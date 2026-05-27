@@ -17,7 +17,8 @@ Turn a requested change into a small, reviewable plan before implementation.
 3. Identify the public interface, likely files, tests/checks, and design artifacts that may change.
 4. Split implementation into internal feature slices when more than one safe implementation step is involved.
 5. For risky or ambiguous work, run `grill-me` locally and fold the critique into the plan.
-6. Present the user-facing plan and wait for user ratification before implementation.
+6. Run `interview-me` only if `grill-me` leaves an unresolved user-judgment question that cannot be answered from the repo.
+7. Present the user-facing plan and wait for user ratification before implementation.
 
 ## Internal State
 

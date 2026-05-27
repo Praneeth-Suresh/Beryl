@@ -39,6 +39,7 @@ required_canonical=(
   "${ROOT_DIR}/agent/skills/debugging/SKILL.md"
   "${ROOT_DIR}/agent/skills/explaining-codebase/SKILL.md"
   "${ROOT_DIR}/agent/skills/grill-me/SKILL.md"
+  "${ROOT_DIR}/agent/skills/interview-me/SKILL.md"
   "${ROOT_DIR}/agent/skills/testing-vertical-slices/SKILL.md"
   "${ROOT_DIR}/agent/skills/improving-architecture/SKILL.md"
   "${ROOT_DIR}/agent/skills/tracking-entropy/SKILL.md"

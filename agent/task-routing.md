@@ -35,3 +35,9 @@ Feature implementation requires an approved plan.
 Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
 
 If a workflow mentions reviewer or parallel-agent steps and the user did not explicitly request sub-agents, perform the review locally in the main agent.
+
+## Supporting Skill Escalation
+
+- Use `grill-me` for structured critique before risky, ambiguous, cross-context, or security-sensitive work.
+- Use `interview-me` only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
+- Do not use `interview-me` for routine task routing or discoverable codebase facts.

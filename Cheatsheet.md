@@ -366,7 +366,9 @@ Expected behavior:
 [what should happen]
 
 Use agent/task-routing.md and the debugging workflow.
+Use session error history automatically if present.
 Reproduce or inspect the failure first, fix the smallest root cause, then run narrow checks and ./scripts/check.sh.
+Keep only compact current-session error summaries in agent/session-state.md and clear resolved entries.
 Do not weaken tests.
 ```
 
@@ -415,6 +417,13 @@ Ask:
 Use agent/task-routing.md and agent/skills/debugging/SKILL.md for this failure: [failure].
 ```
 
+Debugging error history is agent-managed:
+
+- Keep it in gitignored `agent/session-state.md`.
+- Keep at most 5 compact entries.
+- Store summaries, not raw logs.
+- Clear resolved entries after checks pass.
+
 Use `explaining-codebase` when:
 
 - The user asks how code works.
@@ -438,6 +447,18 @@ Ask:
 
 ```text
 Run agent/skills/grill-me/SKILL.md using its YAML input and output templates.
+```
+
+Use `interview-me` after:
+
+- `grill-me` leaves an unresolved product, UX, delivery, or risk decision.
+- The answer cannot be discovered from repo files, tests, config, logs, or canonical agent docs.
+
+Ask:
+
+```text
+Run agent/skills/interview-me/SKILL.md for this unresolved grill-me decision: [decision].
+Ask one question at a time and recommend a default answer.
 ```
 
 Use `testing-vertical-slices` before:
@@ -823,7 +844,7 @@ If an agent makes a messy change:
 
 ## 14. Move Only The New Retrieval Framework
 
-Use this when a repo already has this agent control plane and you only want to add the new retrieval framework. These commands avoid changing existing generated agent instruction files.
+Use this when a repo already has this agent control plane and you only want to add the new retrieval framework plus the later session-state and `interview-me` updates. These commands avoid changing existing generated agent instruction files.
 
 Set paths:
 
@@ -836,7 +857,7 @@ Preview what will be added:
 
 ```bash
 find "$FRAMEWORK/agent/skills" -maxdepth 2 -type f -name 'SKILL.md' \
-  \( -path '*/planning/*' -o -path '*/adding-features/*' -o -path '*/debugging/*' -o -path '*/explaining-codebase/*' \)
+  \( -path '*/planning/*' -o -path '*/adding-features/*' -o -path '*/debugging/*' -o -path '*/explaining-codebase/*' -o -path '*/interview-me/*' \)
 ```
 
 Copy only missing retrieval files:
@@ -846,13 +867,15 @@ mkdir -p \
   "$TARGET/agent/skills/planning" \
   "$TARGET/agent/skills/adding-features" \
   "$TARGET/agent/skills/debugging" \
-  "$TARGET/agent/skills/explaining-codebase"
+  "$TARGET/agent/skills/explaining-codebase" \
+  "$TARGET/agent/skills/interview-me"
 
 cp -n "$FRAMEWORK/agent/task-routing.md" "$TARGET/agent/task-routing.md"
 cp -n "$FRAMEWORK/agent/skills/planning/SKILL.md" "$TARGET/agent/skills/planning/SKILL.md"
 cp -n "$FRAMEWORK/agent/skills/adding-features/SKILL.md" "$TARGET/agent/skills/adding-features/SKILL.md"
 cp -n "$FRAMEWORK/agent/skills/debugging/SKILL.md" "$TARGET/agent/skills/debugging/SKILL.md"
 cp -n "$FRAMEWORK/agent/skills/explaining-codebase/SKILL.md" "$TARGET/agent/skills/explaining-codebase/SKILL.md"
+cp -n "$FRAMEWORK/agent/skills/interview-me/SKILL.md" "$TARGET/agent/skills/interview-me/SKILL.md"
 
 grep -qxF 'agent/session-state.md' "$TARGET/.gitignore" 2>/dev/null || printf '\nagent/session-state.md\n' >> "$TARGET/.gitignore"
 ```
@@ -865,9 +888,34 @@ rsync -av --ignore-existing "$FRAMEWORK/agent/skills/planning/" "$TARGET/agent/s
 rsync -av --ignore-existing "$FRAMEWORK/agent/skills/adding-features/" "$TARGET/agent/skills/adding-features/"
 rsync -av --ignore-existing "$FRAMEWORK/agent/skills/debugging/" "$TARGET/agent/skills/debugging/"
 rsync -av --ignore-existing "$FRAMEWORK/agent/skills/explaining-codebase/" "$TARGET/agent/skills/explaining-codebase/"
+rsync -av --ignore-existing "$FRAMEWORK/agent/skills/interview-me/" "$TARGET/agent/skills/interview-me/"
 
 grep -qxF 'agent/session-state.md' "$TARGET/.gitignore" 2>/dev/null || printf '\nagent/session-state.md\n' >> "$TARGET/.gitignore"
 ```
+
+If the target repo already has the retrieval framework but not the later debugging/interview updates, copy these files explicitly:
+
+```bash
+mkdir -p "$TARGET/agent/skills/interview-me"
+
+cp "$FRAMEWORK/agent/skills/interview-me/SKILL.md" "$TARGET/agent/skills/interview-me/SKILL.md"
+cp "$FRAMEWORK/agent/skills/debugging/SKILL.md" "$TARGET/agent/skills/debugging/SKILL.md"
+cp "$FRAMEWORK/agent/skills/planning/SKILL.md" "$TARGET/agent/skills/planning/SKILL.md"
+cp "$FRAMEWORK/agent/task-routing.md" "$TARGET/agent/task-routing.md"
+
+grep -qxF 'agent/session-state.md' "$TARGET/.gitignore" 2>/dev/null || printf '\nagent/session-state.md\n' >> "$TARGET/.gitignore"
+```
+
+Then manually port these small references into target repos if they have local customizations you do not want to overwrite:
+
+- `agent/skills/debugging/SKILL.md`: add the Session Error History rules; keep at most 5 compact entries in `agent/session-state.md`, summarize instead of storing raw logs, and clear resolved entries.
+- `agent/skills/planning/SKILL.md`: call `interview-me` only when `grill-me` leaves unresolved user judgment that cannot be answered from repo inspection.
+- `agent/task-routing.md`: add `interview-me` as a supporting escalation after unresolved `grill-me` decisions.
+- `agent/agent-rules.md`: add the same `interview-me` trigger and the rule to clear resolved session error history.
+- `agent/scripts/agent-doctor.sh`: require `agent/skills/interview-me/SKILL.md`.
+- `agent/README.md`: mention `interview-me` and bounded session error history.
+
+If you want future generated instruction shims to include these rules, port the relevant changes into `agent/tool-instruction-template.md`. Do not run the sync script until you are ready to update generated files.
 
 Do not run this in the target repo if you want to preserve existing generated instruction files:
 

@@ -7,8 +7,9 @@
 3. Identify the bounded context and intended public interface.
 4. For feature implementation, confirm a user-ratified plan exists. If not, plan first and stop.
 5. For non-trivial or ambiguous work, run `grill-me` locally.
-6. Choose the smallest deterministic check that can prove behavior.
-7. Use `agent/session-state.md` only for temporary, session-specific implementation state.
+6. Run `interview-me` only when `grill-me` leaves an unresolved user-judgment question.
+7. Choose the smallest deterministic check that can prove behavior.
+8. Use `agent/session-state.md` only for temporary, session-specific implementation state.
 
 ## While Coding
 
@@ -28,6 +29,7 @@
 2. Run any task-specific checks defined in `agent/testing-policy.md`.
 3. Update glossary/design tree/architecture/ADRs if durable design changed.
 4. Clear `agent/session-state.md` when temporary implementation state is no longer needed.
+5. Clear resolved session error history after debugging succeeds.
 
 ## Final Response Contract
 

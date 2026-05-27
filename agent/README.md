@@ -53,6 +53,7 @@ Configure test immutability detection in `agent/test-manifest.conf`.
 
 - `grill-me` is the shorthand alias.
 - `grill-me` is the canonical skill contract.
+- `interview-me` is the user-interview fallback for unresolved `grill-me` decisions.
 
 ## Task routing
 
@@ -61,6 +62,7 @@ Configure test immutability detection in `agent/test-manifest.conf`.
 - Feature implementation requires a user-ratified plan. If no approved plan exists, plan first and stop.
 - Feature-slice bookkeeping is internal and temporary. Use ignored `session-state.md` only when needed for resume.
 - Use sub-agents only when the user explicitly asks for them.
+- Keep debugging error history session-scoped and bounded in `session-state.md`.
 
 ## Context hygiene
 

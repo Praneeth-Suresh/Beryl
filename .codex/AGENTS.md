@@ -42,6 +42,7 @@ Task workflows:
 Supporting skills:
 
 - `grill-me`: non-trivial feature, architecture change, cross-context change, ambiguous bug fix.
+- `interview-me`: one-question-at-a-time user interview when `grill-me` leaves unresolved user-judgment decisions.
 - `testing-vertical-slices`: feature/bug behavior implementation.
 - `improving-architecture`: shallow modules, unclear boundaries, recurring coupling.
 - `tracking-entropy`: maintainability review, hotspots, refactoring priority.
@@ -75,6 +76,7 @@ Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs
 - Do not edit unrelated files.
 - Do not store secrets in repo files, prompts, or logs.
 - Do not let temporary implementation notes accumulate in canonical agent files.
+- Keep session debugging history bounded in `agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
 
 ## Browser Verification Rule
 

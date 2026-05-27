@@ -49,6 +49,8 @@ agent/
       SKILL.md
     grill-me/
       SKILL.md
+    interview-me/
+      SKILL.md
     testing-vertical-slices/
       SKILL.md
     improving-architecture/
@@ -130,6 +132,7 @@ Task workflows:
 Supporting skill triggers:
 
 - Use `grill-me` before non-trivial features, architecture changes, cross-context changes, or ambiguous bug fixes.
+- Use `interview-me` only after `grill-me` leaves unresolved user judgment that cannot be answered from repo inspection.
 - Use `testing-vertical-slices` for feature work and bug fixes that need behavior verification.
 - Use `improving-architecture` when a change exposes shallow modules, unclear ownership, repeated coupling, or hard-to-test structure.
 - Use `tracking-entropy` when asked to assess maintainability, hotspots, churn, complexity, or refactoring priority.
@@ -478,6 +481,15 @@ Use when the user reports a bug, failing check, exception, regression, or broken
 
 The workflow should reproduce or inspect the failure first, identify the smallest behavior check that proves the fix, repair from actual tool output, and avoid broad rewrites.
 
+Session error history:
+
+- Use `agent/session-state.md` for current-session error summaries only.
+- Keep at most 5 entries.
+- Keep each entry to about 10 lines or fewer.
+- Store summaries, not raw logs.
+- Redact secrets, tokens, credentials, raw production data, and personal data.
+- Clear resolved entries after the bug is fixed or no longer relevant.
+
 ### Task Workflow: `explaining-codebase`
 
 Create `agent/skills/explaining-codebase/SKILL.md`.
@@ -520,7 +532,28 @@ Use before implementation of non-trivial features, architecture changes, or ambi
 
 Actionable insight: make the agent argue against its own first plan before it edits files. This catches vague boundaries and hidden coupling early.
 
-### Skill 2: `testing-vertical-slices`
+### Skill 2: `interview-me`
+
+Create `agent/skills/interview-me/SKILL.md`.
+
+```md
+# Interview Me
+
+Use only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
+
+## Process
+
+1. State the unresolved decision in one sentence.
+2. Explore the repository first if the answer might be discoverable.
+3. Ask exactly one focused question.
+4. Provide the recommended default answer.
+5. Wait for the user's answer before asking the next question.
+6. Return the resolved decision to the calling workflow.
+```
+
+Actionable insight: keep `grill-me` as the structured critique and use `interview-me` only for conversational decisions that truly require the developer.
+
+### Skill 3: `testing-vertical-slices`
 
 Create `agent/skills/testing-vertical-slices/SKILL.md`.
 
@@ -550,7 +583,7 @@ Use when implementing a feature or bug fix.
 
 Actionable insight: agents behave better when the unit of work is a tested behavior, not a file list.
 
-### Skill 3: `improving-architecture`
+### Skill 4: `improving-architecture`
 
 Create `agent/skills/improving-architecture/SKILL.md`.
 
@@ -580,7 +613,7 @@ Use when code feels hard to change, a feature crosses too many files, or a modul
 
 Actionable insight: the best refactors for agents are boundary refactors. They reduce the amount of context future agents need.
 
-### Skill 4: `tracking-entropy`
+### Skill 5: `tracking-entropy`
 
 Create `agent/skills/tracking-entropy/SKILL.md`.
 
@@ -706,6 +739,7 @@ test -f agent/skills/planning/SKILL.md
 test -f agent/skills/adding-features/SKILL.md
 test -f agent/skills/debugging/SKILL.md
 test -f agent/skills/explaining-codebase/SKILL.md
+test -f agent/skills/interview-me/SKILL.md
 
 command -v git >/dev/null
 grep -qxF "agent/session-state.md" .gitignore
@@ -1454,7 +1488,7 @@ Goal: create the control plane before asking agents to build features.
 7. Update `agent/design-tree.md` and `agent/ubiquitous-language.md` based on the grilling output. The review is not complete until the repo files change or the agent states that no change is needed and why.
 8. Add `agent-rules.md`, `task-routing.md`, `tool-instruction-template.md`, `architecture.md`, and `testing-policy.md`. These files should tell agents how to route the task, what to read, which bounded context they may touch, when tests may change, and which checks must run.
 9. Add the task workflow skills: `planning`, `adding-features`, `debugging`, and `explaining-codebase`.
-10. Add the supporting skills: `grill-me`, `testing-vertical-slices`, `improving-architecture`, and `tracking-entropy`. Each skill should include trigger conditions, required inputs, required output, and which repo files it may update.
+10. Add the supporting skills: `grill-me`, `interview-me`, `testing-vertical-slices`, `improving-architecture`, and `tracking-entropy`. Each skill should include trigger conditions, required inputs, required output, and which repo files it may update.
 11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `scripts/check.sh`, `scripts/check-md.sh`, `scripts/check-tests-unchanged.sh`, and `scripts/update-test-manifest.sh`.
 12. Run `agent/scripts/agent-doctor.sh` and `./scripts/check.sh`. Fix missing files before starting feature work.
 
@@ -1506,7 +1540,7 @@ Goal: make every feature follow the same generate-check-fix loop.
 1. Write a feature brief with `Feature`, `Domain Language`, `Bounded Context`, `Expected Behavior`, and `Checks`.
 2. If no approved plan exists, run `planning`, present the plan, and stop until the user ratifies it.
 3. Load the relevant canonical files: `project-brief.md`, `design-tree.md`, `architecture.md`, `ubiquitous-language.md`, `testing-policy.md`, and `agent-rules.md`.
-4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes. For tiny changes, write the five-bullet version: chosen design, rejected alternative, main risk, public interface, and test strategy.
+4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes. Use `interview-me` only if `grill-me` leaves unresolved user judgment.
 5. Run `testing-vertical-slices` before implementation. It should choose the narrowest useful test level: unit for pure rules, integration for adapters or persistence, E2E smoke for user workflows, and property-based tests for invariants.
 6. Define types, interfaces, and public boundaries first. Use names from `agent/ubiquitous-language.md`; add new terms before using them widely.
 7. Write or identify the smallest useful test. If the test suite must change, run `./scripts/update-test-manifest.sh` after the intentional edit and explain why the manifest changed.
