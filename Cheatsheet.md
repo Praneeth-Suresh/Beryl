@@ -256,7 +256,8 @@ Candidate public interface: [API/component/route/module boundary]
 Constraints: [security/reliability/scalability/delivery]
 
 Update agent/design-tree.md and agent/ubiquitous-language.md if needed.
-Present the plan for approval. Do not implement yet.
+Present the plan for approval. Do not implement yet. 
+If the plan contains more than 10 deliverables, create a plan.md file in the root directory, outlining the list of tasks to be done.
 ```
 
 After the agent responds, review the design. If it is coherent, proceed. If not, ask it to revise the design tree first.
@@ -895,18 +896,18 @@ repo-root/
 
 ### What Lives Where
 
-| Concern | Root `agent/` | Module `agent/` |
-| --- | --- | --- |
-| Engineering rules | ✓ (authoritative) | inherits |
-| Security policy | ✓ (authoritative) | inherits |
-| Skills | ✓ (shared) | inherits |
-| Scripts | ✓ (shared) | inherits |
-| Project brief | whole-system goal | module goal |
-| Design tree | cross-module decisions | module-internal decisions |
-| Architecture | module map + cross-module boundaries | internal module structure |
-| Ubiquitous language | shared terms | module-local terms |
-| Testing policy | root gate commands | module-specific commands |
-| ADRs | cross-module decisions | module-internal decisions |
+| Concern             | Root `agent/`                      | Module `agent/`         |
+| ------------------- | ------------------------------------ | ------------------------- |
+| Engineering rules   | ✓ (authoritative)                   | inherits                  |
+| Security policy     | ✓ (authoritative)                   | inherits                  |
+| Skills              | ✓ (shared)                          | inherits                  |
+| Scripts             | ✓ (shared)                          | inherits                  |
+| Project brief       | whole-system goal                    | module goal               |
+| Design tree         | cross-module decisions               | module-internal decisions |
+| Architecture        | module map + cross-module boundaries | internal module structure |
+| Ubiquitous language | shared terms                         | module-local terms        |
+| Testing policy      | root gate commands                   | module-specific commands  |
+| ADRs                | cross-module decisions               | module-internal decisions |
 
 ### Create A Sub-Module Agent
 

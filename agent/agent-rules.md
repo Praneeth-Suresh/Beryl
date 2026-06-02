@@ -10,7 +10,7 @@
 6. Run `interview-me` only when `grill-me` leaves an unresolved user-judgment question.
 7. Choose the smallest deterministic check that can prove behavior.
 8. Use `agent/session-state.md` only for temporary, session-specific implementation state.
-9. Do not create sub-module agent structures unless the project has 3+ independently complex bounded contexts declared in root `agent/architecture.md`. For smaller projects, the root `agent/` is sufficient and sub-modules waste context.
+9. Do not create sub-module agent structures unless the project has 3+ independently complex bounded contexts declared in root `agent/architecture.md` (in which case, read through `agent/guides/sub-module-agents.md` for more details). For smaller projects, the root `agent/` is sufficient and sub-modules waste context.
 
 ## While Coding
 
