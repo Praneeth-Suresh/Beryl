@@ -46,6 +46,7 @@ Supporting skills:
 - `testing-vertical-slices`: feature/bug behavior implementation.
 - `improving-architecture`: shallow modules, unclear boundaries, recurring coupling.
 - `tracking-entropy`: maintainability review, hotspots, refactoring priority.
+- `frontend-design`: distinctive, intentional visual design for new UI or UI reshaping.
 
 When using a skill, follow its required inputs/outputs exactly.
 

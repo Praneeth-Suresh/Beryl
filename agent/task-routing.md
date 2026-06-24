@@ -67,4 +67,5 @@ If the user explicity requests the use of sub-agents, spin up the following sub-
 
 - Use `grill-me` for structured critique before risky, ambiguous, cross-context, or security-sensitive work.
 - Use `interview-me` only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
+- Use `frontend-design` for distinctive, intentional visual design when building new UI or reshaping an existing one.
 - Do not use `interview-me` for routine task routing or discoverable codebase facts.

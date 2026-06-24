@@ -38,6 +38,12 @@ Generate tool-specific instruction shims:
 ./agent/scripts/sync-agent-env.sh
 ```
 
+Create the first manifest:
+
+```bash
+./scripts/update-test-manifest.sh
+```
+
 If your repo ignores a generated tool directory such as `.codex/`, either track the needed shim explicitly or adjust `agent/scripts/agent-doctor.sh` so CI does not require ignored local files.
 
 ## 0.1 Configure Browser MCP (Web/HTML Work)
