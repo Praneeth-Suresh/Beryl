@@ -32,3 +32,39 @@ One of the current bottlenecks is infrastructure. Many agent-first workflows sti
 So this repository is not built on the assumption that "AI will replace software." A better framing is narrower and more useful: the center of gravity is moving. More behavior will be specified in language. More systems will be assembled dynamically. More deterministic code will be used as tools around a reasoning core. And because of that, the engineering challenge is no longer just writing code. It is designing reliable systems around non-deterministic intelligence.
 
 That is the problem space this repository is about.
+
+## What This Repository Contains
+
+This repository is an inspectable agentic-engineering workspace rather than a conventional app. It collects the operating rules, scripts, hooks, and review boundaries used to make agent-assisted development more reproducible.
+
+```mermaid
+flowchart LR
+    A[Human task] --> B[Agent instructions]
+    B --> C[Repository conventions]
+    C --> D[Checks and hooks]
+    D --> E[Reviewable output]
+    E --> F[Human merge decision]
+```
+
+Key paths:
+
+- `agent/`: architecture notes, security policy, testing policy, task routing, and reusable agent context.
+- `scripts/`: deterministic repository checks and manifest tooling.
+- `githooks/`: pre-commit guardrails for local use.
+- `tests/`: placeholder for behavior checks as the workflow becomes more concrete.
+
+## Run The Checks
+
+From the repository root:
+
+```bash
+./scripts/check.sh
+```
+
+The checks are intentionally lightweight and deterministic. Their job is to catch broken project structure and documentation drift before an agent-produced change reaches review.
+
+## Current Status
+
+This is a framework and operating-system repo for agentic coding practice. It is strongest as a proof-of-work artifact when paired with concrete case studies that show the workflow improving a real repository.
+
+Interested in this area? Email me at praneeth.suresh.s@gmail.com.
