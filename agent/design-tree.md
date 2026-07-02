@@ -17,6 +17,8 @@
 | [Question] | [Choice] | [YYYY-MM-DD] | [ADR link or n/a] |
 | Commit-time test selection | Use an affected test gate behind `scripts/check.sh` instead of Husky-only hook logic | 2026-06-25 | [ADR 0002](adr/0002-use-affected-test-gate-for-commit-feedback.md) |
 | Project onboarding | Use an interactive setup script with explicit headless-agent fallback | 2026-06-25 | [ADR 0003](adr/0003-use-interactive-setup-script-for-project-onboarding.md) |
+| Pre-coding proof points | Require success checks before meaningful redirects or implementation so plans close with measured evidence | 2026-07-02 | n/a |
+| Post-run cleanup mode | After long product runs, forbid new features and return one safe extraction slice based on changed-file evidence | 2026-07-02 | n/a |
 
 ## Pressure Points
 

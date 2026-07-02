@@ -11,6 +11,19 @@ Feature implementation requires an approved plan.
 - If no approved plan exists, run the planning workflow first and stop after presenting the plan.
 - Do not edit implementation code until the user ratifies the plan.
 - After ratification, implement only the next internal feature slice.
+- Before coding, state the success checks that will prove the selected slice or redirect worked.
+
+## Success Checks
+
+Before implementation, state:
+
+- Expected file, route, or artifact change.
+- Narrow test/check command that should prove the behavior.
+- Broader check command, normally `./scripts/check.sh`.
+- Generated output, build artifact, or browser evidence when applicable.
+- One user-visible behavior to verify.
+
+If the approved plan does not contain success checks, define the smallest checks consistent with the approved scope before coding. If defining those checks changes the scope, return to planning and wait for user ratification.
 
 ## Process
 
@@ -24,12 +37,13 @@ Feature implementation requires an approved plan.
    - `agent/agent-rules.md`
 3. If the feature needs multiple implementation steps or may be interrupted, create or update `agent/session-state.md` with the smallest internal feature-slice checklist.
 4. Select exactly one internal feature slice before coding.
-5. Run `testing-vertical-slices` to choose the smallest useful test/check.
-6. Implement the selected slice behind the intended public interface.
-7. Run the formatter command, narrow checks, then the broader project check.
-8. Update `agent/session-state.md` only if more work remains or the slice is blocked.
-9. Clear `agent/session-state.md` when the feature is complete.
-10. Update glossary, architecture, design tree, or ADRs only when durable design knowledge changed.
+5. State the success checks for the selected slice.
+6. Run `testing-vertical-slices` to choose the smallest useful test/check.
+7. Implement the selected slice behind the intended public interface.
+8. Run the formatter command, narrow checks, then the broader project check.
+9. Update `agent/session-state.md` only if more work remains or the slice is blocked.
+10. Clear `agent/session-state.md` when the feature is complete.
+11. Update glossary, architecture, design tree, or ADRs only when durable design knowledge changed.
 
 ## Rules
 
@@ -62,6 +76,7 @@ Durable state belongs in canonical files only when it changes future work:
 
 - What was implemented or plan awaiting approval
 - Files changed
+- Whether the success checks were met
 - Checks run
 - Checks skipped or unavailable
 - Whether tests changed

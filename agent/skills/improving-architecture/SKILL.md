@@ -10,6 +10,7 @@ Reduce coupling and context sprawl by improving module boundaries.
 - Ownership or module boundaries are unclear
 - Repeated illegal or fragile cross-context imports
 - Shallow pass-through modules
+- Post-run extraction slice needs a clearer boundary before implementation
 
 ## Input Contract (required)
 
@@ -32,6 +33,8 @@ existing_boundary_tests:
 4. Move details behind that boundary.
 5. Add or update boundary-protecting tests.
 6. Record durable decision in ADR when needed.
+
+For post-run extraction work, do not add new features. Keep the proposal to one behavior-preserving extraction slice and name the check or regression test that protects it.
 
 ## Output Template (required)
 

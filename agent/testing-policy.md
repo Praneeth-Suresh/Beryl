@@ -19,10 +19,11 @@
 
 1. Identify or add the failing behavior.
 2. Select the smallest useful test level.
-3. Implement one internal feature slice.
-4. Run narrow checks first, then broader checks.
-5. Repair from actual tool output.
-6. For web UI or HTML/CSS work, include a Playwright MCP browser verification step.
+3. State success checks before implementation: expected artifact, narrow command, broader command, generated output or browser evidence when applicable, and one user-visible behavior.
+4. Implement one internal feature slice.
+5. Run narrow checks first, then broader checks.
+6. Repair from actual tool output.
+7. For web UI or HTML/CSS work, include a Playwright MCP browser verification step.
 
 ## Affected Test Gate
 

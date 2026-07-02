@@ -46,6 +46,8 @@ narrow_checks_first:
   - "<command>"
 broader_checks_after:
   - "<command>"
+success_checks:
+  - "<expected artifact, command, generated output, or user-visible behavior>"
 test_files_expected_to_change:
   - "<path or none>"
 manifest_update_required: true
@@ -57,6 +59,7 @@ notes: "<short rationale>"
 - Output uses the exact template keys.
 - Test level is one of the allowed enum values.
 - Narrow and broader commands are executable.
+- `success_checks` includes at least one artifact or behavior proof and at least one command.
 - `manifest_update_required` is accurate when test files change.
 
 ## Refusal / Abort Conditions
@@ -83,4 +86,3 @@ Abort if:
 - May update: test files and test fixtures
 - Must update manifest with `./scripts/update-test-manifest.sh` when test files change intentionally
 - Must not weaken existing assertions without explicit behavior-change rationale
-

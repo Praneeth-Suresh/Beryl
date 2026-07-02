@@ -42,6 +42,24 @@ Build to a quality floor without announcing it: responsive down to mobile, visib
 
 Human creators have memory and always try to do something new, so if you have a space to quickly jot down notes about what you've tried, it can help you in future passes.
 
+## Frontend success checks
+
+Before coding or redirecting a UI approach, state the acceptance proof for the work.
+
+Use this shape and adapt it to the task:
+
+```text
+I will accept this only if:
+- The intended route, component, or asset changes in the expected way.
+- Text remains readable and does not overlap at mobile and desktop widths relevant to the product.
+- The key sections or controls are visually distinct enough for the target workflow.
+- The main user-visible behavior is verified in the browser.
+- Playwright MCP evidence, such as accessibility snapshots or screenshots, confirms the shipped state.
+- The narrow UI check and `./scripts/check.sh` pass, or skipped checks are explained.
+```
+
+For HTML/CSS or web app work, include at least one mobile viewport and one desktop viewport in the browser evidence unless the task is explicitly viewport-independent.
+
 ## More on writing in design
 
 Words appear in a design for one reason: to make it easier to understand, and therefore easier to use. They are design material, not decoration. Bring the same intentionality to copy that you would bring to spacing and color. Before writing anything, ask what the design needs to say, and how it can best be said to help the person navigate the experience.

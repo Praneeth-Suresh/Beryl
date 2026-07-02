@@ -9,8 +9,9 @@
 5. For non-trivial or ambiguous work, run `grill-me` locally.
 6. Run `interview-me` only when `grill-me` leaves an unresolved user-judgment question.
 7. Choose the smallest deterministic check that can prove behavior.
-8. Use `agent/session-state.md` only for temporary, session-specific implementation state.
-9. Do not create sub-module agent structures unless the project has 3+ independently complex bounded contexts declared in root `agent/architecture.md` (in which case, read through `agent/guides/sub-module-agents.md` for more details). For smaller projects, the root `agent/` is sufficient and sub-modules waste context.
+8. State success checks before any meaningful redirect or implementation.
+9. Use `agent/session-state.md` only for temporary, session-specific implementation state.
+10. Do not create sub-module agent structures unless the project has 3+ independently complex bounded contexts declared in root `agent/architecture.md` (in which case, read through `agent/guides/sub-module-agents.md` for more details). For smaller projects, the root `agent/` is sufficient and sub-modules waste context.
 
 ## While Coding
 
@@ -23,6 +24,16 @@
 7. For web app or HTML/CSS tasks, use Microsoft Playwright MCP for browser verification instead of screenshot-only assumptions.
 8. Do not use sub-agents unless the user explicitly asks for them.
 9. Do not expose feature-slice bookkeeping to the user.
+
+## Post-Run Cleanup Review
+
+After a long product run, if the user asks for cleanup or extraction review:
+
+1. Do not implement new features.
+2. Read the changed files before recommending cleanup.
+3. Identify dead selectors, repeated CSS patterns, rendering functions that should be split, generated artifacts that should not be hand-edited, and tests missing for known regressions.
+4. Return one safe extraction slice only.
+5. Include the protecting check or missing regression test that should make the extraction safe.
 
 ## Before Finishing
 

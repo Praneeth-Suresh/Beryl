@@ -17,6 +17,7 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 | Feature addition | add, implement, build, create feature, new workflow, support behavior | `agent/skills/adding-features/SKILL.md` |
 | Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `agent/skills/debugging/SKILL.md` |
 | Codebase explanation | explain, walk me through, understand, map the codebase, where is this handled | `agent/skills/explaining-codebase/SKILL.md` |
+| Post-run maintainability review | long product run, safe extraction slice, dead selectors, repeated CSS, rendering functions to split, generated artifacts, missing regression tests | `agent/skills/tracking-entropy/SKILL.md` |
 
 ## Feature Implementation Gate
 
@@ -68,4 +69,5 @@ If the user explicity requests the use of sub-agents, spin up the following sub-
 - Use `grill-me` for structured critique before risky, ambiguous, cross-context, or security-sensitive work.
 - Use `interview-me` only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
 - Use `frontend-design` for distinctive, intentional visual design when building new UI or reshaping an existing one.
+- Use `tracking-entropy` after long product runs when the user asks for changed-file cleanup or one safe extraction slice.
 - Do not use `interview-me` for routine task routing or discoverable codebase facts.

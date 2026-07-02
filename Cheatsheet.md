@@ -761,14 +761,56 @@ Run:
 Then ask an agent:
 
 ```text
-Run tracking-entropy on the hotspot list.
-Pick one high-churn area.
-Then run improving-architecture on that area.
-Propose one small refactor step, the test that protects it, and whether an ADR is needed.
-Do not implement until I approve the step.
+Do not implement new features or refactors.
+
+Run a long-term maintenance audit from the current changed files and entropy data.
+
+Use:
+- agent/task-routing.md
+- agent/skills/tracking-entropy/SKILL.md
+- agent/skills/improving-architecture/SKILL.md where boundary cleanup is relevant
+- agent/skills/frontend-design/SKILL.md where UI/CSS cleanup is relevant
+
+Read:
+- git status --short
+- git diff --stat
+- git diff
+- output from ./agent/scripts/entropy-hotspots.sh
+- relevant tests and generated-output config
+
+Identify everything that could potentially be removed, split, or refactored:
+- dead selectors
+- repeated CSS patterns
+- oversized rendering functions or components that should be split
+- duplicated domain or formatting logic
+- shallow pass-through modules
+- boundary leaks or imports that should move behind public entry points
+- generated artifacts that should not be hand-edited
+- stale files, unused fixtures, or obsolete docs created during the product run
+- tests missing for known regressions or fragile user-visible behavior
+
+Return one complete maintenance backlog, not just one slice.
+
+For each candidate include:
+- file/path
+- exact smell or risk
+- why it is safe or unsafe to change
+- proposed removal/refactor
+- protecting test/check or missing regression test
+- whether an ADR/design-tree update is needed
+- risk level: low, medium, or high
+
+Then group the backlog into:
+1. Safe removals
+2. Safe extractions
+3. Needs regression test first
+4. Needs design or ADR decision
+5. Do not touch because generated or externally owned
+
+Finally recommend the smallest implementation order for the whole backlog, but do not edit files.
 ```
 
-If approved, implement one step and run:
+If you approve part or all of the backlog, ask the agent to implement the selected group in small checked steps and run:
 
 ```bash
 ./scripts/check.sh

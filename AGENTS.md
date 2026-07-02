@@ -45,7 +45,7 @@ Supporting skills:
 - `interview-me`: one-question-at-a-time user interview when `grill-me` leaves unresolved user-judgment decisions.
 - `testing-vertical-slices`: feature/bug behavior implementation.
 - `improving-architecture`: shallow modules, unclear boundaries, recurring coupling.
-- `tracking-entropy`: maintainability review, hotspots, refactoring priority.
+- `tracking-entropy`: maintainability review, post-run cleanup, hotspots, refactoring priority.
 - `frontend-design`: distinctive, intentional visual design for new UI or UI reshaping.
 
 When using a skill, follow its required inputs/outputs exactly.
@@ -57,14 +57,17 @@ Do not use sub-agents unless the user explicitly asks for sub-agents, parallel a
 1. Restate requested behavior and bounded context.
 2. Identify intended public interface and likely files to change.
 3. Add or identify the smallest deterministic test/check for behavior.
-4. Implement one internal feature slice.
-5. Run narrow checks, then broader checks.
-6. Repair from actual tool output.
-7. Update glossary/design-tree/architecture/ADR files if design knowledge changed.
+4. Before any meaningful redirect or implementation, state success checks: expected artifact change, narrow command, broader command, generated output or browser evidence when applicable, and one user-visible behavior.
+5. Implement one internal feature slice.
+6. Run narrow checks, then broader checks.
+7. Repair from actual tool output.
+8. Update glossary/design-tree/architecture/ADR files if design knowledge changed.
 
 For feature implementation, an approved plan is mandatory. If no approved plan exists, produce the plan first, present it to the user, and stop. Do not implement until the user ratifies the plan.
 
 Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs or ledgers. Use `agent/session-state.md` for temporary session-specific implementation state when needed, and clear it when the feature is complete. Store only durable decisions in canonical files.
+
+For post-run cleanup prompts, do not implement new features. Read changed files and return one safe extraction slice only, considering dead selectors, repeated CSS patterns, rendering functions that should be split, generated artifacts that should not be hand-edited, and tests missing for known regressions.
 
 ## Engineering Rules
 
