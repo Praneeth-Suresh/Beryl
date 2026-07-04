@@ -50,6 +50,20 @@ The difference matters because repository state outlives the model call. A revie
 - `.beryl/beryl.components.json` declares installable components, profiles, dependencies, root paths, and post-install hooks.
 - `.beryl/driver/` runs long tasks through separate plan, implement, verify, and commit phases with file-backed state.
 
+## Founder Story
+
+Long-form origin narrative for launch posts, about pages, and outreach threads. The README carries a three-paragraph short version under `## Origin`; this is the expanded telling. Keep it consistent with the copy guardrails below — the story is about process discipline, never a promise of correct code.
+
+Beryl came out of a frustration I could not engineer around: I could not stay awake all night steering my agent.
+
+When I sat next to it, the work was good. I caught the wrong turns, corrected the assumptions, and held it to the standard I actually wanted. But that does not scale. The moment I stepped away, quality drifted. The agent would wander off the task, skip the context that mattered, invent abstractions I never asked for, or declare victory on work that did not hold up. Supervision was the only thing keeping it honest, and supervision is exactly the thing that cannot run overnight.
+
+So I stopped trying to make the agent more trustworthy in the moment and started making the repository enforce trust on its own. If I could not be in the loop, the loop had to be built into the repo: the context it must read before touching anything, the workflow it has to choose before it implements, the deterministic checks it cannot talk its way past, and the review boundaries it is not allowed to cross. Guarantees that live in files and scripts do not fall asleep. They are there whether I am watching or not.
+
+That shift — from babysitting the agent to hardening the repository — is the whole idea behind Beryl. The agent can run unattended and still land work I trust enough to review in the morning, because the repository already caught, routed, and gated it against a standard I set once and committed.
+
+Beryl started as a personal project I kept reaching for, tool after tool, repo after repo. Everything I have learned about agentic engineering and context management is baked into it: how to give an agent the right context without drowning it, how to route a task before it starts, how to make checks deterministic instead of vibes, and how to keep the human as the final owner of the decision. I am putting it out in the hope it delivers the same value to others that it kept delivering to me.
+
 ## Copy Guardrails
 
 Say:
