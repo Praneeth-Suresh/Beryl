@@ -2,9 +2,13 @@
 
 ## Core Identity
 
-Beryl is positioned as a **control-plane product for reliable AI-assisted engineering**.
+Beryl is positioned as the **hard guarantee layer that makes repositories ready for agents**.
 The brand should feel intentional, precise, and operational: clean geometry, strong contrast,
-and minimal ornamentation.
+minimal ornamentation, and visible evidence of control.
+
+The product is not "another skill pack." Beryl sits around the repository. It makes the
+repo declare its agent contract, routes work through explicit workflows, and backs claims
+with deterministic local gates.
 
 ## Color Tokens
 
@@ -26,6 +30,9 @@ For documentation and website surfaces, pair:
 
 - Display/heading: a sans-serif with geometric traits (for example, `Inter`).
 - Body: a practical, readable sans-serif (for example, `Inter`, `Inter Tight`, or `IBM Plex Sans`).
+
+Type should feel like infrastructure documentation rather than AI marketing. Prefer direct
+headlines, short nouns, and concrete mechanisms over aspirational language.
 
 ## Logo Tokens and Variants
 
@@ -57,9 +64,37 @@ Current repo assets:
 Across documentation and landing surfaces, lead with:
 
 - one-line role statement:
-  - "Inspectable control plane for AI-assisted software engineering."
+  - "Hard guarantees for agent-ready repositories."
 - then a one-liner on outcome:
-  - "Structure, checks, and traceability for stochastic contributors."
+  - "Install the repository contract agents must follow."
+
+## Messaging Pillars
+
+- Repository readiness: Beryl prepares the repository before an agent starts work.
+- Hard guarantees: Beryl turns agent instructions, checks, manifests, and review gates into files and scripts that can be inspected.
+- Runtime agnostic: Beryl can work beside skill packs, IDE assistants, and headless CLIs because the source of truth lives in the repo.
+- Human-owned review: Beryl makes evidence visible; it does not replace engineering judgment.
+- Deterministic feedback: Beryl favors explicit local checks over session-only claims.
+
+## Differentiation Language
+
+Use this framing when comparing Beryl with adjacent agent tooling:
+
+- "Skill packs improve agent behavior inside a session. Beryl prepares the repository around that session."
+- "Runtime harnesses make the agent more capable. Beryl makes the repo more auditable."
+- "Beryl does not ask teams to trust a chat transcript. It gives them files, scripts, manifests, and checks."
+- "Use smarter agents if you want. Beryl is the control plane that keeps their work reviewable."
+
+Avoid these claims:
+
+- "Beryl makes agents safe."
+- "Beryl guarantees correct code."
+- "Beryl replaces tests, code review, or architecture judgment."
+- "Beryl competes with every skill framework."
+
+Preferred claim:
+
+- "Beryl gives repositories hard, inspectable process guarantees around agent work."
 
 ## Future Brand Improvements to Track
 
