@@ -1,70 +1,108 @@
-# Introduction: What Agentic Engineering Is Actually About
+<p align="center">
+  <img src="assets/beryl-logo.svg" alt="Beryl logo" width="220" />
+</p>
 
-Agentic engineering starts from a simple observation: large language models are no longer just autocomplete systems. In many workflows, they behave more like interpreters. The "program" is not only code. It is the whole input you give the model: instructions, constraints, files, examples, tools, state, and environment. In that sense, the context window becomes the new execution surface.
+<h1 align="center">Beryl</h1>
 
-That shift matters because it changes where software behavior comes from. In a traditional system, developers write deterministic code paths ahead of time and users operate within them. In an agentic system, some behavior is still encoded in code, but a meaningful part of the system is produced at runtime from language, context, and tool use. The practical question becomes less "what software do we ship?" and more "what capability do we give the agent, and how do we shape its judgment?"
+<p align="center">
+  <strong>Crafted systems for real outcomes.</strong>
+</p>
 
-This is the broader idea sometimes described as Software 3.0: software is increasingly specified in natural language and executed through models. The agent carries packaged intelligence and adapts its actions to the local environment. Instead of building a fixed application for every narrow workflow, you can often describe the task and get a bespoke solution for that situation.
+<p align="center">
+  <img src="https://img.shields.io/badge/agentic%20engineering-control%20plane-0f766e?style=for-the-badge" alt="Agentic engineering control plane" />
+  <img src="https://img.shields.io/badge/checks-deterministic-2563eb?style=for-the-badge" alt="Deterministic checks" />
+  <img src="https://img.shields.io/badge/review-human%20owned-111827?style=for-the-badge" alt="Human owned review" />
+  <img src="https://img.shields.io/badge/security-bounded%20tools-b45309?style=for-the-badge" alt="Bounded tool security" />
+</p>
 
-That does not mean code disappears. It means code changes roles.
+Beryl is an inspectable control plane for AI-assisted software development. It gives coding agents the structure they usually lack: project rules, task routing, security boundaries, deterministic checks, review expectations, and setup scripts that make their work easier to evaluate.
 
-Deterministic software is still essential, but it increasingly serves as infrastructure, boundary, and tool. The neural network handles interpretation, synthesis, and adaptation. Conventional code handles persistence, permissions, computation, integration, testing, and enforcement. One is good at flexible reasoning under ambiguity. The other is good at reliable execution under rules. Useful systems need both.
+Use it when you want agents to help inside a real repository without turning your engineering process into an unreviewable chat transcript.
 
-This is why agentic engineering is not mainly about making software generation faster. Some of the value is speed, but the deeper change is that new kinds of systems become possible. Agents can inspect a codebase, form a plan, use tools, recover from intermediate failures, and adapt their approach to the environment. That is qualitatively different from ordinary automation.
+## Why Beryl Exists
 
-The catch is equally important: these systems are stochastic. They can be useful, capable, and often impressive, but they are not inherently verifiable in the way ordinary programs are. The core research problem in this paradigm is not only capability. It is verifiability.
+AI coding agents are useful because they can inspect a codebase, form a plan, use tools, recover from failures, and adapt to local context. They are risky because their behavior is shaped at runtime by prompts, files, tools, state, and assumptions.
 
-That is where engineering discipline re-enters the picture. If an agent can reason, improvise, and act, then the job of the engineer is to make those actions legible, bounded, and accountable. Prompting matters, but prompting alone is not enough. You need orchestration, evaluation, interfaces, tool design, environment control, testable boundaries, and reviewable outputs. In other words, the familiar ideas from software design do not become less important. They become more important.
+Beryl treats that runtime environment as an engineering surface.
 
-This repository uses the term **agentic engineering** for that layer of work: the practice of building systems that use stochastic agents without surrendering responsibility for correctness, safety, and maintainability.
+Instead of asking a model to "just code", Beryl gives it a working contract:
 
-At a minimum, that means taking seriously a few obligations:
+- what context to read before changing files
+- how to classify tasks before acting
+- which boundaries, terms, and security rules matter
+- how to state success checks before implementation
+- how to keep tests and review artifacts visible
+- how to leave humans responsible for final judgment
 
-- Prevent obvious failure modes and unnecessary vulnerabilities.
-- Keep responsibility for code and system behavior with humans, not with the model.
-- Design for judgment, taste, and oversight rather than assuming the agent can supply them on demand.
-- Build workflows that handle stochasticity well instead of pretending it is not there.
+The result is not magic automation. It is a sharper workflow for converting rough intent into controlled, reviewable output.
 
-That is also why setup matters so much. Good results rarely come from "just asking the model." They come from investing in the surrounding structure: repository conventions, tool access, environment scaffolding, prompt patterns, evaluation loops, and clear operational boundaries. The quality of the setup often determines whether the agent behaves like a helpful engineer or an unreliable intern with shell access.
-
-One of the current bottlenecks is infrastructure. Many agent-first workflows still break down at the boundary where the agent has to interact with real systems: hosting, deployment, secrets, permissions, observability, and production operations. The model may be capable of reasoning about the task, but the environment is often not yet shaped for agentic work.
-
-So this repository is not built on the assumption that "AI will replace software." A better framing is narrower and more useful: the center of gravity is moving. More behavior will be specified in language. More systems will be assembled dynamically. More deterministic code will be used as tools around a reasoning core. And because of that, the engineering challenge is no longer just writing code. It is designing reliable systems around non-deterministic intelligence.
-
-That is the problem space this repository is about.
-
-## What This Repository Contains
-
-This repository is an inspectable agentic-engineering workspace rather than a conventional app. It collects the operating rules, scripts, hooks, and review boundaries used to make agent-assisted development more reproducible.
+## What You Get
 
 ```mermaid
 flowchart LR
-    A[Human task] --> B[Agent instructions]
-    B --> C[Repository conventions]
-    C --> D[Checks and hooks]
-    D --> E[Reviewable output]
-    E --> F[Human merge decision]
+    A[Human intent] --> B[Task routing]
+    B --> C[Agent instructions]
+    C --> D[Repository boundaries]
+    D --> E[Deterministic checks]
+    E --> F[Reviewable change]
+    F --> G[Human decision]
 ```
 
-Key paths:
+Key pieces:
 
-- `agent/`: architecture notes, security policy, testing policy, task routing, and reusable agent context.
-- `scripts/`: deterministic repository checks and manifest tooling.
-- `githooks/`: pre-commit guardrails for local use.
-- `tests/`: placeholder for behavior checks as the workflow becomes more concrete.
+- `agent/`: canonical instructions, architecture notes, testing policy, security policy, task routing, and reusable agent context.
+- `agent/skills/`: workflow contracts for planning, feature work, debugging, codebase explanation, architecture improvement, entropy tracking, and vertical-slice testing.
+- `scripts/`: deterministic checks, test manifest tooling, affected-test routing, and project setup.
+- `githooks/`: optional local pre-commit guardrails.
+- `driver/`: prompt driver utilities for repeatable plan, implement, verify, and commit flows.
 
-## Run The Checks
+## Who It Is For
 
-From the repository root:
+Beryl is useful for:
+
+- engineers experimenting with agent-assisted development in real repositories
+- teams that want agent output to stay legible, bounded, and reviewable
+- students and builders turning AI coding workflows into serious proof-of-work
+- maintainers who want deterministic checks around stochastic contributors
+
+It is not a replacement for code review, tests, architecture judgment, or product taste. It is the scaffolding that helps those things survive when an agent is in the loop.
+
+## Quick Start
+
+Run the deterministic checks:
 
 ```bash
 ./scripts/check.sh
 ```
 
-The checks are intentionally lightweight and deterministic. Their job is to catch broken project structure and documentation drift before an agent-produced change reaches review.
+Install the control plane into another project:
 
-## Current Status
+```bash
+./scripts/setup-project.sh /path/to/project
+```
 
-This is a framework and operating-system repo for agentic coding practice. It is strongest as a proof-of-work artifact when paired with concrete case studies that show the workflow improving a real repository.
+The setup script copies the agent control plane, configures affected-test behavior, syncs generated instruction shims, creates the initial test manifest, and can enable the bundled pre-commit hook.
+
+Enable the local hook in this repository:
+
+```bash
+git config core.hooksPath githooks
+```
+
+## Operating Model
+
+Beryl keeps the model flexible while making the surrounding process explicit.
+
+| Layer | Purpose |
+| --- | --- |
+| Human intent | Defines the actual goal and acceptable outcome. |
+| Agent routing | Chooses the right workflow before changing files. |
+| Repository rules | Gives the agent local language, architecture, and safety boundaries. |
+| Deterministic checks | Turns review from vibes into repeatable evidence. |
+| Human review | Keeps responsibility with the engineer, not the model. |
+
+## Repository Status
+
+Beryl is a framework and operating-system repository for disciplined agentic engineering. It is strongest when paired with concrete case studies that show the workflow improving a real project.
 
 Interested in this area? Email me at praneeth.suresh.s@gmail.com.
