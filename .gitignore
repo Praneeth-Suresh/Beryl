@@ -1,5 +1,5 @@
 current.md
-agent/session-state.md
-driver/state/
-driver/logs/
-driver/config.env
+.beryl/agent/session-state.md
+.beryl/driver/state/
+.beryl/driver/logs/
+.beryl/driver/config.env

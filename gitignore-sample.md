@@ -7,7 +7,7 @@ Add this only when the code is going to move to production. This is because unti
 ```gitignore
 # --- Agent Control Plane ---
 # The core logic and documentation for agent behavior
-/agent/
+/.beryl/
 
 # --- Agent Documentation ---
 # Local documentation files provided by the boilerplate
@@ -17,7 +17,7 @@ Add this only when the code is going to move to production. This is because unti
 /README.md
 
 # --- Instruction Shims & Generated Files ---
-# Tool-specific instructions and generated shims (synced from agent/ folder)
+# Tool-specific instructions and generated shims (synced from .beryl/agent/ folder)
 /AGENTS.md
 /CLAUDE.md
 /.codex/
@@ -26,6 +26,6 @@ Add this only when the code is going to move to production. This is because unti
 
 # --- Agent State & Manifests ---
 # Deterministic check state that should not be part of the codebase logic
-/agent/session-state.md
+/.beryl/agent/session-state.md
 /tests/.manifest.sha256
 ```

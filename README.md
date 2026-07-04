@@ -5,7 +5,7 @@
 <h1 align="center">Beryl</h1>
 
 <p align="center">
-  <strong>Crafted systems for real outcomes.</strong>
+  <strong>Craft Robust Software</strong>
 </p>
 
 <p align="center">
@@ -34,7 +34,9 @@ Instead of asking a model to "just code", Beryl gives it a working contract:
 - how to keep tests and review artifacts visible
 - how to leave humans responsible for final judgment
 
-The result is not magic automation. It is a sharper workflow for converting rough intent into controlled, reviewable output.
+Here is the simple goal Beryl tries to achieve:
+
+> Convert rough intent into controlled, reviewable output.
 
 ## What You Get
 
@@ -50,11 +52,11 @@ flowchart LR
 
 Key pieces:
 
-- `agent/`: canonical instructions, architecture notes, testing policy, security policy, task routing, and reusable agent context.
-- `agent/skills/`: workflow contracts for planning, feature work, debugging, codebase explanation, architecture improvement, entropy tracking, and vertical-slice testing.
-- `scripts/`: deterministic checks, test manifest tooling, affected-test routing, and project setup.
-- `githooks/`: optional local pre-commit guardrails.
-- `driver/`: prompt driver utilities for repeatable plan, implement, verify, and commit flows.
+- `.beryl/agent/`: canonical instructions, architecture notes, testing policy, security policy, task routing, and reusable agent context.
+- `.beryl/agent/skills/`: workflow contracts for planning, feature work, debugging, codebase explanation, architecture improvement, entropy tracking, and vertical-slice testing.
+- `.beryl/scripts/`: deterministic checks, test manifest tooling, affected-test routing, and project setup.
+- `.beryl/githooks/`: optional local pre-commit guardrails.
+- `.beryl/driver/`: prompt driver utilities for repeatable plan, implement, verify, and commit flows.
 
 ## Who It Is For
 
@@ -69,16 +71,44 @@ It is not a replacement for code review, tests, architecture judgment, or produc
 
 ## Quick Start
 
+Install Beryl into an existing repository without cloning this repo:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh
+```
+
+Select a profile or explicit components:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh -s -- --profile minimal
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh -s -- --components agent-core,driver
+```
+
+Inspect before running:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh -o install.sh
+sha256sum install.sh
+less install.sh
+sh install.sh --profile standard
+```
+
+The current local `install.sh` checksum is:
+
+```text
+a2275c5947a9dbf4a6997f1a24d9a6da044b549239e1684c4fc822f7ad185cf5  install.sh
+```
+
 Run the deterministic checks:
 
 ```bash
-./scripts/check.sh
+./.beryl/scripts/check.sh
 ```
 
 Install the control plane into another project:
 
 ```bash
-./scripts/setup-project.sh /path/to/project
+./.beryl/scripts/setup-project.sh /path/to/project
 ```
 
 The setup script copies the agent control plane, configures affected-test behavior, syncs generated instruction shims, creates the initial test manifest, and can enable the bundled pre-commit hook.
@@ -86,20 +116,20 @@ The setup script copies the agent control plane, configures affected-test behavi
 Enable the local hook in this repository:
 
 ```bash
-git config core.hooksPath githooks
+git config core.hooksPath .beryl/githooks
 ```
 
 ## Operating Model
 
 Beryl keeps the model flexible while making the surrounding process explicit.
 
-| Layer | Purpose |
-| --- | --- |
-| Human intent | Defines the actual goal and acceptable outcome. |
-| Agent routing | Chooses the right workflow before changing files. |
-| Repository rules | Gives the agent local language, architecture, and safety boundaries. |
-| Deterministic checks | Turns review from vibes into repeatable evidence. |
-| Human review | Keeps responsibility with the engineer, not the model. |
+| Layer                | Purpose                                                              |
+| -------------------- | -------------------------------------------------------------------- |
+| Human intent         | Defines the actual goal and acceptable outcome.                      |
+| Agent routing        | Chooses the right workflow before changing files.                    |
+| Repository rules     | Gives the agent local language, architecture, and safety boundaries. |
+| Deterministic checks | Turns review from vibes into repeatable evidence.                    |
+| Human review         | Keeps responsibility with the engineer, not the model.               |
 
 ## Repository Status
 

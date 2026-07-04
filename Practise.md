@@ -19,16 +19,16 @@ Every agent task should therefore follow this shape:
 
 Do not ask the agent to "build the app" in one large pass. Ask it to build one behavior, through one module boundary, with one testable outcome.
 
-Use the same discipline for commit-time tests. Developers should not have to choose a subset by hand on every commit; `scripts/check.sh` should run an affected test gate that selects from changed files and falls back to full tests when selection is unsafe.
+Use the same discipline for commit-time tests. Developers should not have to choose a subset by hand on every commit; `.beryl/scripts/check.sh` should run an affected test gate that selects from changed files and falls back to full tests when selection is unsafe.
 
 ## Step 1: Create The Agent Control Plane
 
-Add an `agent/` directory to the repo. This becomes the shared source of truth for all coding agents.
+Add an `.beryl/agent/` directory to the repo. This becomes the shared source of truth for all coding agents.
 
 The easiest way to add it to a project is:
 
 ```bash
-./scripts/setup-project.sh /path/to/project
+./.beryl/scripts/setup-project.sh /path/to/project
 ```
 
 Use the guided options for common stacks. If the options do not fit, choose `Use AI agent fallback`, describe the build in the prompt, and let the selected headless coding agent finish the project-specific setup from inside the target directory.
@@ -36,7 +36,7 @@ Use the guided options for common stacks. If the options do not fit, choose `Use
 Recommended structure:
 
 ```text
-agent/
+.beryl/agent/
   README.md
   project-brief.md
   design-tree.md
@@ -67,7 +67,7 @@ agent/
       SKILL.md
     tracking-entropy/
       SKILL.md
-  scripts/
+  .beryl/scripts/
     agent-doctor.sh
     sync-agent-env.sh
     entropy-hotspots.sh
@@ -77,9 +77,9 @@ agent/
 
 Why this matters: agents need a stable memory layer that lives in the repo, not in one person's chat history or local tool configuration.
 
-Keep these files short enough to be loaded frequently. Move long references, examples, schemas, and checklists into separate files that agents load only when needed. Use `agent/task-routing.md` as the retrieval layer that maps the user's current intent to one task workflow.
+Keep these files short enough to be loaded frequently. Move long references, examples, schemas, and checklists into separate files that agents load only when needed. Use `.beryl/agent/task-routing.md` as the retrieval layer that maps the user's current intent to one task workflow.
 
-Then generate tool-specific instruction files from the canonical `agent/` files. Common targets:
+Then generate tool-specific instruction files from the canonical `.beryl/agent/` files. Common targets:
 
 ```text
 AGENTS.md
@@ -89,48 +89,48 @@ CLAUDE.md
 .codex/AGENTS.md
 ```
 
-Treat these as generated shims. The real source of truth stays in `agent/`.
+Treat these as generated shims. The real source of truth stays in `.beryl/agent/`.
 
 ### Tool-Specific Instruction Prompt
 
-Add this exact prompt to `agent/tool-instruction-template.md`, then copy it into each tool-specific instruction file, including `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md`.
+Add this exact prompt to `.beryl/agent/tool-instruction-template.md`, then copy it into each tool-specific instruction file, including `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md`.
 
 The prompt is deliberately short. Its job is not to repeat every rule. Its job is to make each agent load the canonical repo files, obey their precedence, and keep its work inside deterministic feedback loops.
 
 ```md
 # Agent Operating Instructions
 
-This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `agent/tool-instruction-template.md` and rerun `agent/scripts/sync-agent-env.sh`.
+This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `.beryl/agent/tool-instruction-template.md` and rerun `.beryl/agent/scripts/sync-agent-env.sh`.
 
 You are working in this repository as an implementation agent. Treat the repository files as the source of truth. Do not rely on hidden chat history, memory, or assumptions when a repo-owned instruction file answers the question.
 
 ## Instruction Precedence
 
 1. Follow explicit user instructions for the current task.
-2. Follow the canonical files in `agent/`.
+2. Follow the canonical files in `.beryl/agent/`.
 3. Follow this tool-specific shim.
 4. Follow existing code, tests, and local conventions.
 
-If this shim conflicts with files under `agent/`, treat this shim as stale, follow the `agent/` files, and mention the conflict in your final response.
+If this shim conflicts with files under `.beryl/agent/`, treat this shim as stale, follow the `.beryl/agent/` files, and mention the conflict in your final response.
 
 ## Required Context Before Editing
 
-Before changing code or tests, read `agent/task-routing.md`, classify the current task, and load only the matching workflow from `agent/skills/<skill-name>/SKILL.md`.
+Before changing code or tests, read `.beryl/agent/task-routing.md`, classify the current task, and load only the matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
 
 Then read the smallest relevant set of canonical files requested by that workflow:
 
-- `agent/project-brief.md`
-- `agent/design-tree.md`
-- `agent/architecture.md`
-- `agent/ubiquitous-language.md`
-- `agent/testing-policy.md`
-- `agent/agent-rules.md`
+- `.beryl/agent/project-brief.md`
+- `.beryl/agent/design-tree.md`
+- `.beryl/agent/architecture.md`
+- `.beryl/agent/ubiquitous-language.md`
+- `.beryl/agent/testing-policy.md`
+- `.beryl/agent/agent-rules.md`
 
 Load additional files only when they are relevant to the task. Keep context focused.
 
 ## Skill Use
 
-Skills live under `agent/skills/<skill-name>/SKILL.md`. Use a skill when its name or purpose matches the task.
+Skills live under `.beryl/agent/skills/<skill-name>/SKILL.md`. Use a skill when its name or purpose matches the task.
 
 Task workflows:
 
@@ -161,11 +161,11 @@ For every implementation task:
 4. Implement one internal feature slice at a time.
 5. Run the narrowest relevant check first, then the broader relevant suite.
 6. Repair based on actual tool output, not guesswork.
-7. Update `agent/ubiquitous-language.md`, `agent/design-tree.md`, `agent/architecture.md`, or `agent/adr/` if the change alters domain language, boundaries, or durable design decisions.
+7. Update `.beryl/agent/ubiquitous-language.md`, `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, or `.beryl/agent/adr/` if the change alters domain language, boundaries, or durable design decisions.
 
 For feature implementation, an approved plan is mandatory. If no approved plan exists, produce the plan first, present it to the user, and stop. Do not implement until the user ratifies the plan.
 
-Feature-slice bookkeeping is internal. Use gitignored `agent/session-state.md` only when interruption or resume support is needed, and clear it when the feature is complete. Do not store temporary slice state in canonical files.
+Feature-slice bookkeeping is internal. Use gitignored `.beryl/agent/session-state.md` only when interruption or resume support is needed, and clear it when the feature is complete. Do not store temporary slice state in canonical files.
 
 ## Engineering Rules
 
@@ -173,7 +173,7 @@ Feature-slice bookkeeping is internal. Use gitignored `agent/session-state.md` o
 - Keep public interfaces small and explicit.
 - Do not import another bounded context's internals.
 - Put external systems behind adapters; do not leak API clients, ORM records, HTTP objects, or UI state into domain logic.
-- Use domain names from `agent/ubiquitous-language.md`; add new domain terms when needed.
+- Use domain names from `.beryl/agent/ubiquitous-language.md`; add new domain terms when needed.
 - Write types or interfaces before implementation when the language supports it.
 - Do not weaken tests to make implementation pass.
 - Do not edit unrelated files.
@@ -181,7 +181,7 @@ Feature-slice bookkeeping is internal. Use gitignored `agent/session-state.md` o
 
 ## Verification
 
-Run the checks required by `agent/testing-policy.md` and the local toolchain. If a required check cannot run, explain why and state the risk.
+Run the checks required by `.beryl/agent/testing-policy.md` and the local toolchain. If a required check cannot run, explain why and state the risk.
 
 Your final response must include:
 
@@ -195,16 +195,16 @@ Your final response must include:
 
 Create these files before serious implementation starts.
 
-### `agent/task-routing.md`
+### `.beryl/agent/task-routing.md`
 
 Purpose: keep the default prompt small by routing the user's current intent to one workflow.
 
 Use it to map:
 
-- Planning requests to `agent/skills/planning/SKILL.md`.
-- Feature requests to `agent/skills/adding-features/SKILL.md`.
-- Debugging requests to `agent/skills/debugging/SKILL.md`.
-- Explanation requests to `agent/skills/explaining-codebase/SKILL.md`.
+- Planning requests to `.beryl/agent/skills/planning/SKILL.md`.
+- Feature requests to `.beryl/agent/skills/adding-features/SKILL.md`.
+- Debugging requests to `.beryl/agent/skills/debugging/SKILL.md`.
+- Explanation requests to `.beryl/agent/skills/explaining-codebase/SKILL.md`.
 
 Rule: load exactly one task workflow first. Load supporting skills and canonical files only when that workflow asks for them.
 
@@ -214,7 +214,7 @@ Feature gate: if the user asks for feature implementation and no approved plan e
 
 Purpose: prevent context bloat in canonical agent files.
 
-Temporary state belongs in gitignored `agent/session-state.md` and should be removed as soon as it is no longer needed:
+Temporary state belongs in gitignored `.beryl/agent/session-state.md` and should be removed as soon as it is no longer needed:
 
 - Internal feature-slice checklists.
 - Current failing command excerpts.
@@ -224,14 +224,14 @@ Temporary state belongs in gitignored `agent/session-state.md` and should be rem
 
 Durable state belongs in canonical files only when it changes future implementation:
 
-- `agent/design-tree.md` for open or settled design decisions.
-- `agent/architecture.md` for bounded contexts, ownership, public interfaces, adapters, and forbidden imports.
-- `agent/ubiquitous-language.md` for domain terms that should appear in prompts, code, or tests.
-- `agent/adr/*` for decisions that future agents must preserve.
+- `.beryl/agent/design-tree.md` for open or settled design decisions.
+- `.beryl/agent/architecture.md` for bounded contexts, ownership, public interfaces, adapters, and forbidden imports.
+- `.beryl/agent/ubiquitous-language.md` for domain terms that should appear in prompts, code, or tests.
+- `.beryl/agent/adr/*` for decisions that future agents must preserve.
 
 Cleanup rule: when a feature, debug repair, or refactor finishes, remove temporary session state. If a temporary note revealed durable knowledge, compress it into the appropriate canonical file and delete the scratch detail.
 
-### `agent/project-brief.md`
+### `.beryl/agent/project-brief.md`
 
 Purpose: define what the application is trying to become.
 
@@ -278,7 +278,7 @@ A feature is complete only when it has:
 - No new illegal imports across bounded contexts.
 ```
 
-### `agent/design-tree.md`
+### `.beryl/agent/design-tree.md`
 
 Purpose: keep the shared design concept visible.
 
@@ -312,7 +312,7 @@ Use this format:
 
 Agent rule: before making architectural changes, the agent must update `Open Decisions` or create an ADR.
 
-### `agent/ubiquitous-language.md`
+### `.beryl/agent/ubiquitous-language.md`
 
 Purpose: make domain vocabulary explicit so agents do not invent sloppy names.
 
@@ -331,14 +331,14 @@ Practical rule: if a new domain noun appears in code, it should be added here in
 
 ## Optional: Run Multi-Session Feature Batches with Driver
 
-If your repo includes the `driver/` folder, use it to run multiple related feature changes across separate, bounded Codex sessions.
+If your repo includes the `.beryl/driver/` folder, use it to run multiple related feature changes across separate, bounded Codex sessions.
 
 Goal: keep each phase cleanly bounded and avoid context bleed between long-running changes.
 
 How the driver works:
 
-- Each task is declared in `driver/tasks/<NN>-<slug>.md`.
-- `driver/run.sh` executes each task through **PLAN → IMPLEMENT → VERIFY (Playwright) → COMMIT**.
+- Each task is declared in `.beryl/driver/tasks/<NN>-<slug>.md`.
+- `.beryl/driver/run.sh` executes each task through **PLAN → IMPLEMENT → VERIFY (Playwright) → COMMIT**.
 - Each phase uses a fresh `codex exec` process.
 - On pass, the driver commits, then moves to the next task.
 - On failure, it re-plans according to the failure reason and bounded attempts.
@@ -355,20 +355,20 @@ chmod +x run.sh lib/common.sh
 Run:
 
 ```bash
-bash driver/run.sh              # run all remaining tasks in order
-bash driver/run.sh --status      # show per-task state
-bash driver/run.sh --task 02     # run one task
-bash driver/run.sh --from 02     # run from task 02 onward
-bash driver/run.sh --resume      # continue a partial run
-DRIVER_MOCK=1 bash driver/run.sh --selftest
+bash .beryl/driver/run.sh              # run all remaining tasks in order
+bash .beryl/driver/run.sh --status      # show per-task state
+bash .beryl/driver/run.sh --task 02     # run one task
+bash .beryl/driver/run.sh --from 02     # run from task 02 onward
+bash .beryl/driver/run.sh --resume      # continue a partial run
+DRIVER_MOCK=1 bash .beryl/driver/run.sh --selftest
 ```
 
 Task file discipline:
 
-- Keep `driver/tasks/` as reusable task templates users edit before running.
-- Treat `driver/state/`, `driver/logs/`, and `driver/config.env` as ephemeral runtime data.
+- Keep `.beryl/driver/tasks/` as reusable task templates users edit before running.
+- Treat `.beryl/driver/state/`, `.beryl/driver/logs/`, and `.beryl/driver/config.env` as ephemeral runtime data.
 
-### `agent/architecture.md`
+### `.beryl/agent/architecture.md`
 
 Purpose: tell agents where code belongs.
 
@@ -409,7 +409,7 @@ Each context exposes one public entry point:
 - Go: `internal/<context>` plus explicit exported symbols
 ```
 
-### `agent/testing-policy.md`
+### `.beryl/agent/testing-policy.md`
 
 Purpose: prevent agents from treating tests as optional or moving the goal posts.
 
@@ -461,9 +461,9 @@ For efficient commits, add an affected test gate to the policy:
 ```md
 ## Affected Test Gate
 
-- Developers enable hooks once with `git config core.hooksPath githooks`.
-- The pre-commit hook runs `./scripts/check.sh` with `CHECK_AFFECTED_MODE=staged`.
-- `scripts/check-affected.sh` reads `agent/affected-tests.conf`.
+- Developers enable hooks once with `git config core.hooksPath .beryl/githooks`.
+- The pre-commit hook runs `./.beryl/scripts/check.sh` with `CHECK_AFFECTED_MODE=staged`.
+- `.beryl/scripts/check-affected.sh` reads `.beryl/agent/affected-tests.conf`.
 - Related source/test changes run `RELATED_TEST_CMD` with changed files appended.
 - Broad changes run `FULL_TEST_CMD`.
 - If no project test runner exists yet, the gate exits cleanly and the deterministic checks still run.
@@ -471,7 +471,7 @@ For efficient commits, add an affected test gate to the policy:
 
 This is deliberately lower-friction than asking developers to remember per-stack commands. They configure the runner once, then commit normally.
 
-### `agent/agent-rules.md`
+### `.beryl/agent/agent-rules.md`
 
 Purpose: make the agent's day-to-day behavior explicit.
 
@@ -482,7 +482,7 @@ Recommended rules:
 
 ## Before Coding
 
-- Read `agent/project-brief.md`, `agent/design-tree.md`, `agent/architecture.md`, and `agent/ubiquitous-language.md`.
+- Read `.beryl/agent/project-brief.md`, `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, and `.beryl/agent/ubiquitous-language.md`.
 - Identify the bounded context being changed.
 - State the intended public interface.
 - Run the `grill-me` skill for non-trivial changes.
@@ -501,7 +501,7 @@ Recommended rules:
 - Run formatter, linter, typecheck, and relevant tests.
 - Explain which checks ran and which did not.
 - Update the glossary, design tree, or ADRs if the design changed.
-- Clear `agent/session-state.md` when temporary implementation state is no longer needed.
+- Clear `.beryl/agent/session-state.md` when temporary implementation state is no longer needed.
 ```
 
 ## Step 3: Add Skills That Encode Repeatable Work
@@ -510,7 +510,7 @@ Skills should be small, named by capability, and loaded only when relevant. Do n
 
 ### Task Workflow: `planning`
 
-Create `agent/skills/planning/SKILL.md`.
+Create `.beryl/agent/skills/planning/SKILL.md`.
 
 Use when the user asks for a plan, design, approach, or when a feature request has no approved plan yet.
 
@@ -525,7 +525,7 @@ The workflow should:
 
 ### Task Workflow: `adding-features`
 
-Create `agent/skills/adding-features/SKILL.md`.
+Create `.beryl/agent/skills/adding-features/SKILL.md`.
 
 Use for feature implementation only after the user has ratified a plan.
 
@@ -534,12 +534,12 @@ Hard gate:
 - If no approved plan exists, run `planning`, present the plan, and stop.
 - Do not edit implementation code until the user ratifies the plan.
 - After ratification, implement one internal feature slice at a time.
-- Track temporary feature-slice state in `agent/session-state.md`, not canonical files.
-- Clear `agent/session-state.md` when the feature is complete.
+- Track temporary feature-slice state in `.beryl/agent/session-state.md`, not canonical files.
+- Clear `.beryl/agent/session-state.md` when the feature is complete.
 
 ### Task Workflow: `debugging`
 
-Create `agent/skills/debugging/SKILL.md`.
+Create `.beryl/agent/skills/debugging/SKILL.md`.
 
 Use when the user reports a bug, failing check, exception, regression, or broken behavior.
 
@@ -547,7 +547,7 @@ The workflow should reproduce or inspect the failure first, identify the smalles
 
 Session error history:
 
-- Use `agent/session-state.md` for current-session error summaries only.
+- Use `.beryl/agent/session-state.md` for current-session error summaries only.
 - Keep at most 5 entries.
 - Keep each entry to about 10 lines or fewer.
 - Store summaries, not raw logs.
@@ -556,13 +556,13 @@ Session error history:
 
 ### Task Workflow: `explaining-codebase`
 
-Create `agent/skills/explaining-codebase/SKILL.md`.
+Create `.beryl/agent/skills/explaining-codebase/SKILL.md`.
 
 Use when the user asks how code works. It should inspect the smallest relevant file set, explain public interfaces before internals, and avoid file edits.
 
 ### Skill 1: `grill-me`
 
-Create `agent/skills/grill-me/SKILL.md`.
+Create `.beryl/agent/skills/grill-me/SKILL.md`.
 
 ```md
 # Grilling Design
@@ -598,7 +598,7 @@ Actionable insight: make the agent argue against its own first plan before it ed
 
 ### Skill 2: `interview-me`
 
-Create `agent/skills/interview-me/SKILL.md`.
+Create `.beryl/agent/skills/interview-me/SKILL.md`.
 
 ```md
 # Interview Me
@@ -619,7 +619,7 @@ Actionable insight: keep `grill-me` as the structured critique and use `intervie
 
 ### Skill 3: `testing-vertical-slices`
 
-Create `agent/skills/testing-vertical-slices/SKILL.md`.
+Create `.beryl/agent/skills/testing-vertical-slices/SKILL.md`.
 
 ```md
 # Testing Vertical Slices
@@ -649,7 +649,7 @@ Actionable insight: agents behave better when the unit of work is a tested behav
 
 ### Skill 4: `improving-architecture`
 
-Create `agent/skills/improving-architecture/SKILL.md`.
+Create `.beryl/agent/skills/improving-architecture/SKILL.md`.
 
 ```md
 # Improving Architecture
@@ -679,7 +679,7 @@ Actionable insight: the best refactors for agents are boundary refactors. They r
 
 ### Skill 5: `tracking-entropy`
 
-Create `agent/skills/tracking-entropy/SKILL.md`.
+Create `.beryl/agent/skills/tracking-entropy/SKILL.md`.
 
 ```md
 # Tracking Entropy
@@ -688,7 +688,7 @@ Use weekly, before large features, or when a file keeps getting changed by unrel
 
 ## Process
 
-1. Run `agent/scripts/entropy-hotspots.sh`.
+1. Run `.beryl/agent/scripts/entropy-hotspots.sh`.
 2. Identify files with both high churn and high complexity.
 3. For the top hotspot, ask:
    - Which concepts are mixed together?
@@ -704,7 +704,7 @@ Actionable insight: AI increases entropy when every feature touches the same cen
 
 Agents need deterministic tools more than they need longer prompts.
 
-Create `agent/mcp.json` as the desired MCP inventory. Exact server names vary by agent platform, but this is the target capability set:
+Create `.beryl/agent/mcp.json` as the desired MCP inventory. Exact server names vary by agent platform, but this is the target capability set:
 
 ```json
 {
@@ -781,7 +781,7 @@ For web apps, add a Playwright smoke test for the most important workflow. This 
 
 ## Step 6: Add Practical Scripts
 
-### `agent/scripts/agent-doctor.sh`
+### `.beryl/agent/scripts/agent-doctor.sh`
 
 Purpose: quickly tell whether an environment is ready for agent work.
 
@@ -791,33 +791,33 @@ set -euo pipefail
 
 echo "Checking agent workspace..."
 
-test -f agent/project-brief.md
-test -f agent/design-tree.md
-test -f agent/ubiquitous-language.md
-test -f agent/architecture.md
-test -f agent/testing-policy.md
-test -f agent/agent-rules.md
-test -f agent/task-routing.md
-test -f agent/tool-instruction-template.md
-test -f agent/skills/planning/SKILL.md
-test -f agent/skills/adding-features/SKILL.md
-test -f agent/skills/debugging/SKILL.md
-test -f agent/skills/explaining-codebase/SKILL.md
-test -f agent/skills/interview-me/SKILL.md
+test -f .beryl/agent/project-brief.md
+test -f .beryl/agent/design-tree.md
+test -f .beryl/agent/ubiquitous-language.md
+test -f .beryl/agent/architecture.md
+test -f .beryl/agent/testing-policy.md
+test -f .beryl/agent/agent-rules.md
+test -f .beryl/agent/task-routing.md
+test -f .beryl/agent/tool-instruction-template.md
+test -f .beryl/agent/skills/planning/SKILL.md
+test -f .beryl/agent/skills/adding-features/SKILL.md
+test -f .beryl/agent/skills/debugging/SKILL.md
+test -f .beryl/agent/skills/explaining-codebase/SKILL.md
+test -f .beryl/agent/skills/interview-me/SKILL.md
 
 command -v git >/dev/null
-grep -qxF "agent/session-state.md" .gitignore
+grep -qxF ".beryl/agent/session-state.md" .gitignore
 
 echo "Agent instruction files present."
 echo "Git available."
 echo "Now run the project-specific check command."
 ```
 
-### `agent/scripts/sync-agent-env.sh`
+### `.beryl/agent/scripts/sync-agent-env.sh`
 
 Purpose: sync repo-owned instructions into local agent-specific locations.
 
-Keep the source of truth in `agent/`. The script should copy from the repo into each tool's expected config directory, never the other way around.
+Keep the source of truth in `.beryl/agent/`. The script should copy from the repo into each tool's expected config directory, never the other way around.
 
 Example:
 
@@ -838,12 +838,12 @@ cp "$SHIM" "$ROOT/.codex/AGENTS.md"
 cp "$SHIM" "$ROOT/.cursor/rules/agent-rules.md"
 cp "$SHIM" "$ROOT/.github/copilot-instructions.md"
 
-echo "Synced generated tool instruction shims from agent/ into local agent config files."
+echo "Synced generated tool instruction shims from .beryl/agent/ into local agent config files."
 ```
 
-Practical note: if multiple tools need small format differences, keep `agent/tool-instruction-template.md` as the shared shim and generate tool-specific versions from it. Do not manually maintain five divergent instruction files.
+Practical note: if multiple tools need small format differences, keep `.beryl/agent/tool-instruction-template.md` as the shared shim and generate tool-specific versions from it. Do not manually maintain five divergent instruction files.
 
-### `agent/scripts/entropy-hotspots.sh`
+### `.beryl/agent/scripts/entropy-hotspots.sh`
 
 Purpose: find files that deserve architectural attention.
 
@@ -863,7 +863,7 @@ git log --format=format: --name-only --since="$SINCE" \
 
 Start with churn. Add complexity tooling later only if the churn list is too noisy.
 
-### `scripts/check-tests-unchanged.sh`
+### `.beryl/scripts/check-tests-unchanged.sh`
 
 Purpose: detect whether the test suite changed since the last approved test manifest.
 
@@ -888,7 +888,7 @@ if [[ ! -d "${TESTS_DIR}" ]]; then
 fi
 
 if [[ ! -f "${MANIFEST}" ]]; then
-  fail "check-tests: missing ${MANIFEST}. Run scripts/update-test-manifest.sh to create it."
+  fail "check-tests: missing ${MANIFEST}. Run .beryl/scripts/update-test-manifest.sh to create it."
 fi
 
 if command -v sha256sum >/dev/null 2>&1; then
@@ -918,13 +918,13 @@ normalize() {
 }
 
 if ! diff -u <(normalize "${MANIFEST}") <(normalize "$tmp") >/dev/null; then
-  fail "check-tests: tests/ contents differ from manifest. If intentional, run scripts/update-test-manifest.sh and commit the updated manifest."
+  fail "check-tests: tests/ contents differ from manifest. If intentional, run .beryl/scripts/update-test-manifest.sh and commit the updated manifest."
 fi
 
 printf "check-tests: OK (manifest matches)\n"
 ```
 
-Pair it with `scripts/update-test-manifest.sh`, which is only run when a test change is intentional:
+Pair it with `.beryl/scripts/update-test-manifest.sh`, which is only run when a test change is intentional:
 
 ```bash
 #!/usr/bin/env bash
@@ -985,12 +985,12 @@ printf "OK\n"
 Run this command whenever you want assurance that the repo still satisfies the deterministic checks:
 
 ```bash
-./scripts/check.sh
+./.beryl/scripts/check.sh
 ```
 
 ### Add Project Formatters And Linters To `check-project.sh`
 
-Do not add another wrapper script for formatting and linting. `./scripts/check.sh` already calls `scripts/check-project.sh`, so `check-project.sh` is the right extension point for project-specific code quality.
+Do not add another wrapper script for formatting and linting. `./.beryl/scripts/check.sh` already calls `.beryl/scripts/check-project.sh`, so `check-project.sh` is the right extension point for project-specific code quality.
 
 The standard order is:
 
@@ -1001,7 +1001,7 @@ The standard order is:
 
 Use a formatter's non-mutating check mode in `check-project.sh` whenever the tool supports it. Agents may run the mutating formatter after writing code, but the deterministic gate should be able to fail in CI without silently changing files.
 
-Recommended `scripts/check-project.sh` examples:
+Recommended `.beryl/scripts/check-project.sh` examples:
 
 ```bash
 #!/usr/bin/env bash
@@ -1033,7 +1033,7 @@ golangci-lint run
 go test ./...
 ```
 
-For agent repair loops, also record the mutating formatter command in `agent/testing-policy.md` so agents can run it immediately after code edits:
+For agent repair loops, also record the mutating formatter command in `.beryl/agent/testing-policy.md` so agents can run it immediately after code edits:
 
 | Stack | Mutating formatter after edits | Formatter check in `check-project.sh` | Linter |
 | --- | --- | --- | --- |
@@ -1041,7 +1041,7 @@ For agent repair loops, also record the mutating formatter command in `agent/tes
 | Python | `ruff format .` | `ruff format --check .` | `ruff check .` |
 | Go | `gofmt -w .` | `test -z "$(gofmt -l .)"` | `go vet ./...` and/or `golangci-lint run` |
 
-If a project does not have a formatter or linter yet, `agent/testing-policy.md` must say `not available yet` and explain why. Once code exists, the formatter and linter should be added before relying on agents for larger feature work.
+If a project does not have a formatter or linter yet, `.beryl/agent/testing-policy.md` must say `not available yet` and explain why. Once code exists, the formatter and linter should be added before relying on agents for larger feature work.
 
 ## Step 7: Enforce Boundaries With Tooling
 
@@ -1089,7 +1089,7 @@ The human or lead agent writes a small feature brief:
 
 ## Domain Language
 
-[Terms from `agent/ubiquitous-language.md`.]
+[Terms from `.beryl/agent/ubiquitous-language.md`.]
 
 ## Bounded Context
 
@@ -1119,7 +1119,7 @@ Required output:
 - Public interface.
 - Test strategy.
 
-For small changes, this can be five bullets. For architectural changes, it should update `agent/design-tree.md` or create an ADR.
+For small changes, this can be five bullets. For architectural changes, it should update `.beryl/agent/design-tree.md` or create an ADR.
 
 #### Explicit Sub-Agent Overlay (only when requested)
 
@@ -1204,7 +1204,7 @@ targeted test
 broader relevant test
 ```
 
-The mutating formatter command should run immediately after code is written, before linting. Then `./scripts/check.sh` must run so `scripts/check-project.sh` enforces formatter check mode and linting through the same deterministic gate used by hooks and CI.
+The mutating formatter command should run immediately after code is written, before linting. Then `./.beryl/scripts/check.sh` must run so `.beryl/scripts/check-project.sh` enforces formatter check mode and linting through the same deterministic gate used by hooks and CI.
 
 The agent should paste the failing output back into its reasoning and fix the actual cause. It should not guess from memory when deterministic output is available.
 
@@ -1233,10 +1233,10 @@ Speed guidance when sub-agents are explicitly requested:
 
 Before finishing, update:
 
-- `agent/ubiquitous-language.md` if new domain terms were introduced.
-- `agent/design-tree.md` if a design decision moved from open to settled.
-- `agent/architecture.md` if a boundary changed.
-- `agent/adr/` if the change affects future implementation choices.
+- `.beryl/agent/ubiquitous-language.md` if new domain terms were introduced.
+- `.beryl/agent/design-tree.md` if a design decision moved from open to settled.
+- `.beryl/agent/architecture.md` if a boundary changed.
+- `.beryl/agent/adr/` if the change affects future implementation choices.
 
 #### Explicit Final Independent Review (only when requested)
 
@@ -1335,8 +1335,8 @@ For each worktree:
 
 ```bash
 cd "$WT_ROOT/<task-slug>-a"
-./agent/scripts/agent-doctor.sh
-./scripts/check.sh
+./.beryl/agent/scripts/agent-doctor.sh
+./.beryl/scripts/check.sh
 ```
 
 Then run the project setup command for that stack, such as `npm install`, `pnpm install`, `uv sync`, `pip install -r requirements.txt`, or `go mod download`.
@@ -1361,10 +1361,10 @@ Implement one safe internal step for:
 
 Bias this attempt toward the simplest implementation that preserves the existing public interfaces.
 
-Read canonical files under agent/ as needed.
+Read canonical files under .beryl/agent/ as needed.
 Do not touch other worktrees.
-Run the formatter command after code edits, then narrow checks, then ./scripts/check.sh.
-Final response must include changed files, checks run, checks skipped, tests changed, manifest changed, and agent/ docs updated.
+Run the formatter command after code edits, then narrow checks, then ./.beryl/scripts/check.sh.
+Final response must include changed files, checks run, checks skipped, tests changed, manifest changed, and .beryl/agent/ docs updated.
 ```
 
 Example variants:
@@ -1419,21 +1419,21 @@ If you need a separate integration branch:
 ```bash
 git switch -c integrate/<task-slug> origin/main
 git merge --no-ff agents/<task-slug>-a
-./scripts/check.sh
+./.beryl/scripts/check.sh
 ```
 
 When combining selected commits from multiple variants, cherry-pick deliberately and rerun the full gate:
 
 ```bash
 git cherry-pick <commit-sha>
-./scripts/check.sh
+./.beryl/scripts/check.sh
 ```
 
 If the winning branch changed tests intentionally, run:
 
 ```bash
-./scripts/update-test-manifest.sh
-./scripts/check.sh
+./.beryl/scripts/update-test-manifest.sh
+./.beryl/scripts/check.sh
 ```
 
 ### 7. Clean Up
@@ -1471,7 +1471,7 @@ The strongest worktree candidates in this workflow are:
 - **Per-Feature Developer Workflow**: when explicitly requested, use worktrees on medium/high-risk features, not every small change.
 - **Sub-Agent Review Overlay**: only when explicitly requested, give reviewers real competing diffs instead of only one implementation to critique.
 - **Weekly Maintenance**: when explicitly requested, try two refactor steps for the same entropy hotspot and keep the one that reduces future context needs.
-- **Architecture Reviewer escalation**: only when explicitly requested, create separate branches for competing boundary designs, then record the chosen boundary in `agent/architecture.md` or an ADR.
+- **Architecture Reviewer escalation**: only when explicitly requested, create separate branches for competing boundary designs, then record the chosen boundary in `.beryl/agent/architecture.md` or an ADR.
 
 Worktrees add speed only when the comparison is disciplined. Every variant must start from the same base, receive the same acceptance criteria, run the same checks, and be cleaned up after the decision.
 
@@ -1543,59 +1543,59 @@ Do this in order. Each phase should leave behind a repo-owned artifact, a determ
 
 Goal: create the control plane before asking agents to build features.
 
-1. Create `agent/` with the canonical files listed in Step 1. Keep each file short enough that an agent can load it at the start of work.
-2. Fill `agent/project-brief.md` with the product goal, primary workflows, non-goals, external systems, and definition of done. Do not start implementation until the primary workflows are named.
-3. Create `agent/ubiquitous-language.md` as a table of `Business Term | Technical Symbol | Definition | Constraints`. Pull the first terms from `Plan.md`: design concept, design tree, bounded context, ubiquitous language, feedback loop, entropy hotspot, vertical slice, adapter, seam, and ADR.
-4. Create `agent/design-tree.md` with three sections: `Open Decisions`, `Settled Decisions`, and `Pressure Points`. The first version can be rough, but it must name the choices that are still uncertain.
-5. Run the `grill-me` pre-flight review from `Plan.md` before creating architecture rules. In this repo, implement that as the `grill-me` skill or a `grill-me` alias that loads `agent/skills/grill-me/SKILL.md`.
+1. Create `.beryl/agent/` with the canonical files listed in Step 1. Keep each file short enough that an agent can load it at the start of work.
+2. Fill `.beryl/agent/project-brief.md` with the product goal, primary workflows, non-goals, external systems, and definition of done. Do not start implementation until the primary workflows are named.
+3. Create `.beryl/agent/ubiquitous-language.md` as a table of `Business Term | Technical Symbol | Definition | Constraints`. Pull the first terms from `Plan.md`: design concept, design tree, bounded context, ubiquitous language, feedback loop, entropy hotspot, vertical slice, adapter, seam, and ADR.
+4. Create `.beryl/agent/design-tree.md` with three sections: `Open Decisions`, `Settled Decisions`, and `Pressure Points`. The first version can be rough, but it must name the choices that are still uncertain.
+5. Run the `grill-me` pre-flight review from `Plan.md` before creating architecture rules. In this repo, implement that as the `grill-me` skill or a `grill-me` alias that loads `.beryl/agent/skills/grill-me/SKILL.md`.
 6. During `grill-me`, make the agent critique the proposed design for reliability, context management, security, and scalability. Require short answers to: "What is unclear?", "What will agents likely misunderstand?", "What test proves the first behavior?", and "What decision must be recorded now?"
-7. Update `agent/design-tree.md` and `agent/ubiquitous-language.md` based on the grilling output. The review is not complete until the repo files change or the agent states that no change is needed and why.
+7. Update `.beryl/agent/design-tree.md` and `.beryl/agent/ubiquitous-language.md` based on the grilling output. The review is not complete until the repo files change or the agent states that no change is needed and why.
 8. Add `agent-rules.md`, `task-routing.md`, `tool-instruction-template.md`, `architecture.md`, and `testing-policy.md`. These files should tell agents how to route the task, what to read, which bounded context they may touch, when tests may change, and which checks must run.
 9. Add the task workflow skills: `planning`, `adding-features`, `debugging`, and `explaining-codebase`.
 10. Add the supporting skills: `grill-me`, `interview-me`, `testing-vertical-slices`, `improving-architecture`, and `tracking-entropy`. Each skill should include trigger conditions, required inputs, required output, and which repo files it may update.
-11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `scripts/check.sh`, `scripts/check-md.sh`, `scripts/check-tests-unchanged.sh`, and `scripts/update-test-manifest.sh`.
-12. Run `agent/scripts/agent-doctor.sh` and `./scripts/check.sh`. Fix missing files before starting feature work.
+11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `.beryl/scripts/check.sh`, `.beryl/scripts/check-md.sh`, `.beryl/scripts/check-tests-unchanged.sh`, and `.beryl/scripts/update-test-manifest.sh`.
+12. Run `.beryl/agent/scripts/agent-doctor.sh` and `./.beryl/scripts/check.sh`. Fix missing files before starting feature work.
 
 ### Week 1: Make Feedback Deterministic
 
 Goal: make every agent change pass through the same local checks.
 
-1. Choose the project commands and write them into `agent/testing-policy.md`: `format`, `lint`, `typecheck`, `unit test`, `integration test`, `e2e smoke`, and `check`. If a command does not exist yet, write `not available yet` and the reason.
-2. Configure `scripts/check-project.sh` as the project-specific quality gate. Put formatter check mode first, then lint, then typecheck and tests. Do not create a second script for this.
-3. Record the mutating formatter command in `agent/testing-policy.md` so agents know what to run immediately after code edits before they run the gate.
-4. Make `./scripts/check.sh` the manual one-command gate. It should call Markdown checks, test-manifest checks, and `scripts/check-project.sh`.
-5. Add `tests/.manifest.sha256` by running `./scripts/update-test-manifest.sh`. From this point forward, `./scripts/check-tests-unchanged.sh` tells you whether tests changed since the last approved manifest.
-6. Define the test-change rule in `agent/testing-policy.md`: existing tests must not be weakened during implementation; intentional test changes require a matching manifest update and a short explanation in the final response.
+1. Choose the project commands and write them into `.beryl/agent/testing-policy.md`: `format`, `lint`, `typecheck`, `unit test`, `integration test`, `e2e smoke`, and `check`. If a command does not exist yet, write `not available yet` and the reason.
+2. Configure `.beryl/scripts/check-project.sh` as the project-specific quality gate. Put formatter check mode first, then lint, then typecheck and tests. Do not create a second script for this.
+3. Record the mutating formatter command in `.beryl/agent/testing-policy.md` so agents know what to run immediately after code edits before they run the gate.
+4. Make `./.beryl/scripts/check.sh` the manual one-command gate. It should call Markdown checks, test-manifest checks, and `.beryl/scripts/check-project.sh`.
+5. Add `tests/.manifest.sha256` by running `./.beryl/scripts/update-test-manifest.sh`. From this point forward, `./.beryl/scripts/check-tests-unchanged.sh` tells you whether tests changed since the last approved manifest.
+6. Define the test-change rule in `.beryl/agent/testing-policy.md`: existing tests must not be weakened during implementation; intentional test changes require a matching manifest update and a short explanation in the final response.
 7. Turn on strict typechecking as far as the current codebase allows. If strict mode creates too much noise, document the relaxed rule and the plan to tighten it.
 8. Add import-boundary rules for the highest-value bounded contexts first. Start with one or two forbidden imports that catch real mistakes rather than a large policy that nobody understands.
 9. Add one E2E smoke test for the most important workflow. Keep it thin: it should prove the app starts and the primary path works, not exhaustively test every variant.
-10. Update `agent/agent-rules.md` so every agent final response includes checks passed, checks skipped, and whether tests were changed.
-11. Run the formatter after code edits, then run `./scripts/check.sh` manually before and after feature work. This replaces continuous watching; you decide when you want assurance.
+10. Update `.beryl/agent/agent-rules.md` so every agent final response includes checks passed, checks skipped, and whether tests were changed.
+11. Run the formatter after code edits, then run `./.beryl/scripts/check.sh` manually before and after feature work. This replaces continuous watching; you decide when you want assurance.
 
 ### Week 2: Improve Agent Memory
 
 Goal: move repeated explanations out of chat and into files agents can read.
 
-1. Review the last few feature discussions, bug reports, or design notes. Extract repeated domain terms into `agent/ubiquitous-language.md`.
+1. Review the last few feature discussions, bug reports, or design notes. Extract repeated domain terms into `.beryl/agent/ubiquitous-language.md`.
 2. Use `grill-me` whenever a term is ambiguous. The skill should ask whether the term belongs to the business domain, technical implementation, UI copy, or external-system vocabulary.
 3. Add ADRs for decisions that repeatedly confuse agents: bounded context ownership, persistence shape, adapter boundaries, test strategy, and naming conventions.
-4. Move long prompt paragraphs into `agent/` files. A good rule: if you paste the same instruction twice, it belongs in the repo.
-5. Run `agent/scripts/sync-agent-env.sh` so `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md` are generated from the same source.
+4. Move long prompt paragraphs into `.beryl/agent/` files. A good rule: if you paste the same instruction twice, it belongs in the repo.
+5. Run `.beryl/agent/scripts/sync-agent-env.sh` so `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md` are generated from the same source.
 6. Run `agent-doctor.sh` after syncing. It should fail if a canonical file is missing or if a generated shim is stale.
-7. Update `agent/skills/*/SKILL.md` when a repeated workflow appears. Keep each skill focused: one trigger, one process, one expected output.
+7. Update `.beryl/agent/skills/*/SKILL.md` when a repeated workflow appears. Keep each skill focused: one trigger, one process, one expected output.
 
 ### Week 3: Reduce Entropy
 
 Goal: use agents to make the codebase easier to change, not just larger.
 
-1. Run `agent/scripts/entropy-hotspots.sh` and pick one file or module with high churn. Do not start with the worst file if it is too broad; choose the smallest hotspot that affects current work.
+1. Run `.beryl/agent/scripts/entropy-hotspots.sh` and pick one file or module with high churn. Do not start with the worst file if it is too broad; choose the smallest hotspot that affects current work.
 2. Run the `tracking-entropy` skill. Required output: why the file changes often, which concepts are mixed together, what tests currently protect it, and what change would reduce future context needs.
 3. Run `improving-architecture` on the chosen hotspot. Ask it to identify shallow modules, hidden domain concepts, unclear ownership, and imports that cross boundaries.
 4. Choose one small refactor: extract a domain concept, move adapter code behind an interface, shrink a public API, or merge shallow pass-through modules.
 5. Before refactoring, run `testing-vertical-slices` to identify the smallest behavior test that protects the boundary. Add or identify that test before implementation.
 6. Make the refactor in one internal implementation step. Avoid broad cleanup unless it directly supports the new boundary.
-7. Run targeted tests first, then `./scripts/check.sh`.
-8. Record the decision in an ADR if future agents need to preserve the boundary. Update `agent/architecture.md` if imports or ownership changed.
+7. Run targeted tests first, then `./.beryl/scripts/check.sh`.
+8. Record the decision in an ADR if future agents need to preserve the boundary. Update `.beryl/agent/architecture.md` if imports or ownership changed.
 
 ### Ongoing: Per Feature
 
@@ -1606,10 +1606,10 @@ Goal: make every feature follow the same generate-check-fix loop.
 3. Load the relevant canonical files: `project-brief.md`, `design-tree.md`, `architecture.md`, `ubiquitous-language.md`, `testing-policy.md`, and `agent-rules.md`.
 4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes. Use `interview-me` only if `grill-me` leaves unresolved user judgment.
 5. Run `testing-vertical-slices` before implementation. It should choose the narrowest useful test level: unit for pure rules, integration for adapters or persistence, E2E smoke for user workflows, and property-based tests for invariants.
-6. Define types, interfaces, and public boundaries first. Use names from `agent/ubiquitous-language.md`; add new terms before using them widely.
-7. Write or identify the smallest useful test. If the test suite must change, run `./scripts/update-test-manifest.sh` after the intentional edit and explain why the manifest changed.
+6. Define types, interfaces, and public boundaries first. Use names from `.beryl/agent/ubiquitous-language.md`; add new terms before using them widely.
+7. Write or identify the smallest useful test. If the test suite must change, run `./.beryl/scripts/update-test-manifest.sh` after the intentional edit and explain why the manifest changed.
 8. Implement one ratified internal feature slice. Keep external systems behind adapters and avoid importing another bounded context's internals.
-9. Run the mutating formatter command recorded in `agent/testing-policy.md`, then the narrowest check first, then broader checks, then `./scripts/check.sh`.
+9. Run the mutating formatter command recorded in `.beryl/agent/testing-policy.md`, then the narrowest check first, then broader checks, then `./.beryl/scripts/check.sh`.
 10. If checks fail, repair from actual tool output. Do not weaken tests unless the feature brief explicitly says the expected behavior changed.
 11. Close the loop by updating `ubiquitous-language.md`, `design-tree.md`, `architecture.md`, or an ADR when the change creates durable knowledge.
 12. Final response must state: what changed, which skill was used, which checks ran, whether tests changed, whether the manifest changed, and whether temporary session state was cleared.
