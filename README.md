@@ -115,6 +115,38 @@ Primary and variant marks live under `assets/`:
 - Social preview: `assets/beryl-social-preview.svg`
 - Brand guide: `assets/brand/beryl-brand-guide.md`
 
+## Documentation Map
+
+Use this map to choose the right Markdown file before opening everything.
+
+- User docs and references
+  - [README.md](./README.md): Start here for orientation, scope, and project entry points.
+  - [Theory.md](./Theory.md): Read for goals, motivations, and reasoning model.
+  - [Practise.md](./Practise.md): Read for applied usage examples and practical workflow patterns.
+  - [Cheatsheet.md](./Cheatsheet.md): Read for quick commands, recurring workflows, and short reminders.
+  - [current.md](./current.md): Read for current snapshot context and session-level notes.
+  - [gitignore-sample.md](./gitignore-sample.md): Copy/reuse when creating or refreshing ignore rules.
+  - [assets/brand/beryl-brand-guide.md](./assets/brand/beryl-brand-guide.md): Read before touching public-facing brand assets.
+- Agent instruction surfaces
+  - [AGENTS.md](./AGENTS.md): Runtime instruction shim for AGENTS-compatible tools; source edits should start from `.beryl/agent/tool-instruction-template.md`.
+  - [CLAUDE.md](./CLAUDE.md): Runtime instruction shim for Claude-compatible tools; source edits should start from `.beryl/agent/tool-instruction-template.md`.
+  - [.cursor/rules/agent-rules.md](./.cursor/rules/agent-rules.md): Runtime instruction shim for Cursor; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.github/copilot-instructions.md](./.github/copilot-instructions.md): Runtime instruction shim for Copilot; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.codex/AGENTS.md](./.codex/AGENTS.md): Runtime instruction shim for Codex; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.github/workflows/deterministic-checks.yml](./.github/workflows/deterministic-checks.yml): Consult when changing deterministic CI behavior.
+- Reference, design, and operational material
+  - [.beryl/agent/task-routing.md](./.beryl/agent/task-routing.md): Read to choose the correct workflow for a request.
+  - [.beryl/agent/project-brief.md](./.beryl/agent/project-brief.md): Read for official product goals and non-goals.
+  - [.beryl/agent/design-tree.md](./.beryl/agent/design-tree.md): Read for settled and open design decisions.
+  - [.beryl/agent/architecture.md](./.beryl/agent/architecture.md): Read for context ownership and boundary expectations.
+  - [.beryl/agent/ubiquitous-language.md](./.beryl/agent/ubiquitous-language.md): Read for canonical term meanings.
+  - [.beryl/agent/testing-policy.md](./.beryl/agent/testing-policy.md): Read for check commands and testing expectations.
+  - [.beryl/agent/agent-rules.md](./.beryl/agent/agent-rules.md): Read for repo-level operational rules before editing.
+  - [.beryl/agent/skills/adding-features/SKILL.md](./.beryl/agent/skills/adding-features/SKILL.md): Read for commit boundaries and feature slice flow.
+  - [.beryl/driver/README.md](./.beryl/driver/README.md): Read for driver phase behavior.
+  - [.beryl/agent/README.md](./.beryl/agent/README.md): Read for an implementation-facing index of canonical instructions.
+
+
 ## Who It Is For
 
 Beryl is useful for:
@@ -175,6 +207,22 @@ Enable the local hook in this repository:
 ```bash
 git config core.hooksPath .beryl/githooks
 ```
+
+## Adding Feature
+
+### Run driver tasks
+
+Use this three-step flow to execute a feature request through numbered tasks:
+
+1. Tell the recording agent you want a task breakdown for your requested feature.
+2. Ask the recording agent to write those tasks as numbered task briefs into `.beryl/driver/tasks`.
+3. Run the driver when the tasks are ready:
+
+```bash
+./.beryl/driver/run.sh
+```
+
+See the full task execution details in the [driver README](./.beryl/driver/README.md).
 
 ## Operating Model
 
