@@ -1,0 +1,9 @@
+# Transient driver run artifacts — never commit these
+state/
+logs/
+runs/
+*.log
+.last-run
+
+# Keep tracked: run.sh, lib/, prompts/, tasks/, README.md, config.example.env
+!config.example.env

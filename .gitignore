@@ -1,2 +1,5 @@
 current.md
 agent/session-state.md
+driver/state/
+driver/logs/
+driver/config.env

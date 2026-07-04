@@ -80,6 +80,35 @@ args = ["@playwright/mcp@latest"]
 
 4. For web UI tasks, prompt the agent to verify behavior in Playwright MCP before marking work done.
 
+## 0.3 Use the In-Repo Feature Driver (optional)
+
+If this repo has `driver/`, use it to run multiple feature tasks with context-safe session boundaries.
+
+Run once:
+
+```bash
+cd driver
+cp config.example.env config.env
+chmod +x run.sh lib/common.sh
+```
+
+Then:
+
+- `bash driver/run.sh`
+- `bash driver/run.sh --status`
+- `bash driver/run.sh --task 02`
+- `bash driver/run.sh --from 02`
+- `bash driver/run.sh --resume`
+- `DRIVER_MOCK=1 bash driver/run.sh --selftest`
+
+Before running, ensure task templates in `driver/tasks/01-... .md` and `driver/tasks/02-... .md` describe the behavior you want.
+
+Ignore these runtime artifacts in version control:
+
+- `driver/state/`
+- `driver/logs/`
+- `driver/config.env`
+
 ## 1. Fill The Minimum Project Facts
 
 Do this before asking an agent to build features.

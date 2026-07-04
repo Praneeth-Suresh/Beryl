@@ -329,6 +329,45 @@ Use this table:
 
 Practical rule: if a new domain noun appears in code, it should be added here in the same PR.
 
+## Optional: Run Multi-Session Feature Batches with Driver
+
+If your repo includes the `driver/` folder, use it to run multiple related feature changes across separate, bounded Codex sessions.
+
+Goal: keep each phase cleanly bounded and avoid context bleed between long-running changes.
+
+How the driver works:
+
+- Each task is declared in `driver/tasks/<NN>-<slug>.md`.
+- `driver/run.sh` executes each task through **PLAN → IMPLEMENT → VERIFY (Playwright) → COMMIT**.
+- Each phase uses a fresh `codex exec` process.
+- On pass, the driver commits, then moves to the next task.
+- On failure, it re-plans according to the failure reason and bounded attempts.
+
+Setup:
+
+```bash
+cd driver
+cp config.example.env config.env
+# edit config.env as needed (CODEX_MODEL, CODEX_PROFILE, branch names, ports)
+chmod +x run.sh lib/common.sh
+```
+
+Run:
+
+```bash
+bash driver/run.sh              # run all remaining tasks in order
+bash driver/run.sh --status      # show per-task state
+bash driver/run.sh --task 02     # run one task
+bash driver/run.sh --from 02     # run from task 02 onward
+bash driver/run.sh --resume      # continue a partial run
+DRIVER_MOCK=1 bash driver/run.sh --selftest
+```
+
+Task file discipline:
+
+- Keep `driver/tasks/` as reusable task templates users edit before running.
+- Treat `driver/state/`, `driver/logs/`, and `driver/config.env` as ephemeral runtime data.
+
 ### `agent/architecture.md`
 
 Purpose: tell agents where code belongs.
