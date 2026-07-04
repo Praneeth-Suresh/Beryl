@@ -487,14 +487,14 @@ main() {
   local started=0 t id rc
   for t in $(list_tasks); do
     id="$(task_id_from_path "$t")"
+    [ -n "$ONLY_TASK" ] && [ "$id" != "$ONLY_TASK" ] && continue
+    if [ -n "$FROM_TASK" ] && [ "$started" -eq 0 ]; then
+      [ "$id" = "$FROM_TASK" ] && started=1 || continue
+    fi
     if is_placeholder_task "$t"; then
       log "=== TASK $id : $(basename "$t") ==="
       log "task $id is placeholder-task; skipping."
       continue
-    fi
-    [ -n "$ONLY_TASK" ] && [ "$id" != "$ONLY_TASK" ] && continue
-    if [ -n "$FROM_TASK" ] && [ "$started" -eq 0 ]; then
-      [ "$id" = "$FROM_TASK" ] && started=1 || continue
     fi
     log "=== TASK $id : $(basename "$t") ==="
     run_task "$id"; rc=$?
