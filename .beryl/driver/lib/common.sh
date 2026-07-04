@@ -18,6 +18,13 @@ logs_root()   { echo "$DRIVER_DIR/logs"; }
 
 # task_id_from_path tasks/03-foo.md -> 03
 task_id_from_path() { basename "$1" | sed -E 's/^([0-9]+).*/\1/'; }
+is_placeholder_task() {
+  local path="$1"
+  case "$(basename "$path")" in
+    *-placeholder-task.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 state_dir_for() { echo "$(state_root)/$1"; }   # arg: task id
 
