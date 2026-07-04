@@ -15,8 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run deterministic checks
-        run: ./scripts/check.sh
+        run: ./.beryl/scripts/check.sh
 
       - name: Run agent doctor
-        run: ./agent/scripts/agent-doctor.sh
-
+        run: ./.beryl/agent/scripts/agent-doctor.sh

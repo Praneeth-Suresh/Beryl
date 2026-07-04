@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "installerVersion": "1",
+  "sourceRef": "main",
+  "rawBaseUrl": "https://raw.githubusercontent.com/praneeth/Beryl/main",
+  "archiveUrl": "https://codeload.github.com/praneeth/Beryl/tar.gz/main",
+  "rootShims": ["AGENTS.md","CLAUDE.md",".cursor/rules/agent-rules.md",".github/copilot-instructions.md",".codex/AGENTS.md"],
+  "profiles": [
+    {"kind":"profile","name":"minimal","components":["agent-core","tool-shims"]},
+    {"kind":"profile","name":"standard","components":["agent-core","tool-shims","checks","githooks"]},
+    {"kind":"profile","name":"full","components":["agent-core","tool-shims","checks","githooks","ci","driver"]}
+  ],
+  "components": [
+    {"kind":"component","name":"agent-core","requires":[],"paths":[".beryl/beryl.components.json",".beryl/agent/README.md",".beryl/agent/agent-rules.md",".beryl/agent/guides/",".beryl/agent/mcp.json",".beryl/agent/module-routing.md",".beryl/agent/scripts/",".beryl/agent/security-policy.md",".beryl/agent/skills/",".beryl/agent/task-routing.md",".beryl/agent/templates/",".beryl/agent/tool-instruction-template.md"],"rootPaths":[],"postInstall":["seed-agent-context"]},
+    {"kind":"component","name":"tool-shims","requires":["agent-core"],"paths":[],"rootPaths":["AGENTS.md","CLAUDE.md",".cursor/rules/agent-rules.md",".github/copilot-instructions.md",".codex/AGENTS.md"],"postInstall":["sync-agent-env"]},
+    {"kind":"component","name":"checks","requires":["agent-core"],"paths":[".beryl/scripts/",".beryl/agent/affected-tests.conf",".beryl/agent/test-manifest.conf"],"rootPaths":[],"postInstall":["update-test-manifest"]},
+    {"kind":"component","name":"githooks","requires":["checks"],"paths":[".beryl/githooks/"],"rootPaths":[],"postInstall":["enable-githooks"]},
+    {"kind":"component","name":"ci","requires":["checks"],"paths":[],"rootPaths":[".github/workflows/deterministic-checks.yml"],"postInstall":[]},
+    {"kind":"component","name":"driver","requires":["agent-core"],"paths":[".beryl/driver/"],"rootPaths":[],"postInstall":[]}
+  ]
+}

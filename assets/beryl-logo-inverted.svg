@@ -1,0 +1,19 @@
+<svg width="260" height="300" viewBox="70 45 280 330" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Beryl inverted logo</title>
+  <desc id="desc">Inverted Beryl logo mark for dark surfaces.</desc>
+  <g>
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" fill="#FFFFFF"/>
+    <path d="M210 64L318 128L260 146L210 64Z" fill="#EAFBF3" fill-opacity="0.8"/>
+    <path d="M210 64L160 146L102 128L210 64Z" fill="#D1FAE5" fill-opacity="0.86"/>
+    <path d="M160 146L210 64L260 146L210 186L160 146Z" fill="#A7F3D0"/>
+    <path d="M102 128L160 146L138 250L102 252L102 128Z" fill="#6EE7B7"/>
+    <path d="M318 128L260 146L282 250L318 252L318 128Z" fill="#34D399"/>
+    <path d="M160 146L210 186L138 250L160 146Z" fill="#CFFFE5"/>
+    <path d="M260 146L210 186L282 250L260 146Z" fill="#A7F3D0"/>
+    <path d="M138 250L210 186L282 250L210 356L138 250Z" fill="#86EFAC"/>
+    <path d="M102 252L138 250L210 356L102 252Z" fill="#34D399"/>
+    <path d="M318 252L282 250L210 356L318 252Z" fill="#10B981"/>
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" stroke="#DBF7E6" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M160 146L260 146M160 146L138 250M260 146L282 250M210 186L138 250M210 186L282 250M210 186L210 64M138 250L210 356M282 250L210 356" stroke="#0F172A" stroke-opacity="0.25" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

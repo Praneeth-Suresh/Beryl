@@ -1,108 +1,127 @@
 <p align="center">
-  <img src="assets/beryl-logo.svg" alt="Beryl logo" width="220" />
+  <img src="assets/beryl-logo.svg" alt="Beryl faceted emerald logo mark" width="220" />
 </p>
 
 <h1 align="center">Beryl</h1>
 
 <p align="center">
-  <strong>Crafted systems for real outcomes.</strong>
+  <strong>Make Repositories Ready For Agents</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/agentic%20engineering-control%20plane-0f766e?style=for-the-badge" alt="Agentic engineering control plane" />
-  <img src="https://img.shields.io/badge/checks-deterministic-2563eb?style=for-the-badge" alt="Deterministic checks" />
-  <img src="https://img.shields.io/badge/review-human%20owned-111827?style=for-the-badge" alt="Human owned review" />
-  <img src="https://img.shields.io/badge/security-bounded%20tools-b45309?style=for-the-badge" alt="Bounded tool security" />
+  <img src="https://img.shields.io/static/v1?label=repository&amp;message=agent-ready&amp;color=0f766e&amp;labelColor=111827&amp;style=flat-square" alt="Agent-ready repository" />
+  <img src="https://img.shields.io/static/v1?label=checks&amp;message=deterministic&amp;color=2563eb&amp;labelColor=111827&amp;style=flat-square" alt="Deterministic checks" />
+  <img src="https://img.shields.io/static/v1?label=review&amp;message=human-owned&amp;color=111827&amp;labelColor=111827&amp;style=flat-square" alt="Human-owned review" />
+  <img src="https://img.shields.io/static/v1?label=control%20plane&amp;message=installable&amp;color=b45309&amp;labelColor=111827&amp;style=flat-square" alt="Installable control plane" />
 </p>
 
-Beryl is an inspectable control plane for AI-assisted software development. It gives coding agents the structure they usually lack: project rules, task routing, security boundaries, deterministic checks, review expectations, and setup scripts that make their work easier to evaluate.
+Beryl is a hard guarantee layer for AI-assisted development. It turns the agent workflow into files, checks, and review-ready boundaries before agent output is trusted.
 
-Use it when you want agents to help inside a real repository without turning your engineering process into an unreviewable chat transcript.
-
-## Why Beryl Exists
-
-AI coding agents are useful because they can inspect a codebase, form a plan, use tools, recover from failures, and adapt to local context. They are risky because their behavior is shaped at runtime by prompts, files, tools, state, and assumptions.
-
-Beryl treats that runtime environment as an engineering surface.
-
-Instead of asking a model to "just code", Beryl gives it a working contract:
-
-- what context to read before changing files
-- how to classify tasks before acting
-- which boundaries, terms, and security rules matter
-- how to state success checks before implementation
-- how to keep tests and review artifacts visible
-- how to leave humans responsible for final judgment
-
-The result is not magic automation. It is a sharper workflow for converting rough intent into controlled, reviewable output.
-
-## What You Get
-
-```mermaid
-flowchart LR
-    A[Human intent] --> B[Task routing]
-    B --> C[Agent instructions]
-    C --> D[Repository boundaries]
-    D --> E[Deterministic checks]
-    E --> F[Reviewable change]
-    F --> G[Human decision]
-```
-
-Key pieces:
-
-- `agent/`: canonical instructions, architecture notes, testing policy, security policy, task routing, and reusable agent context.
-- `agent/skills/`: workflow contracts for planning, feature work, debugging, codebase explanation, architecture improvement, entropy tracking, and vertical-slice testing.
-- `scripts/`: deterministic checks, test manifest tooling, affected-test routing, and project setup.
-- `githooks/`: optional local pre-commit guardrails.
-- `driver/`: prompt driver utilities for repeatable plan, implement, verify, and commit flows.
-
-## Who It Is For
-
-Beryl is useful for:
-
-- engineers experimenting with agent-assisted development in real repositories
-- teams that want agent output to stay legible, bounded, and reviewable
-- students and builders turning AI coding workflows into serious proof-of-work
-- maintainers who want deterministic checks around stochastic contributors
-
-It is not a replacement for code review, tests, architecture judgment, or product taste. It is the scaffolding that helps those things survive when an agent is in the loop.
+You get repository-owned defaults for where the contract lives, how work is routed, and which checks run. Beryl does not replace review. It makes review and recovery easier.
 
 ## Quick Start
 
-Run the deterministic checks:
+**Recommended first read:** [Quickstart.md](./Quickstart.md) — short, story-style onboarding from first read to first safe agent task.
+
+Install into this repository with one command:
 
 ```bash
-./scripts/check.sh
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh
+```
+
+Run the primary repo safety gate:
+
+```bash
+./.beryl/scripts/check.sh
 ```
 
 Install the control plane into another project:
 
 ```bash
-./scripts/setup-project.sh /path/to/project
+./.beryl/scripts/setup-project.sh /path/to/project
 ```
 
-The setup script copies the agent control plane, configures affected-test behavior, syncs generated instruction shims, creates the initial test manifest, and can enable the bundled pre-commit hook.
-
-Enable the local hook in this repository:
+Optional local pre-commit guardrail:
 
 ```bash
-git config core.hooksPath githooks
+git config core.hooksPath .beryl/githooks
 ```
+
+Prefer the one-command install profile if you know your target profile:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh -s -- --profile minimal
+```
+
+## Documentation Map
+
+Use this map before opening multiple files:
+
+- User docs and references
+  - [Quickstart.md](./Quickstart.md): Fast path to your first safe task.
+  - [README.md](./README.md): Entry point and decision guide.
+  - [Theory.md](./Theory.md): Goals, motivations, and project reasoning.
+  - [Practise.md](./Practise.md): Applied examples.
+  - [Cheatsheet.md](./Cheatsheet.md): Canonical command-and-workflow reference.
+  - [current.md](./current.md): Current snapshot context.
+  - [gitignore-sample.md](./gitignore-sample.md): Ignore pattern template.
+  - [assets/brand/beryl-brand-guide.md](./assets/brand/beryl-brand-guide.md): Brand and messaging reference.
+- Agent instruction surfaces
+  - [AGENTS.md](./AGENTS.md): Runtime AGENTS shim; source edits should start from `.beryl/agent/tool-instruction-template.md`.
+  - [CLAUDE.md](./CLAUDE.md): Runtime Claude shim; source edits should start from `.beryl/agent/tool-instruction-template.md`.
+  - [.cursor/rules/agent-rules.md](./.cursor/rules/agent-rules.md): Runtime Cursor shim; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.github/copilot-instructions.md](./.github/copilot-instructions.md): Runtime Copilot shim; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.codex/AGENTS.md](./.codex/AGENTS.md): Runtime Codex shim; source edits should start from `.beryl/agent/agent-rules.md`.
+  - [.github/workflows/deterministic-checks.yml](./.github/workflows/deterministic-checks.yml): deterministic CI entrypoint.
+- Reference, design, and operational material
+  - [.beryl/agent/task-routing.md](./.beryl/agent/task-routing.md): Route each request to the correct workflow.
+  - [.beryl/agent/project-brief.md](./.beryl/agent/project-brief.md): Product goal and scope.
+  - [.beryl/agent/design-tree.md](./.beryl/agent/design-tree.md): Evolving and settled design notes.
+  - [.beryl/agent/architecture.md](./.beryl/agent/architecture.md): Bounded-context ownership.
+  - [.beryl/agent/ubiquitous-language.md](./.beryl/agent/ubiquitous-language.md): Canonical project vocabulary.
+  - [.beryl/agent/testing-policy.md](./.beryl/agent/testing-policy.md): Check commands and testing expectations.
+  - [.beryl/agent/agent-rules.md](./.beryl/agent/agent-rules.md): Repo-level operating defaults.
+  - [.beryl/agent/skills/adding-features/SKILL.md](./.beryl/agent/skills/adding-features/SKILL.md): Approved feature implementation path.
+  - [.beryl/agent/skills/planning/SKILL.md](./.beryl/agent/skills/planning/SKILL.md): Planning workflow.
+  - [.beryl/agent/skills/debugging/SKILL.md](./.beryl/agent/skills/debugging/SKILL.md): Debug workflow.
+  - [.beryl/driver/README.md](./.beryl/driver/README.md): Driver behavior and session flow.
+  - [.beryl/agent/README.md](./.beryl/agent/README.md): Source-of-truth index for agent contexts.
+
+## Using Beryl from scratch in another repo
+
+```bash
+# copy command used in this repo setup
+./.beryl/scripts/setup-project.sh /path/to/new-project
+```
+
+Optional hook setup is available during setup or at any time with:
+
+```bash
+git config core.hooksPath .beryl/githooks
+```
+
+## Adding Features (driver flow)
+
+When you already have a feature request, run:
+
+```bash
+./.beryl/driver/run.sh
+```
+
+The driver handles plan -> implement -> verify phases against numbered tasks.
 
 ## Operating Model
 
-Beryl keeps the model flexible while making the surrounding process explicit.
-
 | Layer | Purpose |
 | --- | --- |
-| Human intent | Defines the actual goal and acceptable outcome. |
-| Agent routing | Chooses the right workflow before changing files. |
-| Repository rules | Gives the agent local language, architecture, and safety boundaries. |
-| Deterministic checks | Turns review from vibes into repeatable evidence. |
-| Human review | Keeps responsibility with the engineer, not the model. |
+| Human intent | Defines the desired outcome |
+| Agent routing | Selects the right workflow before edits |
+| Repository rules | Provides the persistent contract from `.beryl/agent/` |
+| Deterministic checks | Verifies edits through `./.beryl/scripts/check.sh` |
+| Human review | Keeps final ownership with the user |
 
-## Repository Status
+## Origin
 
-Beryl is a framework and operating-system repository for disciplined agentic engineering. It is strongest when paired with concrete case studies that show the workflow improving a real project.
+Beryl started as a practical answer to unattended agent runs that were hard to supervise. The repository now carries the control plane so the process is explicit, repeated, and reviewable.
 
 Interested in this area? Email me at praneeth.suresh.s@gmail.com.

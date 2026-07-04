@@ -30,5 +30,4 @@
     <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" stroke="url(#edge)" stroke-width="8" stroke-linejoin="round"/>
     <path d="M160 146L260 146M160 146L138 250M260 146L282 250M210 186L138 250M210 186L282 250M210 186L210 64M138 250L210 356M282 250L210 356" stroke="#ECFDF5" stroke-opacity="0.52" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <path d="M152 95C169 82 190 75 210 75C232 75 253 83 270 97" stroke="#FFFFFF" stroke-opacity="0.72" stroke-width="8" stroke-linecap="round"/>
 </svg>

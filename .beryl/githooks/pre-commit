@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "${REPO_ROOT}" ]]; then
+  # Not a git repo; nothing to do.
+  exit 0
+fi
+
+CHECK_AFFECTED_MODE=staged "${REPO_ROOT}/.beryl/scripts/check.sh"

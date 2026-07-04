@@ -1,36 +1,48 @@
 # Agent Operating Instructions
 
-This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `agent/tool-instruction-template.md` and rerun `agent/scripts/sync-agent-env.sh`.
+This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `.beryl/agent/tool-instruction-template.md` and rerun `.beryl/agent/scripts/sync-agent-env.sh`.
 
 You are working in this repository as an implementation agent. Treat repository files as the source of truth. Do not rely on hidden chat history or assumptions when repo-owned instructions answer the question.
 
 ## Instruction Precedence
 
 1. Explicit user instructions for the current task.
-2. Canonical files under `agent/`.
+2. Canonical files under `.beryl/agent/`.
 3. This generated shim.
 4. Existing code, tests, and local conventions.
 
-If this shim conflicts with canonical files under `agent/`, treat this shim as stale, follow `agent/`, and note the conflict.
+If this shim conflicts with canonical files under `.beryl/agent/`, treat this shim as stale, follow `.beryl/agent/`, and note the conflict.
 
 ## Required Context Before Editing
 
-Before changing code or tests, read `agent/task-routing.md`, classify the current task, and load only the matching workflow from `agent/skills/<skill-name>/SKILL.md`.
+Before changing code or tests, read `.beryl/agent/task-routing.md`, classify the current task, and load only the matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
 
 Then read the smallest relevant set of canonical files requested by that workflow:
 
-- `agent/project-brief.md`
-- `agent/design-tree.md`
-- `agent/architecture.md`
-- `agent/ubiquitous-language.md`
-- `agent/testing-policy.md`
-- `agent/agent-rules.md`
+- `.beryl/agent/project-brief.md`
+- `.beryl/agent/design-tree.md`
+- `.beryl/agent/architecture.md`
+- `.beryl/agent/ubiquitous-language.md`
+- `.beryl/agent/testing-policy.md`
+- `.beryl/agent/agent-rules.md`
 
 Load additional files only when relevant.
 
+## Always-On Operating Contract
+
+These operating defaults apply in every agent session even when the user does not restate them. Users only need to speak up when they want to opt out of or override a default for the current prompt, such as explicitly allowing sub-agents.
+
+- Route work through `.beryl/agent/task-routing.md` and the matching workflow skill before editing.
+- Treat ratified feature implementation as `adding-features` work by default.
+- Use `.beryl/agent/session-state.md` only as internal temporary state when needed, and clear it when the feature, repair, or debugging thread is complete.
+- After edits, run the formatter command if one is configured, then narrow checks, then the broader deterministic gate `./.beryl/scripts/check.sh`.
+- Never weaken tests to make implementation pass.
+- If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
+- Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
+
 ## Skill Use
 
-Skills live in `agent/skills/<skill-name>/SKILL.md`.
+Skills live in `.beryl/agent/skills/<skill-name>/SKILL.md`.
 
 Task workflows:
 
@@ -61,13 +73,13 @@ Do not use sub-agents unless the user explicitly asks for sub-agents, parallel a
 5. For non-trivial work with multiple viable implementation paths, present the options and wait for user approval unless the user explicitly allowed you to choose.
 6. Before coding, state commit boundaries: one purpose, expected files, and validating check command per boundary.
 7. Implement one internal feature slice.
-8. Run narrow checks, then broader checks.
+8. Run the formatter command if configured, then narrow checks, then broader checks.
 9. Repair from actual tool output.
 10. Update glossary/design-tree/architecture/ADR files if design knowledge changed.
 
 For feature implementation, an approved plan is mandatory. If no approved plan exists, produce the plan first, present it to the user, and stop. Do not implement until the user ratifies the plan.
 
-Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs or ledgers. Use `agent/session-state.md` for temporary session-specific implementation state when needed, and clear it when the feature is complete. Store only durable decisions in canonical files.
+Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs or ledgers. Use `.beryl/agent/session-state.md` for temporary session-specific implementation state when needed, and clear it when the feature is complete. Store only durable decisions in canonical files.
 
 For post-run cleanup prompts, do not implement new features. Read changed files and return one safe extraction slice only, considering dead selectors, repeated CSS patterns, rendering functions that should be split, generated artifacts that should not be hand-edited, and tests missing for known regressions.
 
@@ -77,12 +89,12 @@ For post-run cleanup prompts, do not implement new features. Read changed files 
 - Keep public interfaces small and explicit.
 - Do not import internals from another bounded context.
 - Keep external systems behind adapters.
-- Use terms from `agent/ubiquitous-language.md`.
+- Use terms from `.beryl/agent/ubiquitous-language.md`.
 - Do not weaken tests to make implementation pass.
 - Do not edit unrelated files.
 - Do not store secrets in repo files, prompts, or logs.
 - Do not let temporary implementation notes accumulate in canonical agent files.
-- Keep session debugging history bounded in `agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
+- Keep session debugging history bounded in `.beryl/agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
 
 Before deleting or consolidating root planning or documentation files, list every file, what is preserved, what is lost, and where replacement content lives, then wait for explicit approval.
 
@@ -96,7 +108,7 @@ For static-site changes, source inspection is not enough. Verify affected genera
 
 ## Verification
 
-Run checks required by `agent/testing-policy.md` and local project tooling.
+Run checks required by `.beryl/agent/testing-policy.md` and local project tooling.
 
 Final response must include:
 
