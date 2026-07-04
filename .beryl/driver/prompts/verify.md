@@ -10,14 +10,27 @@ do NOT trust the implementer's notes. Verify against the brief's acceptance
 criteria only. Do NOT use sub-agents. Do NOT edit implementation code; if you
 must add a throwaway verification script, delete it before finishing.
 
-# Isolated dev stack (already started for you by the driver)
+# Verification context
 
-- Frontend: {{VERIFY_BASE_URL}}
-- Backend API: {{VERIFY_API_URL}} (CORS allows the frontend origin above)
-- The backend uses a COPY of the dev DB, so you may exercise mutations freely.
-  If the stack is not reachable, report `VERIFY: FAIL` and put
-  `KIND: verify_stack_failure` on the second line of `verify.txt`. Do not classify
-  an unreachable or stale verification stack as an app acceptance failure.
+The driver verifies the codebase, not a hard-coded application shape.
+
+- Stack status: {{VERIFY_STACK_STATUS}}
+- Frontend, when a stack was started: {{VERIFY_BASE_URL}}
+- Backend API, when a stack was started: {{VERIFY_API_URL}}
+
+Use the ORIGINAL task brief and this repository's declared checks as the source
+of truth. Read `.beryl/agent/testing-policy.md` and run the smallest commands
+needed to prove the acceptance criteria, usually task-specific source checks plus
+`./.beryl/scripts/check.sh`.
+
+If a task is documentation-only, script-only, configuration-only, or otherwise
+provable through repository inspection and deterministic checks, do not require
+browser screenshots or a frontend/backend stack.
+
+If a task explicitly requires runtime UI, API, browser, persistence, or
+deployment evidence and no suitable stack or command is available, report
+`VERIFY: FAIL` with `KIND: verify_stack_failure` and concrete evidence of the
+missing prerequisite. Do not pass a runtime task using source inspection alone.
 
 # Deployment readiness Docker preflight
 
@@ -46,14 +59,16 @@ TASK_BRIEF
 
 # What to do
 
-1. Drive the app exactly as the brief's "Acceptance / Playwright checks" describe (login, navigate, interact, measure DOM, read API responses, etc.).
-2. For UI work, use accessibility snapshots / DOM state / computed styles as the
-   source of truth — not just a screenshot glance.
-3. For data/persistence work, confirm the database actually reflects the change
-   (query via the API or the DB copy).
-4. Capture screenshots of the verified behavior into
-   `{{STATE_DIR}}/verify-shots/` for the human reviewer.
-5. Decide PASS only if EVERY acceptance criterion is met. Otherwise FAIL.
+1. Verify every acceptance criterion in the original task brief.
+2. Use repository inspection and deterministic commands for codebase, docs,
+   scripts, configuration, generated-output, and test-policy tasks.
+3. For UI work, use accessibility snapshots / DOM state / computed styles as the
+   source of truth, not just a screenshot glance.
+4. For data/persistence work, confirm the database actually reflects the change
+   through the API, database copy, or a declared project check.
+5. Capture screenshots into `{{STATE_DIR}}/verify-shots/` only when browser or
+   visual evidence is relevant to the task.
+6. Decide PASS only if EVERY acceptance criterion is met. Otherwise FAIL.
 
 # Required output (this drives the loop)
 
@@ -61,11 +76,9 @@ TASK_BRIEF
   VERIFY: PASS
   VERIFY: FAIL
   Following lines: for stack/reachability failures, second line must be
-  `KIND: verify_stack_failure` followed by concrete stack evidence. For app
-  FAIL, use a numbered list of each unmet criterion with the concrete
-  observed-vs-expected evidence (selectors, measured values, API responses).
-  For PASS, a short list of what was confirmed and screenshot the correct
-  behaviour of the app. Add these screen-shots to the /material directory in
-  the root.
+  `KIND: verify_stack_failure` followed by concrete stack evidence. For other
+  FAIL results, use a numbered list of each unmet criterion with concrete
+  observed-vs-expected evidence. For PASS, list what was confirmed and the
+  commands/evidence used. Mention screenshots only when the task required them.
 - Mirror the same first line as the final line of your chat message:
   end with exactly `VERIFY: PASS` or `VERIFY: FAIL`.

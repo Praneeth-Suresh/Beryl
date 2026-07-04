@@ -53,13 +53,14 @@ compose_prompt() {
   STATE_DIR="$PH_STATE_DIR" ATTEMPT="$PH_ATTEMPT" MAX_ATTEMPTS="$MAX_ATTEMPTS" \
   TASK_BRIEF="$PH_TASK_BRIEF" FAILURE_CONTEXT="$PH_FAILURE_CONTEXT" \
   PLAN="$PH_PLAN" VERIFY="$PH_VERIFY" \
+  VERIFY_STACK_STATUS="$PH_VERIFY_STACK_STATUS" \
   VERIFY_BASE_URL="$VERIFY_BASE_URL" VERIFY_API_URL="$VERIFY_API_URL" \
   python3 - "$tmpl" <<'PY'
 import os, sys
 tmpl = open(sys.argv[1]).read()
 keys = ["REPO_ROOT","WORK_BRANCH","STATE_DIR","ATTEMPT","MAX_ATTEMPTS",
         "TASK_BRIEF","FAILURE_CONTEXT","PLAN","VERIFY",
-        "VERIFY_BASE_URL","VERIFY_API_URL"]
+        "VERIFY_STACK_STATUS","VERIFY_BASE_URL","VERIFY_API_URL"]
 for k in keys:
     tmpl = tmpl.replace("{{%s}}" % k, os.environ.get(k, ""))
 sys.stdout.write(tmpl)
@@ -121,12 +122,61 @@ run_agent() {
 }
 
 # ── Isolated dev stack for verification ──────────────────────────────────--
-# These are no-ops in mock mode. In real mode they start an isolated stack so
-# Playwright verification never collides with already-running servers and never
-# mutates the canonical dev DB.
+# These helpers support the legacy backend/frontend verifier. The driver starts
+# that stack only when VERIFY_STACK_MODE requires it or auto-detection finds it.
 VSTACK_BACKEND_PID=""
 VSTACK_FRONTEND_PID=""
 VSTACK_FRONTEND_DIST_DIR=""
+VERIFY_STACK_STATUS="${VERIFY_STACK_STATUS:-not evaluated}"
+
+has_legacy_verify_stack() {
+  [ -d "$REPO_ROOT/backend" ] \
+    && [ -d "$REPO_ROOT/frontend" ] \
+    && [ -x "$REPO_ROOT/.venv/bin/python" ]
+}
+
+should_start_verify_stack() {
+  if [ "${DRIVER_MOCK:-0}" = "1" ]; then
+    case "${MOCK_STACK_RESULT:-OK}" in
+      SKIP)
+        VERIFY_STACK_STATUS="[mock] skipped by MOCK_STACK_RESULT=SKIP"
+        export VERIFY_STACK_STATUS
+        return 1
+        ;;
+      *)
+        VERIFY_STACK_STATUS="[mock] starting mocked verifier stack"
+        export VERIFY_STACK_STATUS
+        return 0
+        ;;
+    esac
+  fi
+
+  case "${VERIFY_STACK_MODE:-auto}" in
+    always)
+      VERIFY_STACK_STATUS="required by VERIFY_STACK_MODE=always; starting legacy backend/frontend verifier"
+      export VERIFY_STACK_STATUS
+      return 0
+      ;;
+    never)
+      VERIFY_STACK_STATUS="skipped by VERIFY_STACK_MODE=never"
+      export VERIFY_STACK_STATUS
+      return 1
+      ;;
+    auto)
+      if has_legacy_verify_stack; then
+        VERIFY_STACK_STATUS="auto-detected legacy backend/frontend verifier; starting stack"
+        export VERIFY_STACK_STATUS
+        return 0
+      fi
+      VERIFY_STACK_STATUS="skipped by VERIFY_STACK_MODE=auto; no legacy backend/frontend verifier detected"
+      export VERIFY_STACK_STATUS
+      return 1
+      ;;
+    *)
+      die "invalid VERIFY_STACK_MODE='${VERIFY_STACK_MODE:-}'; expected auto, always, or never"
+      ;;
+  esac
+}
 
 port_is_listening() {
   local port="$1"

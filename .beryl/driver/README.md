@@ -12,7 +12,7 @@ sessions:
 ```
         ┌─────────────────────────────────────────────┐
         │                                             │
-   PLAN ──▶ IMPLEMENT ──▶ VERIFY (Playwright cross-check)
+   PLAN ──▶ IMPLEMENT ──▶ VERIFY (codebase checks / runtime evidence)
         │                       │
         │             PASS ─────┴───▶ COMMIT (no push) ──▶ next task
         │             FAIL
@@ -22,16 +22,18 @@ sessions:
 - **PLAN** — reads the task brief + `.beryl/agent/task-routing.md` planning workflow,
   writes a plan into the task's session-state file. No code edits.
 - **IMPLEMENT** — implements strictly against the ratified plan.
-- **VERIFY** — brings up an isolated dev stack and uses Playwright to
-  cross-verify the result **against the original task brief** (not against the
-  implementer's own claims). Emits a machine-readable `VERIFY: PASS` or
+- **VERIFY** — independently checks the result **against the original task
+  brief** (not against the implementer's own claims). For docs, scripts,
+  config, and other codebase-only work, verification uses repository inspection
+  and deterministic checks. For runtime/browser/API work, verification uses the
+  task's declared runtime evidence. Emits a machine-readable `VERIFY: PASS` or
   `VERIFY: FAIL` sentinel plus a reason.
 - On **FAIL** → loops back to PLAN with the failure reason folded in
   (`attempt += 1`), up to `MAX_ATTEMPTS`, then blocks and stops.
-- If the isolated verification stack cannot start cleanly, the driver writes
-  `VERIFY: FAIL` with `KIND: verify_stack_failure`, blocks immediately, and does
-  **not** consume a task attempt. This keeps stale ports/processes from being
-  mistaken for app behavior.
+- If a required runtime verification stack cannot start cleanly, the driver
+  writes `VERIFY: FAIL` with `KIND: verify_stack_failure`, blocks immediately,
+  and does **not** consume a task attempt. This keeps stale ports/processes from
+  being mistaken for app behavior.
 - On **PASS** → **COMMIT** phase commits the change (never pushes).
 
 Each phase is a *separate process invocation*, which is exactly why context stays
@@ -88,8 +90,8 @@ only ever asked to do one bounded phase at a time.
 ## Prerequisites
 
 - Codex CLI on PATH (`codex exec`).
-- Node + the repo's `frontend/node_modules` (Playwright is already installed there).
-- Python venv at repo root `.venv` (used by the isolated verify backend).
+- Runtime/browser dependencies only when the task or project check policy
+  requires runtime verification.
 - A clean-ish git working tree on the base branch.
 
 ## Setup
@@ -97,7 +99,7 @@ only ever asked to do one bounded phase at a time.
 ```bash
 cd .beryl/driver
 cp config.example.env config.env
-# edit config.env: set CODEX_MODEL/CODEX_PROFILE if desired, confirm ports/branch
+# edit config.env: set CODEX_MODEL/CODEX_PROFILE if desired, confirm branch and verification mode
 ```
 
 ## Run
@@ -136,14 +138,16 @@ See `lib/common.sh` `mock_*` functions for the scripted behaviors.
 - Headless sessions default to `--sandbox workspace-write` and
   `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`.
   Review `WORK_BRANCH` diffs before pushing.
-- Verification uses an **isolated** stack and a **copy** of the dev SQLite DB,
-  so it never mutates canonical dev data. By default the stack allocates fresh
-  free ports per run (`VERIFY_FRONTEND_PORT=auto`, `VERIFY_BACKEND_PORT=auto`);
-  fixed ports are still supported, but occupied ports block as infrastructure
-  failures instead of burning attempts. The driver-owned Next.js verifier also
-  runs with a private `NEXT_DIST_DIR` under `frontend/.next/driver-<run-id>`,
-  so an already-running developer `next dev` process for `frontend/.next` is left
-  untouched and cannot take the verifier's dev-server lock.
+- `VERIFY_STACK_MODE` controls optional runtime stack startup:
+  - `auto` starts the bundled legacy backend/frontend verifier only when the
+    repository has that layout.
+  - `always` requires that legacy verifier and blocks if it cannot start.
+  - `never` skips stack startup; verification must use repository checks and
+    task-specific evidence.
+- When the legacy verifier is started, it uses an **isolated** stack and a
+  **copy** of the dev SQLite DB, so it never mutates canonical dev data. The
+  stack allocates fresh free ports per run (`VERIFY_FRONTEND_PORT=auto`,
+  `VERIFY_BACKEND_PORT=auto`) unless fixed ports are configured.
 - Rate-limit retries use linear backoff from `RATE_LIMIT_COOLDOWN` and are only
   triggered after a failed Codex process reports a rate-limit style error.
 - The driver commits but never pushes, and never force-operates on git.

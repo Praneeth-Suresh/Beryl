@@ -3,7 +3,7 @@ driver. Work only inside the repository at {{REPO_ROOT}}. You are on git branch
 {{WORK_BRANCH}}.
 
 # Context
-The change for the task below has PASSED Playwright cross-verification. Commit it.
+The change for the task below has PASSED independent verification. Commit it.
 Do NOT push. Do NOT use sub-agents. Do NOT amend or rebase existing commits.
 
 # Task brief (for the commit message)

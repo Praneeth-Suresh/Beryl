@@ -29,7 +29,7 @@ export REPO_ROOT WORK_BRANCH BASE_BRANCH VERIFY_BASE_URL VERIFY_API_URL \
        VERIFY_FRONTEND_PORT VERIFY_BACKEND_PORT VERIFY_DB SOURCE_DB \
        MAX_ATTEMPTS CODEX_BIN CODEX_MODEL CODEX_PROFILE CODEX_SANDBOX \
        CODEX_APPROVAL CODEX_EXTRA_ARGS DRIVER_MOCK \
-       RATE_LIMIT_COOLDOWN MAX_RATE_LIMIT_WAITS \
+       RATE_LIMIT_COOLDOWN MAX_RATE_LIMIT_WAITS VERIFY_STACK_MODE \
        VERIFY_FRONTEND_PORT_SETTING VERIFY_BACKEND_PORT_SETTING
 
 # shellcheck disable=SC1091
@@ -107,6 +107,7 @@ run_phase() {
   export PH_TASK_BRIEF; PH_TASK_BRIEF="$(read_file_safe "$TASK_FILE")"
   export PH_PLAN; PH_PLAN="$(read_file_safe "$sd/plan.md")"
   export PH_VERIFY; PH_VERIFY="$(read_file_safe "$sd/verify.txt")"
+  export PH_VERIFY_STACK_STATUS="${VERIFY_STACK_STATUS:-not evaluated for this phase}"
   # Failure context only meaningful for re-plan.
   if [ -f "$sd/verify.txt" ] && verify_failed "$sd/verify.txt"; then
     export PH_FAILURE_CONTEXT="Previous verification FAILED with:
@@ -222,18 +223,24 @@ run_task() {
       set_attempt "$id" "$((att+1))"; continue
     fi
 
-    # VERIFY (isolated stack)
+    # VERIFY
     set_status "$id" "verifying"
-    if ! start_verify_stack; then
-      local stack_failure="$RUN_LOG_DIR/verify-stack-failure.txt"
-      write_verify_stack_failure_state "$id" "$stack_failure"
-      stop_verify_stack
-      set_status "$id" "blocked"
-      warn "task $id: VERIFY stack failed to start (attempt $att). Infrastructure failure did not consume an attempt."
-      return 2
+    local stack_started=0
+    if should_start_verify_stack; then
+      if ! start_verify_stack; then
+        local stack_failure="$RUN_LOG_DIR/verify-stack-failure.txt"
+        write_verify_stack_failure_state "$id" "$stack_failure"
+        stop_verify_stack
+        set_status "$id" "blocked"
+        warn "task $id: VERIFY stack failed to start (attempt $att). Infrastructure failure did not consume an attempt."
+        return 2
+      fi
+      stack_started=1
+    else
+      log "task $id: VERIFY stack skipped (${VERIFY_STACK_STATUS})"
     fi
     run_phase "$id" VERIFY "$(prompts_dir)/verify.md"; local verify_rc=$?
-    stop_verify_stack
+    [ "$stack_started" -eq 1 ] && stop_verify_stack
     if [ "$verify_rc" -ne 0 ]; then
       set_status "$id" "blocked"
       warn "task $id: VERIFY session failed (rc=$verify_rc). Not consuming attempt."
@@ -402,6 +409,14 @@ selftest() {
   _expect "N: next dev lock blocks for infrastructure review" "$(get_status "$TID")" "blocked"
   _expect "N: next dev lock leaves attempt == 1" "$(get_attempt "$TID")" "1"
   _expect "N: next dev lock evidence is preserved" "$(grep -c 'Another next dev server is already running' "$(state_dir_for "$TID")/verify.txt")" "2"
+
+  # Scenario O: stack-less codebase verification can proceed to commit.
+  _reset "$TID"; set_attempt "$TID" 1
+  MOCK_STACK_RESULT=SKIP \
+  MOCK_PLAN_RESULT=READY MOCK_IMPL_RESULT=DONE MOCK_VERIFY_SCRIPT="PASS" MOCK_COMMIT_RESULT=DONE \
+    run_task "$TID" >/dev/null 2>&1
+  _expect "O: skipped verify stack still verifies" "$(get_status "$TID")" "committed"
+  _expect "O: skipped verify stack leaves attempt == 1" "$(get_attempt "$TID")" "1"
 
   _restore_selftest_state
   if [ "$fails" -eq 0 ]; then

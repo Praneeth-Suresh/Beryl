@@ -16,6 +16,7 @@ Beryl is a relocatable hard guarantee layer for agent-ready repositories: canoni
 | --- | --- | --- | --- |
 | Control-plane layout | Move Beryl-owned implementation files under `.beryl/` and keep only root contracts at fixed external locations. | 2026-07-04 | `.beryl/agent/adr/0004-relocate-control-plane-under-dot-beryl.md` |
 | Modular delivery | Use `.beryl/beryl.components.json` plus `install.sh` for profile/component installs without cloning Beryl history. | 2026-07-04 | `.beryl/agent/adr/0005-git-history-free-modular-installer.md` |
+| Driver verification | Verify driver tasks from the task brief and host repo checks, with runtime stacks optional instead of mandatory. | 2026-07-04 | `.beryl/agent/adr/0006-use-codebase-driven-driver-verification.md` |
 | Product positioning | Position Beryl as the repository hard guarantee layer for agent-ready repositories, adjacent to but distinct from skill packs and runtime harnesses. | 2026-07-04 | N/A |
 
 ## Pressure Points

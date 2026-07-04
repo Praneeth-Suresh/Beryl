@@ -39,3 +39,4 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 - `install.sh` is the raw-GitHub entry point. It resolves dependencies, installs only selected manifest paths, runs declared hooks, and writes `.beryl/lock.json` last.
 - `.beryl/scripts/setup-project.sh` is the local onboarding entry point and consumes the same component manifest.
 - `.beryl/scripts/paths.sh` is the shared boundary between Beryl root and host repo root.
+- `.beryl/driver/run.sh` verifies tasks against the task brief and host repository checks. Runtime stack startup is optional and configured through `VERIFY_STACK_MODE`; it is not part of the default Beryl boundary.
