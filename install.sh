@@ -165,6 +165,12 @@ run_post_install_hooks() {
       ran_hooks="${ran_hooks}
 ${hook}"
       case "$hook" in
+        seed-agent-context)
+          if [ -x "$TARGET_DIR/.beryl/agent/scripts/seed-agent-context.sh" ]; then
+            printf "beryl: running post-install hook: .beryl/agent/scripts/seed-agent-context.sh\n"
+            (cd "$TARGET_DIR" && BERYL_AGENT_TEMPLATE_CONFLICT="${BERYL_AGENT_TEMPLATE_CONFLICT:-skip}" ./.beryl/agent/scripts/seed-agent-context.sh)
+          fi
+          ;;
         sync-agent-env)
           if [ -x "$TARGET_DIR/.beryl/agent/scripts/sync-agent-env.sh" ]; then
             printf "beryl: running post-install hook: .beryl/agent/scripts/sync-agent-env.sh\n"

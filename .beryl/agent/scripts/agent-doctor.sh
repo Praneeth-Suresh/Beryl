@@ -55,7 +55,14 @@ required_canonical=(
   "${BERYL_ROOT}/agent/skills/testing-vertical-slices/SKILL.md"
   "${BERYL_ROOT}/agent/skills/improving-architecture/SKILL.md"
   "${BERYL_ROOT}/agent/skills/tracking-entropy/SKILL.md"
+  "${BERYL_ROOT}/agent/templates/install/project-brief.md"
+  "${BERYL_ROOT}/agent/templates/install/design-tree.md"
+  "${BERYL_ROOT}/agent/templates/install/architecture.md"
+  "${BERYL_ROOT}/agent/templates/install/ubiquitous-language.md"
+  "${BERYL_ROOT}/agent/templates/install/testing-policy.md"
+  "${BERYL_ROOT}/agent/templates/install/adr/0001-record-architecture-decisions.md"
   "${BERYL_ROOT}/agent/adr/0001-record-architecture-decisions.md"
+  "${BERYL_ROOT}/agent/adr/0007-seed-generic-agent-context-on-install.md"
 )
 
 for file in "${required_canonical[@]}"; do
@@ -64,6 +71,7 @@ done
 
 required_exec=(
   "${BERYL_ROOT}/agent/scripts/agent-doctor.sh"
+  "${BERYL_ROOT}/agent/scripts/seed-agent-context.sh"
   "${BERYL_ROOT}/agent/scripts/sync-agent-env.sh"
   "${BERYL_ROOT}/agent/scripts/entropy-hotspots.sh"
   "${BERYL_ROOT}/scripts/check.sh"

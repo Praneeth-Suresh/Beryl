@@ -369,6 +369,9 @@ run_setup_checks() {
       ran["${hook}"]=1
 
       case "${hook}" in
+        seed-agent-context)
+          run_with_optional_env "seeding generic agent context" BERYL_AGENT_TEMPLATE_CONFLICT "${BERYL_AGENT_TEMPLATE_CONFLICT:-skip}" "${TARGET_DIR}/.beryl/agent/scripts/seed-agent-context.sh"
+          ;;
         sync-agent-env)
           run_with_optional_env "syncing generated agent shims" BERYL_SHIM_CONFLICT "${BERYL_SHIM_CONFLICT:-overwrite}" "${TARGET_DIR}/.beryl/agent/scripts/sync-agent-env.sh"
           ;;

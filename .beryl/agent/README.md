@@ -10,7 +10,8 @@ The system follows the core rule from `Plan.md`: generation speed is useful only
 
 1. `.beryl/agent/` files are canonical.
 2. Tool-specific instruction files (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, `.codex/AGENTS.md`) are generated shims.
-3. Do not edit generated shims manually. Edit `.beryl/agent/tool-instruction-template.md` and run:
+3. Installed projects seed project-owned canonical files from `.beryl/agent/templates/install/`; Beryl's own filled-in canonical files are not copied as target project truth.
+4. Do not edit generated shims manually. Edit `.beryl/agent/tool-instruction-template.md` and run:
 
 ```bash
 ./.beryl/agent/scripts/sync-agent-env.sh
@@ -31,6 +32,7 @@ Fill these files before feature implementation:
 Then run:
 
 ```bash
+./.beryl/agent/scripts/seed-agent-context.sh
 ./.beryl/agent/scripts/sync-agent-env.sh
 ./.beryl/agent/scripts/agent-doctor.sh
 ./.beryl/scripts/check.sh
