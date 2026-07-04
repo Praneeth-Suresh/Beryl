@@ -188,6 +188,14 @@ Beryl keeps the model flexible while making the repository contract explicit.
 | Deterministic checks | Turns review from vibes into repeatable evidence.                    |
 | Human review         | Keeps responsibility with the engineer, not the model.               |
 
+## Origin
+
+I built Beryl because I could not stay awake all night steering an agent.
+
+I needed the work done to my standard, but supervising every step in real time did not scale. The moment I stopped watching, quality drifted. So instead of babysitting the agent, I pushed the discipline into the repository itself: the context it must read, the workflow it must choose, the checks it must pass, and the review boundaries it cannot cross. If the guarantees live in the repo, the agent can run unattended and still land work I trust enough to review in the morning.
+
+Beryl started as a personal project I kept reaching for. It carries the research I have done on agentic engineering and context management, and I am putting it out in the hope that it delivers the same value to others.
+
 ## Repository Status
 
 Beryl is a repository control plane for disciplined agentic engineering. Its strongest claim is not that agents become perfect; it is that the repository gets hard, inspectable guarantees before agent work begins.
