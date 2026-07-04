@@ -1,0 +1,19 @@
+<svg width="260" height="300" viewBox="70 45 280 330" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Beryl monochrome logo</title>
+  <desc id="desc">Monochrome Beryl logo mark for constrained output channels.</desc>
+  <g>
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" fill="#0F766E"/>
+    <path d="M210 64L318 128L260 146L210 64Z" fill="#0F766E" fill-opacity="0.78"/>
+    <path d="M210 64L160 146L102 128L210 64Z" fill="#0F766E" fill-opacity="0.86"/>
+    <path d="M160 146L210 64L260 146L210 186L160 146Z" fill="#0F766E"/>
+    <path d="M102 128L160 146L138 250L102 252L102 128Z" fill="#0F766E"/>
+    <path d="M318 128L260 146L282 250L318 252L318 128Z" fill="#0F766E"/>
+    <path d="M160 146L210 186L138 250L160 146Z" fill="#0F766E"/>
+    <path d="M260 146L210 186L282 250L260 146Z" fill="#0F766E"/>
+    <path d="M138 250L210 186L282 250L210 356L138 250Z" fill="#0F766E"/>
+    <path d="M102 252L138 250L210 356L102 252Z" fill="#0F766E"/>
+    <path d="M318 252L282 250L210 356L318 252Z" fill="#0F766E"/>
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" stroke="#0F766E" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M160 146L260 146M160 146L138 250M260 146L282 250M210 186L138 250M210 186L282 250M210 186L210 64M138 250L210 356M282 250L210 356" stroke="#0F766E" stroke-opacity="0.52" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

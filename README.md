@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/beryl-logo.svg" alt="Beryl logo" width="220" />
+  <img src="assets/beryl-logo.svg" alt="Beryl faceted emerald logo mark" width="220" />
 </p>
 
 <h1 align="center">Beryl</h1>
@@ -57,6 +57,18 @@ Key pieces:
 - `.beryl/scripts/`: deterministic checks, test manifest tooling, affected-test routing, and project setup.
 - `.beryl/githooks/`: optional local pre-commit guardrails.
 - `.beryl/driver/`: prompt driver utilities for repeatable plan, implement, verify, and commit flows.
+
+### Brand Toolkit
+
+Primary and variant marks live under `assets/`:
+
+- Full logo: `assets/beryl-logo.svg`
+- Square mark: `assets/beryl-logo-square.svg`
+- Monochrome mark: `assets/beryl-logo-monochrome.svg`
+- Inverted mark: `assets/beryl-logo-inverted.svg`
+- Favicon mark: `assets/favicon.svg`
+- Social preview: `assets/beryl-social-preview.svg`
+- Brand guide: `assets/brand/beryl-brand-guide.md`
 
 ## Who It Is For
 

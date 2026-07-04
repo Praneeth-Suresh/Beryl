@@ -1,0 +1,27 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(220 100) scale(2.35)">
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" fill="#10B981"/>
+    <path d="M210 64L318 128L260 146L210 64Z" fill="#B9F8DE" fill-opacity="0.78"/>
+    <path d="M210 64L160 146L102 128L210 64Z" fill="#6EE7B7" fill-opacity="0.86"/>
+    <path d="M160 146L210 64L260 146L210 186L160 146Z" fill="#34D399"/>
+    <path d="M102 128L160 146L138 250L102 252L102 128Z" fill="#059669"/>
+    <path d="M318 128L260 146L282 250L318 252L318 128Z" fill="#047857"/>
+    <path d="M160 146L210 186L138 250L160 146Z" fill="#10B981"/>
+    <path d="M260 146L210 186L282 250L260 146Z" fill="#0F766E"/>
+    <path d="M138 250L210 186L282 250L210 356L138 250Z" fill="#065F46"/>
+    <path d="M102 252L138 250L210 356L102 252Z" fill="#047857"/>
+    <path d="M318 252L282 250L210 356L318 252Z" fill="#064E3B"/>
+    <path d="M210 64L318 128L318 252L210 356L102 252L102 128L210 64Z" stroke="#ECFDF5" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M160 146L260 146M160 146L138 250M260 146L282 250M210 186L138 250M210 186L282 250M210 186L210 64M138 250L210 356M282 250L210 356" stroke="#ECFDF5" stroke-opacity="0.52" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="640" y="470" fill="#ECFDF5" font-size="80" font-family="Arial, Helvetica, sans-serif" font-weight="700">Beryl</text>
+  <text x="640" y="545" fill="#BAF0D6" font-size="34" font-family="Arial, Helvetica, sans-serif">Inspectable control plane for AI-assisted engineering</text>
+  <rect x="640" y="560" width="180" height="2" fill="#34D399"/>
+</svg>
