@@ -42,10 +42,11 @@ automatically, the quickstart should teach the *simple* prompt, not the old boil
    layout under `.beryl/`. Do not invent commands.
 6. End with a short "where to go deeper" pointer back to `Cheatsheet.md`, `Practise.md`,
    `Theory.md`, and the relevant `.beryl/agent/` docs so the quickstart stays lean.
-7. Hyperlink the quickstart prominently from `README.md`: add it near the top of the "Quick Start"
+7. Make the `README.md` more concise. When a new user who wants to find out about the repository reads through the `README.md`, they should be shown only what they need but everything they need to know. They should not be given unecessary texts or essays that don't affect them. People's attention is dififcult to grab so be sure to be attention grabbing because the `README.md` is where people make a decision about the product.
+8. Hyperlink the quickstart prominently from `README.md`: add it near the top of the "Quick Start"
    section (and to the "Documentation Map") as the recommended first read, with a one-line
    description consistent with the map's existing entry style.
-8. Keep the quickstart consistent with the auto-loaded operating contract from Task 07: it must not
+9. Keep the quickstart consistent with the auto-loaded operating contract from Task 07: it must not
    reintroduce the instruction boilerplate that Task 07 removes.
 
 ## Acceptance checks

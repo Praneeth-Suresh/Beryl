@@ -100,6 +100,55 @@ is_rate_limited() {
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
+# ── Driver config parsing and runtime cleanup ─────────────────────────────
+driver_bool_value() {
+  local name="$1" value="$2"
+  case "${value,,}" in
+    1|true|yes|on) echo "true" ;;
+    0|false|no|off) echo "false" ;;
+    *) die "invalid $name='$value'; expected one of true/false, yes/no, on/off, or 1/0" ;;
+  esac
+}
+
+path_is_git_tracked() {
+  local path="$1" rel
+  case "$path" in
+    "$REPO_ROOT"/*) rel="${path#"$REPO_ROOT"/}" ;;
+    *) rel="$path" ;;
+  esac
+  git -C "$REPO_ROOT" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1
+}
+
+clear_runtime_root() {
+  local root="$1" removed=0 preserved=0 item
+  mkdir -p "$root"
+
+  while IFS= read -r -d '' item; do
+    if path_is_git_tracked "$item"; then
+      preserved=$((preserved + 1))
+      continue
+    fi
+
+    if [ -d "$item" ] && [ ! -L "$item" ]; then
+      if rmdir -- "$item" 2>/dev/null; then
+        removed=$((removed + 1))
+      fi
+    elif rm -f -- "$item"; then
+      removed=$((removed + 1))
+    fi
+  done < <(find "$root" -mindepth 1 -depth -print0)
+
+  mkdir -p "$root"
+  printf '%s %s\n' "$removed" "$preserved"
+}
+
+flush_driver_runtime() {
+  local state_counts logs_counts
+  state_counts="$(clear_runtime_root "$(state_root)")"
+  logs_counts="$(clear_runtime_root "$(logs_root)")"
+  printf '%s %s\n' "$state_counts" "$logs_counts"
+}
+
 # ── Codex invocation ──────────────────────────────────────────────────────--
 # run_agent PROMPT LOGFILE -> exit code of the session (tee'd to LOGFILE)
 run_agent() {

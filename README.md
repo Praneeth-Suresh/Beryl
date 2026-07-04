@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/repository-agent--ready-0f766e?style=for-the-badge" alt="Agent-ready repository" />
-  <img src="https://img.shields.io/badge/guarantees-deterministic-2563eb?style=for-the-badge" alt="Deterministic guarantees" />
-  <img src="https://img.shields.io/badge/review-human%20owned-111827?style=for-the-badge" alt="Human owned review" />
-  <img src="https://img.shields.io/badge/control-plane-installable-b45309?style=for-the-badge" alt="Installable control plane" />
+  <img src="https://img.shields.io/static/v1?label=repository&amp;message=agent-ready&amp;color=0f766e&amp;labelColor=111827&amp;style=flat-square" alt="Agent-ready repository" />
+  <img src="https://img.shields.io/static/v1?label=checks&amp;message=deterministic&amp;color=2563eb&amp;labelColor=111827&amp;style=flat-square" alt="Deterministic checks" />
+  <img src="https://img.shields.io/static/v1?label=review&amp;message=human-owned&amp;color=111827&amp;labelColor=111827&amp;style=flat-square" alt="Human-owned review" />
+  <img src="https://img.shields.io/static/v1?label=control%20plane&amp;message=installable&amp;color=b45309&amp;labelColor=111827&amp;style=flat-square" alt="Installable control plane" />
 </p>
 
 Beryl is a hard guarantee layer for AI-assisted software development. It installs into a repository and turns vague agent behavior into an explicit operating contract: what context must be read, which workflows are allowed, what checks must run, which files are generated, and where human review remains responsible.

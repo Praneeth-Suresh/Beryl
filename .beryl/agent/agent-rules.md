@@ -1,5 +1,18 @@
 # Agent Rules
 
+## Always-On Operating Defaults
+
+These defaults apply in every agent session even when the user does not restate them. Users only need to mention a default when opting out of or overriding it for the current prompt, such as explicitly allowing sub-agents.
+
+1. Route work through `.beryl/agent/task-routing.md` and the matching workflow skill before editing.
+2. Treat ratified feature implementation as `adding-features` work by default.
+3. Use `.beryl/agent/session-state.md` only as internal temporary state when needed.
+4. After edits, run the formatter command if configured, then narrow checks, then `./.beryl/scripts/check.sh`.
+5. Clear temporary session state when the feature, repair, or debugging thread is complete.
+6. Never weaken tests to make implementation pass.
+7. If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
+8. Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
+
 ## Before Coding
 
 1. Read `.beryl/agent/task-routing.md`, classify the task, and load only the matching workflow skill.
@@ -49,11 +62,12 @@ After a long product run, if the user asks for cleanup or extraction review:
 
 ## Before Finishing
 
-1. Run `./.beryl/scripts/check.sh`.
-2. Run any task-specific checks defined in `.beryl/agent/testing-policy.md`.
-3. Update glossary/design tree/architecture/ADRs if durable design changed.
-4. Clear `.beryl/agent/session-state.md` when temporary implementation state is no longer needed.
-5. Clear resolved session error history after debugging succeeds.
+1. Run the formatter command if configured.
+2. Run narrow checks and any task-specific checks defined in `.beryl/agent/testing-policy.md`.
+3. Run `./.beryl/scripts/check.sh`.
+4. Update glossary/design tree/architecture/ADRs if durable design changed.
+5. Clear `.beryl/agent/session-state.md` when temporary implementation state is no longer needed.
+6. Clear resolved session error history after debugging succeeds.
 
 ## Final Response Contract
 

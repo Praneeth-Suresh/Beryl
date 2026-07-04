@@ -28,6 +28,18 @@ Then read the smallest relevant set of canonical files requested by that workflo
 
 Load additional files only when relevant.
 
+## Always-On Operating Contract
+
+These operating defaults apply in every agent session even when the user does not restate them. Users only need to speak up when they want to opt out of or override a default for the current prompt, such as explicitly allowing sub-agents.
+
+- Route work through `.beryl/agent/task-routing.md` and the matching workflow skill before editing.
+- Treat ratified feature implementation as `adding-features` work by default.
+- Use `.beryl/agent/session-state.md` only as internal temporary state when needed, and clear it when the feature, repair, or debugging thread is complete.
+- After edits, run the formatter command if one is configured, then narrow checks, then the broader deterministic gate `./.beryl/scripts/check.sh`.
+- Never weaken tests to make implementation pass.
+- If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
+- Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
+
 ## Skill Use
 
 Skills live in `.beryl/agent/skills/<skill-name>/SKILL.md`.
@@ -61,7 +73,7 @@ Do not use sub-agents unless the user explicitly asks for sub-agents, parallel a
 5. For non-trivial work with multiple viable implementation paths, present the options and wait for user approval unless the user explicitly allowed you to choose.
 6. Before coding, state commit boundaries: one purpose, expected files, and validating check command per boundary.
 7. Implement one internal feature slice.
-8. Run narrow checks, then broader checks.
+8. Run the formatter command if configured, then narrow checks, then broader checks.
 9. Repair from actual tool output.
 10. Update glossary/design-tree/architecture/ADR files if design knowledge changed.
 

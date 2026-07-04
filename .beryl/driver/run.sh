@@ -8,6 +8,8 @@
 #   bash .beryl/driver/run.sh --task 03       # one task
 #   bash .beryl/driver/run.sh --from 02       # from task 02 onward
 #   bash .beryl/driver/run.sh --resume        # skip committed, resume current
+#   bash .beryl/driver/run.sh --flush-on-complete      # force cleanup on successful full run
+#   bash .beryl/driver/run.sh --no-flush-on-complete   # preserve runtime state/logs this run
 #   bash .beryl/driver/run.sh --status        # print status table and exit
 #   bash .beryl/driver/run.sh --selftest      # control-flow self-test (use with DRIVER_MOCK=1)
 set -u
@@ -16,12 +18,12 @@ DRIVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DRIVER_DIR
 
 # ── Load config ──────────────────────────────────────────────────────────--
+# Source checked-in defaults first; local config.env may then override them.
+# shellcheck disable=SC1090
+. "$DRIVER_DIR/config.example.env"
 if [ -f "$DRIVER_DIR/config.env" ]; then
   # shellcheck disable=SC1090
   . "$DRIVER_DIR/config.env"
-else
-  # shellcheck disable=SC1090
-  . "$DRIVER_DIR/config.example.env"
 fi
 VERIFY_FRONTEND_PORT_SETTING="$VERIFY_FRONTEND_PORT"
 VERIFY_BACKEND_PORT_SETTING="$VERIFY_BACKEND_PORT"
@@ -30,13 +32,15 @@ export REPO_ROOT WORK_BRANCH BASE_BRANCH VERIFY_BASE_URL VERIFY_API_URL \
        MAX_ATTEMPTS CODEX_BIN CODEX_MODEL CODEX_PROFILE CODEX_SANDBOX \
        CODEX_APPROVAL CODEX_EXTRA_ARGS DRIVER_MOCK \
        RATE_LIMIT_COOLDOWN MAX_RATE_LIMIT_WAITS VERIFY_STACK_MODE \
-       VERIFY_FRONTEND_PORT_SETTING VERIFY_BACKEND_PORT_SETTING
+       VERIFY_FRONTEND_PORT_SETTING VERIFY_BACKEND_PORT_SETTING \
+       FLUSH_ON_COMPLETE
 
 # shellcheck disable=SC1091
 . "$DRIVER_DIR/lib/common.sh"
 
 # ── Args ─────────────────────────────────────────────────────────────────--
 ONLY_TASK=""; FROM_TASK=""; MODE="run"
+FLUSH_ON_COMPLETE_CLI=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --task) ONLY_TASK="$2"; shift 2 ;;
@@ -44,10 +48,18 @@ while [ $# -gt 0 ]; do
     --resume) MODE="resume"; shift ;;
     --status) MODE="status"; shift ;;
     --selftest) MODE="selftest"; shift ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    --flush-on-complete) FLUSH_ON_COMPLETE_CLI="true"; shift ;;
+    --no-flush-on-complete) FLUSH_ON_COMPLETE_CLI="false"; shift ;;
+    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
     *) die "unknown arg: $1" ;;
   esac
 done
+
+FLUSH_ON_COMPLETE="${FLUSH_ON_COMPLETE:-true}"
+EFFECTIVE_FLUSH_ON_COMPLETE="$(driver_bool_value "FLUSH_ON_COMPLETE" "$FLUSH_ON_COMPLETE")"
+if [ -n "$FLUSH_ON_COMPLETE_CLI" ]; then
+  EFFECTIVE_FLUSH_ON_COMPLETE="$(driver_bool_value "flush-on-complete CLI override" "$FLUSH_ON_COMPLETE_CLI")"
+fi
 
 RUN_ID="$(date '+%Y%m%d-%H%M%S')"
 RUN_LOG_DIR="$(logs_root)/$RUN_ID"
@@ -90,6 +102,43 @@ write_verify_stack_failure_state() {
       printf 'Verification stack startup failed; no failure detail file was written.\n'
     fi
   } > "$sd/verify.txt"
+}
+
+full_run_selected() {
+  [ -z "$ONLY_TASK" ] && [ -z "$FROM_TASK" ]
+}
+
+flush_skip_reason() {
+  if [ "$EFFECTIVE_FLUSH_ON_COMPLETE" != "true" ]; then
+    echo "disabled by config or CLI"
+    return 0
+  fi
+  if ! full_run_selected; then
+    if [ -n "$ONLY_TASK" ]; then
+      echo "scoped run selected by --task $ONLY_TASK"
+    else
+      echo "scoped run selected by --from $FROM_TASK"
+    fi
+    return 0
+  fi
+  echo ""
+}
+
+finish_successful_run() {
+  local reason counts state_removed state_preserved logs_removed logs_preserved
+  reason="$(flush_skip_reason)"
+  if [ -n "$reason" ]; then
+    log "runtime flush skipped: $reason; preserving driver state and logs."
+    return 0
+  fi
+
+  counts="$(flush_driver_runtime)"
+  set -- $counts
+  state_removed="$1"
+  state_preserved="$2"
+  logs_removed="$3"
+  logs_preserved="$4"
+  log "runtime flush cleared driver state/logs after successful full run: removed ${state_removed} state item(s), ${logs_removed} log item(s); preserved ${state_preserved} tracked state file(s), ${logs_preserved} tracked log file(s)."
 }
 
 # ── One phase runner: sets global PHASE_LOG; returns agent exit code ───────--
@@ -446,11 +495,13 @@ main() {
     run_task "$id"; rc=$?
     if [ "$rc" -ne 0 ]; then
       warn "stopping at task $id (rc=$rc). Inspect $RUN_LOG_DIR and $(state_dir_for "$id")."
+      warn "runtime flush skipped: task stopped early; preserving driver state and logs for inspection."
       print_status
       exit "$rc"
     fi
   done
   log "all selected tasks committed on branch $WORK_BRANCH (not pushed)."
+  finish_successful_run
   print_status
 }
 

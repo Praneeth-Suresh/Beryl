@@ -111,6 +111,8 @@ bash .beryl/driver/run.sh --task 03       # run a single task by number
 bash .beryl/driver/run.sh --from 02       # run task 02 onward
 bash .beryl/driver/run.sh --status        # print per-task status and exit
 bash .beryl/driver/run.sh --resume        # continue where a previous run stopped
+bash .beryl/driver/run.sh --flush-on-complete      # force full-success cleanup
+bash .beryl/driver/run.sh --no-flush-on-complete   # preserve state/logs this run
 ```
 
 The driver creates/uses `WORK_BRANCH` (default `feat/agent-driver-build`) off
@@ -120,6 +122,31 @@ When all tasks are `committed`, push manually after your own review:
 ```bash
 git push -u origin feat/agent-driver-build   # only when YOU are ready
 ```
+
+## Runtime state and log retention
+
+After an unscoped full run completes successfully, the driver clears accumulated
+runtime material under `.beryl/driver/state/` and `.beryl/driver/logs/`. The
+parent directories remain in place, and any git-tracked placeholder files below
+those roots, such as a future `.gitkeep`, are preserved.
+
+The flush is intentionally narrow:
+
+- It runs only after the task loop reaches the successful all-committed path.
+- Failed, blocked, or interrupted runs preserve state and logs for inspection.
+- Scoped runs using `--task` or `--from` preserve state and logs outside the
+  selected scope.
+- `--resume` without `--task` or `--from` is still a full-run completion
+  candidate.
+- `--status` and `--selftest` never flush runtime material.
+
+`FLUSH_ON_COMPLETE` controls the default behavior. Accepted values are
+`true/false`, `yes/no`, `on/off`, or `1/0`. Precedence is:
+
+1. `--flush-on-complete` or `--no-flush-on-complete` for the current invocation.
+2. `FLUSH_ON_COMPLETE` from `.beryl/driver/config.env`.
+3. The default from `.beryl/driver/config.example.env` when `config.env` is
+   absent.
 
 ## Testing the driver without burning agent sessions
 

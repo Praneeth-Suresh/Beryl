@@ -43,6 +43,11 @@ targets=(
 )
 
 for target in "${targets[@]}"; do
+  if [[ -f "${target}" ]] && cmp -s "${SOURCE}" "${target}"; then
+    printf "already synced: %s\n" "${target#${REPO_ROOT}/}"
+    continue
+  fi
+
   if [[ -e "${target}" ]] && ! cmp -s "${SOURCE}" "${target}"; then
     case "${CONFLICT_POLICY}" in
       fail)

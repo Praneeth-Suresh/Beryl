@@ -327,21 +327,15 @@ If the plan contains more than 10 deliverables, create a plan.md file in the roo
 
 After the agent responds, review the design. If it is coherent, proceed. If not, ask it to revise the design tree first.
 
+Operating contract note: the implementation, continue, resume, and debugging prompts below automatically use the standing routing, session-state, verification, test-discipline, and no-sub-agents defaults from `.beryl/agent/`. Only mention a default when overriding it for one prompt, for example: `Use sub-agents for this prompt.`
+
 Use this after the initial design specification is reviewed and accepted:
 
 ```text
 Implement the complete application from the approved initial design specification.
 
-Use .beryl/agent/task-routing.md and the adding-features workflow.
 Implement one safe internal step at a time.
-Run the formatter command, narrow checks, then ./.beryl/scripts/check.sh.
-For web UI behavior, verify with Playwright MCP.
-Do not use sub-agents unless I explicitly ask for them.
-
-Final response: what changed, checks run/skipped, tests/manifest changed, agent docs/ADRs updated, and whether temporary session state was cleared.
 ```
-
-If you want to use sub-agents, add `Use sub-agents.` to the above prompt.
 
 After the first pass, review missing workflow gaps and continue one safe internal step at a time until complete.
 
@@ -378,36 +372,18 @@ Use .beryl/agent/task-routing.md and the planning workflow.
 Present the plan for my approval. Do not implement yet.
 ```
 
-If you want to use sub-agents, add `Use sub-agents.` to the above prompt.
-
 Feature implementation prompt after approval:
 
 ```text
 Implement the approved feature plan.
-
-Use .beryl/agent/task-routing.md and the adding-features workflow.
-Manage implementation steps internally in .beryl/agent/session-state.md if needed.
-Run the formatter command, narrow checks, then ./.beryl/scripts/check.sh.
-Clear temporary session state when the feature is complete.
-Do not weaken tests. If tests change intentionally, update the test manifest.
-Do not use sub-agents unless I explicitly ask for them.
 ```
-
-If you want to use sub-agents, add `Use sub-agents.` to the above prompt.
 
 Follow-up prompt to continue feature work:
 
 ```text
 Continue the approved feature implementation.
 
-Use .beryl/agent/task-routing.md and the adding-features workflow.
-Resume from .beryl/agent/session-state.md if present.
 Implement only the next safe internal step.
-Run the formatter command, narrow checks, then ./.beryl/scripts/check.sh.
-If blocked, keep the smallest resume note in .beryl/agent/session-state.md and stop.
-
-Do not weaken tests.
-If tests change intentionally, run ./.beryl/scripts/update-test-manifest.sh and explain why.
 ```
 
 Follow-up prompt to repair or resume interrupted work:
@@ -415,13 +391,9 @@ Follow-up prompt to repair or resume interrupted work:
 ```text
 Resume the approved feature implementation.
 
-Use .beryl/agent/session-state.md if present.
 Repair or implement only the next safe internal step.
 Use actual tool output as the source of truth.
-Run the formatter command, narrow checks, then ./.beryl/scripts/check.sh.
-
 Do not broaden scope.
-Clear temporary session state if the feature is complete.
 ```
 
 ## 7.5 Debugging
@@ -435,11 +407,7 @@ Debug this:
 Expected behavior:
 [what should happen]
 
-Use .beryl/agent/task-routing.md and the debugging workflow.
-Use session error history automatically if present.
-Reproduce or inspect the failure first, fix the smallest root cause, then run narrow checks and ./.beryl/scripts/check.sh.
-Keep only compact current-session error summaries in .beryl/agent/session-state.md and clear resolved entries.
-Do not weaken tests.
+Reproduce or inspect the failure first, then fix the smallest root cause.
 ```
 
 Code explanation prompt:
