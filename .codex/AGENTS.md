@@ -1,36 +1,36 @@
 # Agent Operating Instructions
 
-This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `agent/tool-instruction-template.md` and rerun `agent/scripts/sync-agent-env.sh`.
+This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `.beryl/agent/tool-instruction-template.md` and rerun `.beryl/agent/scripts/sync-agent-env.sh`.
 
 You are working in this repository as an implementation agent. Treat repository files as the source of truth. Do not rely on hidden chat history or assumptions when repo-owned instructions answer the question.
 
 ## Instruction Precedence
 
 1. Explicit user instructions for the current task.
-2. Canonical files under `agent/`.
+2. Canonical files under `.beryl/agent/`.
 3. This generated shim.
 4. Existing code, tests, and local conventions.
 
-If this shim conflicts with canonical files under `agent/`, treat this shim as stale, follow `agent/`, and note the conflict.
+If this shim conflicts with canonical files under `.beryl/agent/`, treat this shim as stale, follow `.beryl/agent/`, and note the conflict.
 
 ## Required Context Before Editing
 
-Before changing code or tests, read `agent/task-routing.md`, classify the current task, and load only the matching workflow from `agent/skills/<skill-name>/SKILL.md`.
+Before changing code or tests, read `.beryl/agent/task-routing.md`, classify the current task, and load only the matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
 
 Then read the smallest relevant set of canonical files requested by that workflow:
 
-- `agent/project-brief.md`
-- `agent/design-tree.md`
-- `agent/architecture.md`
-- `agent/ubiquitous-language.md`
-- `agent/testing-policy.md`
-- `agent/agent-rules.md`
+- `.beryl/agent/project-brief.md`
+- `.beryl/agent/design-tree.md`
+- `.beryl/agent/architecture.md`
+- `.beryl/agent/ubiquitous-language.md`
+- `.beryl/agent/testing-policy.md`
+- `.beryl/agent/agent-rules.md`
 
 Load additional files only when relevant.
 
 ## Skill Use
 
-Skills live in `agent/skills/<skill-name>/SKILL.md`.
+Skills live in `.beryl/agent/skills/<skill-name>/SKILL.md`.
 
 Task workflows:
 
@@ -67,7 +67,7 @@ Do not use sub-agents unless the user explicitly asks for sub-agents, parallel a
 
 For feature implementation, an approved plan is mandatory. If no approved plan exists, produce the plan first, present it to the user, and stop. Do not implement until the user ratifies the plan.
 
-Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs or ledgers. Use `agent/session-state.md` for temporary session-specific implementation state when needed, and clear it when the feature is complete. Store only durable decisions in canonical files.
+Feature slices are internal bookkeeping. Do not ask the user to manage slice IDs or ledgers. Use `.beryl/agent/session-state.md` for temporary session-specific implementation state when needed, and clear it when the feature is complete. Store only durable decisions in canonical files.
 
 For post-run cleanup prompts, do not implement new features. Read changed files and return one safe extraction slice only, considering dead selectors, repeated CSS patterns, rendering functions that should be split, generated artifacts that should not be hand-edited, and tests missing for known regressions.
 
@@ -77,12 +77,12 @@ For post-run cleanup prompts, do not implement new features. Read changed files 
 - Keep public interfaces small and explicit.
 - Do not import internals from another bounded context.
 - Keep external systems behind adapters.
-- Use terms from `agent/ubiquitous-language.md`.
+- Use terms from `.beryl/agent/ubiquitous-language.md`.
 - Do not weaken tests to make implementation pass.
 - Do not edit unrelated files.
 - Do not store secrets in repo files, prompts, or logs.
 - Do not let temporary implementation notes accumulate in canonical agent files.
-- Keep session debugging history bounded in `agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
+- Keep session debugging history bounded in `.beryl/agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
 
 Before deleting or consolidating root planning or documentation files, list every file, what is preserved, what is lost, and where replacement content lives, then wait for explicit approval.
 
@@ -96,7 +96,7 @@ For static-site changes, source inspection is not enough. Verify affected genera
 
 ## Verification
 
-Run checks required by `agent/testing-policy.md` and local project tooling.
+Run checks required by `.beryl/agent/testing-policy.md` and local project tooling.
 
 Final response must include:
 
