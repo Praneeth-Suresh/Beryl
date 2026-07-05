@@ -1,0 +1,8 @@
+# Review gate for the trusted tooling layer: these files run as code in CI,
+# at pre-commit, and inside the driver, so changes need owner review.
+/.beryl/scripts/    @Praneeth-Suresh
+/.beryl/githooks/   @Praneeth-Suresh
+/.beryl/driver/     @Praneeth-Suresh
+/.github/           @Praneeth-Suresh
+/install.sh         @Praneeth-Suresh
+*.conf              @Praneeth-Suresh

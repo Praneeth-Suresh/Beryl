@@ -1,12 +1,28 @@
 # Agent Driver
 
 A long-running orchestrator that drives the codebase through a series of large
-changes, one task at a time, using **separate headless `codex exec` sessions** for
+changes, one task at a time, using **separate headless agent sessions** for
 each phase so every step runs with a fresh, full context window.
+
+## Choosing the coding agent
+
+The driver is agent-agnostic. `DRIVER_AGENT` in `config.env` selects which
+coding agent runs each phase session:
+
+- `codex` — OpenAI Codex CLI (`codex exec`)
+- `claude` — Claude Code CLI (`claude -p`)
+- `gemini` — Gemini CLI (`gemini -p`)
+- `custom` — any headless command via `CUSTOM_AGENT_CMD` (the phase prompt is
+  appended as the final argument; the command must print its transcript to
+  stdout and exit non-zero on failure)
+
+If `DRIVER_AGENT` is unset and the driver runs on an interactive terminal, it
+presents this list, lets you pick, and saves the choice to `config.env`.
+Non-interactive runs fail fast with instructions instead of guessing.
 
 ## The cycle
 
-For each task, the driver runs phases as independent `codex exec`
+For each task, the driver runs phases as independent headless agent
 sessions:
 
 ```
@@ -89,7 +105,8 @@ only ever asked to do one bounded phase at a time.
 
 ## Prerequisites
 
-- Codex CLI on PATH (`codex exec`).
+- The selected coding agent CLI on PATH (`codex`, `claude`, `gemini`, or your
+  `CUSTOM_AGENT_CMD` binary).
 - Runtime/browser dependencies only when the task or project check policy
   requires runtime verification.
 - A clean-ish git working tree on the base branch.
@@ -99,7 +116,8 @@ only ever asked to do one bounded phase at a time.
 ```bash
 cd .beryl/driver
 cp config.example.env config.env
-# edit config.env: set CODEX_MODEL/CODEX_PROFILE if desired, confirm branch and verification mode
+# edit config.env: set DRIVER_AGENT (or leave empty to choose interactively),
+# per-agent model/flags if desired, confirm branch and verification mode
 ```
 
 ## Run
@@ -163,8 +181,16 @@ See `lib/common.sh` `mock_*` functions for the scripted behaviors.
 ## Safety notes
 
 - Headless sessions default to `--sandbox workspace-write` and
-  `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`.
-  Review `WORK_BRANCH` diffs before pushing.
+  `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`, but
+  the driver refuses to start in that unattended mode until you set
+  `DRIVER_UNATTENDED_OK="true"` in your local `config.env`. Review
+  `WORK_BRANCH` diffs before pushing.
+- Task briefs (`tasks/*.md`), prompt templates (`prompts/*.md`), and
+  `config.env` are **trusted inputs**: anyone who can edit them steers an
+  unattended agent. Keep them under the same review bar as code, and prefer
+  running the driver inside a container/VM boundary.
+- `CODEX_EXTRA_ARGS` accepts only simple whitespace-separated tokens; quoting
+  and shell metacharacters are rejected rather than word-split.
 - `VERIFY_STACK_MODE` controls optional runtime stack startup:
   - `auto` starts the bundled legacy backend/frontend verifier only when the
     repository has that layout.
@@ -175,6 +201,9 @@ See `lib/common.sh` `mock_*` functions for the scripted behaviors.
   **copy** of the dev SQLite DB, so it never mutates canonical dev data. The
   stack allocates fresh free ports per run (`VERIFY_FRONTEND_PORT=auto`,
   `VERIFY_BACKEND_PORT=auto`) unless fixed ports are configured.
+- The verify stack binds to loopback (`VERIFY_BIND_HOST=127.0.0.1`) so the
+  dev-mode backend and its data copy are never reachable from other hosts.
+  Override only when you need cross-host access and understand the exposure.
 - Rate-limit retries use linear backoff from `RATE_LIMIT_COOLDOWN` and are only
   triggered after a failed Codex process reports a rate-limit style error.
 - The driver commits but never pushes, and never force-operates on git.

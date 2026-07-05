@@ -23,10 +23,24 @@ You get repository-owned defaults for where the contract lives, how work is rout
 
 **Recommended first read:** [Quickstart.md](./Quickstart.md) — short, story-style onboarding from first read to first safe agent task.
 
-Install into this repository with one command:
+Recommended install: download the installer, inspect it, then run it pinned to
+a ref you trust (a tag or commit SHA instead of the moving `main`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh
+curl --proto '=https' --tlsv1.2 -fsSL \
+  https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh -o beryl-install.sh
+less beryl-install.sh   # inspect before executing
+sh beryl-install.sh --ref <tag-or-commit-sha>
+```
+
+To verify the downloaded archive against a published digest, add
+`--expected-sha256 <hex>`; the installer refuses to install on mismatch.
+
+Convenience one-liner (executes remote code without inspection — only use it
+when you accept that trade-off):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh | sh
 ```
 
 Run the primary repo safety gate:
@@ -47,10 +61,10 @@ Optional local pre-commit guardrail:
 git config core.hooksPath .beryl/githooks
 ```
 
-Prefer the one-command install profile if you know your target profile:
+Pass a profile if you know your target profile:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh -s -- --profile minimal
+sh beryl-install.sh --ref <tag-or-commit-sha> --profile minimal
 ```
 
 ## Documentation Map

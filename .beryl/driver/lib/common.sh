@@ -156,7 +156,160 @@ flush_driver_runtime() {
   printf '%s %s\n' "$state_counts" "$logs_counts"
 }
 
-# ── Codex invocation ──────────────────────────────────────────────────────--
+# ── Agent selection ───────────────────────────────────────────────────────--
+# The driver supports multiple coding agents. DRIVER_AGENT picks one; when it
+# is unset on an interactive terminal the user chooses from a menu and the
+# choice is persisted to config.env for future runs.
+driver_agent_bin() {
+  case "${DRIVER_AGENT:-codex}" in
+    codex)  echo "${CODEX_BIN:-codex}" ;;
+    claude) echo "${CLAUDE_BIN:-claude}" ;;
+    gemini) echo "${GEMINI_BIN:-gemini}" ;;
+    custom) tokenize_extra_args "${CUSTOM_AGENT_CMD:-}"; echo "${EXTRA_ARG_TOKENS[0]:-}" ;;
+  esac
+}
+
+persist_driver_agent() {
+  local cfg="$DRIVER_DIR/config.env"
+  if [ ! -f "$cfg" ]; then
+    printf '# Local driver overrides (gitignored). See config.example.env.\n' > "$cfg"
+  fi
+  printf 'DRIVER_AGENT="%s"\n' "$DRIVER_AGENT" >> "$cfg"
+  log "saved DRIVER_AGENT=\"$DRIVER_AGENT\" to .beryl/driver/config.env"
+}
+
+select_driver_agent() {
+  case "${DRIVER_AGENT:-}" in
+    codex|claude|gemini|custom) ;;
+    "")
+      if [ "${DRIVER_MOCK:-0}" = "1" ]; then
+        DRIVER_AGENT="codex"; export DRIVER_AGENT; return 0
+      fi
+      if [ ! -t 0 ]; then
+        die "DRIVER_AGENT is not set. Set it in .beryl/driver/config.env (codex, claude, gemini, or custom), or run the driver from an interactive terminal to choose."
+      fi
+      printf '\nSelect the coding agent the driver should run:\n' >&2
+      printf '  1) codex   - OpenAI Codex CLI (codex exec)\n' >&2
+      printf '  2) claude  - Claude Code CLI (claude -p)\n' >&2
+      printf '  3) gemini  - Gemini CLI (gemini -p)\n' >&2
+      printf '  4) custom  - your own command via CUSTOM_AGENT_CMD\n' >&2
+      local choice
+      while :; do
+        printf 'Choice [1-4]: ' >&2
+        read -r choice || die "no agent selected"
+        case "$choice" in
+          1|codex)  DRIVER_AGENT="codex";  break ;;
+          2|claude) DRIVER_AGENT="claude"; break ;;
+          3|gemini) DRIVER_AGENT="gemini"; break ;;
+          4|custom) DRIVER_AGENT="custom"; break ;;
+          *) printf 'invalid choice: %s\n' "$choice" >&2 ;;
+        esac
+      done
+      export DRIVER_AGENT
+      persist_driver_agent
+      ;;
+    *)
+      die "invalid DRIVER_AGENT='${DRIVER_AGENT}'; expected codex, claude, gemini, or custom"
+      ;;
+  esac
+
+  if [ "${DRIVER_MOCK:-0}" != "1" ]; then
+    if [ "$DRIVER_AGENT" = "custom" ] && [ -z "${CUSTOM_AGENT_CMD:-}" ]; then
+      die "DRIVER_AGENT=\"custom\" requires CUSTOM_AGENT_CMD in .beryl/driver/config.env"
+    fi
+    local bin; bin="$(driver_agent_bin)"
+    command_exists "$bin" || die "agent binary '$bin' for DRIVER_AGENT=\"$DRIVER_AGENT\" is not on PATH"
+  fi
+}
+
+# ── Agent safety gates ────────────────────────────────────────────────────--
+# Unattended mode (no approval prompts + writable filesystem) must be an
+# explicit, acknowledged opt-in, not a silent default — whichever agent runs.
+require_unattended_ack() {
+  [ "${DRIVER_MOCK:-0}" = "1" ] && return 0
+  local why=""
+  case "${DRIVER_AGENT:-codex}" in
+    codex)
+      [ "${CODEX_APPROVAL:-}" = "never" ] && why="CODEX_APPROVAL=\"never\""
+      ;;
+    claude)
+      [ "${CLAUDE_PERMISSION_MODE:-bypassPermissions}" = "bypassPermissions" ] && why="CLAUDE_PERMISSION_MODE=\"bypassPermissions\""
+      ;;
+    gemini)
+      [ "${GEMINI_APPROVAL_MODE:-yolo}" = "yolo" ] && why="GEMINI_APPROVAL_MODE=\"yolo\""
+      ;;
+    custom)
+      why="DRIVER_AGENT=\"custom\" (the driver cannot verify its approval behavior)"
+      ;;
+  esac
+  [ -n "$why" ] || return 0
+  if [ "$(driver_bool_value "DRIVER_UNATTENDED_OK" "${DRIVER_UNATTENDED_OK:-false}")" != "true" ]; then
+    die "$why runs a code-writing agent with no human approval and filesystem write access. If you accept that (ideally inside a container/VM), set DRIVER_UNATTENDED_OK=\"true\" in .beryl/driver/config.env."
+  fi
+  warn "unattended mode enabled: agent=${DRIVER_AGENT:-codex} ($why). Task briefs, prompts, and config.env are trusted inputs — review WORK_BRANCH diffs before pushing."
+}
+
+# Whitespace-split CODEX_EXTRA_ARGS into EXTRA_ARG_TOKENS with a strict
+# per-token charset, so config.env content cannot expand into quoting tricks
+# or shell metacharacters.
+tokenize_extra_args() {
+  local raw="$1" tok
+  EXTRA_ARG_TOKENS=()
+  read -r -a EXTRA_ARG_TOKENS <<< "$raw"
+  for tok in "${EXTRA_ARG_TOKENS[@]}"; do
+    [[ "$tok" =~ ^[A-Za-z0-9._=/,:@+-]+$ ]] \
+      || die "CODEX_EXTRA_ARGS contains an unsupported token: $tok (allowed: letters, digits, ._=/,:@+-)"
+  done
+}
+
+# ── Agent invocation ──────────────────────────────────────────────────────--
+# build_agent_cmd PROMPT -> fills AGENT_CMD with the full per-agent command.
+# Every preset must run headlessly, print its transcript to stdout, and exit
+# non-zero on failure; the prompt is always the final argument.
+build_agent_cmd() {
+  local prompt="$1"
+  AGENT_CMD=()
+  case "${DRIVER_AGENT:-codex}" in
+    codex)
+      AGENT_CMD=("${CODEX_BIN:-codex}" exec -C "$REPO_ROOT")
+      [ -n "${CODEX_MODEL:-}" ] && AGENT_CMD+=(--model "$CODEX_MODEL")
+      [ -n "${CODEX_PROFILE:-}" ] && AGENT_CMD+=(--profile "$CODEX_PROFILE")
+      [ -n "${CODEX_SANDBOX:-}" ] && AGENT_CMD+=(--sandbox "$CODEX_SANDBOX")
+      [ -n "${CODEX_APPROVAL:-}" ] && AGENT_CMD+=(-c "approval_policy=\"$CODEX_APPROVAL\"")
+      tokenize_extra_args "${CODEX_EXTRA_ARGS:-}"
+      AGENT_CMD+=("${EXTRA_ARG_TOKENS[@]}")
+      ;;
+    claude)
+      AGENT_CMD=("${CLAUDE_BIN:-claude}" -p)
+      [ -n "${CLAUDE_MODEL:-}" ] && AGENT_CMD+=(--model "$CLAUDE_MODEL")
+      if [ "${CLAUDE_PERMISSION_MODE:-bypassPermissions}" = "bypassPermissions" ]; then
+        AGENT_CMD+=(--dangerously-skip-permissions)
+      else
+        AGENT_CMD+=(--permission-mode "$CLAUDE_PERMISSION_MODE")
+      fi
+      tokenize_extra_args "${CLAUDE_EXTRA_ARGS:-}"
+      AGENT_CMD+=("${EXTRA_ARG_TOKENS[@]}")
+      ;;
+    gemini)
+      AGENT_CMD=("${GEMINI_BIN:-gemini}")
+      [ -n "${GEMINI_MODEL:-}" ] && AGENT_CMD+=(--model "$GEMINI_MODEL")
+      AGENT_CMD+=(--approval-mode "${GEMINI_APPROVAL_MODE:-yolo}")
+      tokenize_extra_args "${GEMINI_EXTRA_ARGS:-}"
+      AGENT_CMD+=("${EXTRA_ARG_TOKENS[@]}")
+      AGENT_CMD+=(-p)
+      ;;
+    custom)
+      [ -n "${CUSTOM_AGENT_CMD:-}" ] || die "DRIVER_AGENT=\"custom\" requires CUSTOM_AGENT_CMD in .beryl/driver/config.env"
+      tokenize_extra_args "${CUSTOM_AGENT_CMD}"
+      AGENT_CMD=("${EXTRA_ARG_TOKENS[@]}")
+      ;;
+    *)
+      die "invalid DRIVER_AGENT='${DRIVER_AGENT:-}'; expected codex, claude, gemini, or custom"
+      ;;
+  esac
+  AGENT_CMD+=("$prompt")
+}
+
 # run_agent PROMPT LOGFILE -> exit code of the session (tee'd to LOGFILE)
 run_agent() {
   local prompt="$1" logfile="$2"
@@ -165,15 +318,8 @@ run_agent() {
     mock_agent "$prompt" | tee "$logfile"
     return "${PIPESTATUS[0]}"
   fi
-  local args=(exec -C "$REPO_ROOT")
-  [ -n "${CODEX_MODEL:-}" ] && args+=(--model "$CODEX_MODEL")
-  [ -n "${CODEX_PROFILE:-}" ] && args+=(--profile "$CODEX_PROFILE")
-  [ -n "${CODEX_SANDBOX:-}" ] && args+=(--sandbox "$CODEX_SANDBOX")
-  [ -n "${CODEX_APPROVAL:-}" ] && args+=(-c "approval_policy=\"$CODEX_APPROVAL\"")
-  # shellcheck disable=SC2206
-  args+=(${CODEX_EXTRA_ARGS:-})
-  args+=("$prompt")
-  "${CODEX_BIN:-codex}" "${args[@]}" 2>&1 | tee "$logfile"
+  build_agent_cmd "$prompt"
+  "${AGENT_CMD[@]}" 2>&1 | tee "$logfile"
   return "${PIPESTATUS[0]}"
 }
 
@@ -400,7 +546,7 @@ start_verify_stack() {
       DATABASE_URL="sqlite:///./$(basename "$VERIFY_DB")" \
       ENVIRONMENT=development \
       setsid "$REPO_ROOT/.venv/bin/python" -m uvicorn src.main:app \
-        --host 0.0.0.0 --port "$VERIFY_BACKEND_PORT" \
+        --host "${VERIFY_BIND_HOST:-127.0.0.1}" --port "$VERIFY_BACKEND_PORT" \
         > "$RUN_LOG_DIR/verify-backend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.be.pid" )
   else
     ( cd "$REPO_ROOT/backend" && \
@@ -408,7 +554,7 @@ start_verify_stack() {
       DATABASE_URL="sqlite:///./$(basename "$VERIFY_DB")" \
       ENVIRONMENT=development \
       "$REPO_ROOT/.venv/bin/python" -m uvicorn src.main:app \
-        --host 0.0.0.0 --port "$VERIFY_BACKEND_PORT" \
+        --host "${VERIFY_BIND_HOST:-127.0.0.1}" --port "$VERIFY_BACKEND_PORT" \
         > "$RUN_LOG_DIR/verify-backend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.be.pid" )
   fi
   VSTACK_BACKEND_PID="$(cat "$RUN_LOG_DIR/.be.pid")"
@@ -429,7 +575,7 @@ start_verify_stack() {
         > "$RUN_LOG_DIR/verify-frontend.log" && \
       NEXT_PUBLIC_API_URL="$VERIFY_API_URL" \
       NEXT_DIST_DIR="$VSTACK_FRONTEND_DIST_DIR" \
-      setsid npx next dev -p "$VERIFY_FRONTEND_PORT" \
+      setsid npx next dev -H "${VERIFY_BIND_HOST:-127.0.0.1}" -p "$VERIFY_FRONTEND_PORT" \
         >> "$RUN_LOG_DIR/verify-frontend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.fe.pid" )
   else
     ( cd "$REPO_ROOT/frontend" && \
@@ -438,7 +584,7 @@ start_verify_stack() {
         > "$RUN_LOG_DIR/verify-frontend.log" && \
       NEXT_PUBLIC_API_URL="$VERIFY_API_URL" \
       NEXT_DIST_DIR="$VSTACK_FRONTEND_DIST_DIR" \
-      npx next dev -p "$VERIFY_FRONTEND_PORT" \
+      npx next dev -H "${VERIFY_BIND_HOST:-127.0.0.1}" -p "$VERIFY_FRONTEND_PORT" \
         >> "$RUN_LOG_DIR/verify-frontend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.fe.pid" )
   fi
   VSTACK_FRONTEND_PID="$(cat "$RUN_LOG_DIR/.fe.pid")"

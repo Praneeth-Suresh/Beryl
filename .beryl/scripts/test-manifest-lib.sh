@@ -41,10 +41,10 @@ tm_load_manifest_config() {
   INCLUDE_GLOBS=()
   EXCLUDE_GLOBS=()
 
-  if [[ -f "${config_path}" ]]; then
-    # shellcheck disable=SC1090
-    source "${config_path}"
-  fi
+  # shellcheck source=safe-conf.sh
+  source "${beryl_root}/scripts/safe-conf.sh"
+  # Parsed as data, never sourced (see safe-conf.sh).
+  sc_load_conf "${config_path}" MANIFEST_PATH INCLUDE_GLOBS EXCLUDE_GLOBS
 
   if [[ -z "${MANIFEST_PATH}" ]]; then
     MANIFEST_PATH="tests/.manifest.sha256"
