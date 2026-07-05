@@ -26,7 +26,7 @@ You get repository-owned defaults for where the contract lives, how work is rout
 Install into this repository with one command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh | sh
 ```
 
 Run the primary repo safety gate:
@@ -50,7 +50,7 @@ git config core.hooksPath .beryl/githooks
 Prefer the one-command install profile if you know your target profile:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/praneeth/Beryl/main/install.sh | sh -s -- --profile minimal
+curl -fsSL https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh | sh -s -- --profile minimal
 ```
 
 ## Documentation Map

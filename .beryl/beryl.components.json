@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "installerVersion": "1",
   "sourceRef": "main",
-  "rawBaseUrl": "https://raw.githubusercontent.com/praneeth/Beryl/main",
-  "archiveUrl": "https://codeload.github.com/praneeth/Beryl/tar.gz/main",
+  "rawBaseUrl": "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main",
+  "archiveUrl": "https://codeload.github.com/Praneeth-Suresh/Beryl/tar.gz/main",
   "rootShims": ["AGENTS.md","CLAUDE.md",".cursor/rules/agent-rules.md",".github/copilot-instructions.md",".codex/AGENTS.md"],
   "profiles": [
     {"kind":"profile","name":"minimal","components":["agent-core","tool-shims"]},

@@ -2,9 +2,12 @@
 set -eu
 
 INSTALLER_VERSION="1"
+# Canonical repository slug. Every default URL must be derived from this so a
+# single owner rename cannot leave a stale (potentially claimable) slug behind.
+REPO_SLUG="Praneeth-Suresh/Beryl"
 DEFAULT_REF="main"
-DEFAULT_RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/main"
-DEFAULT_ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/main"
+DEFAULT_RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$DEFAULT_REF"
+DEFAULT_ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$DEFAULT_REF"
 
 fail() {
   printf "ERROR: %s\n" "$*" >&2
@@ -274,14 +277,14 @@ while [ "$#" -gt 0 ]; do
     --ref)
       [ "$#" -ge 2 ] || fail "--ref requires a value"
       SOURCE_REF="$2"
-      RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/$SOURCE_REF"
-      ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/$SOURCE_REF"
+      RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$SOURCE_REF"
+      ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$SOURCE_REF"
       shift 2
       ;;
     --ref=*)
       SOURCE_REF="${1#--ref=}"
-      RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/$SOURCE_REF"
-      ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/$SOURCE_REF"
+      RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$SOURCE_REF"
+      ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$SOURCE_REF"
       shift
       ;;
     --raw-base-url)
