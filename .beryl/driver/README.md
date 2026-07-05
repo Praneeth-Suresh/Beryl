@@ -175,6 +175,9 @@ See `lib/common.sh` `mock_*` functions for the scripted behaviors.
   **copy** of the dev SQLite DB, so it never mutates canonical dev data. The
   stack allocates fresh free ports per run (`VERIFY_FRONTEND_PORT=auto`,
   `VERIFY_BACKEND_PORT=auto`) unless fixed ports are configured.
+- The verify stack binds to loopback (`VERIFY_BIND_HOST=127.0.0.1`) so the
+  dev-mode backend and its data copy are never reachable from other hosts.
+  Override only when you need cross-host access and understand the exposure.
 - Rate-limit retries use linear backoff from `RATE_LIMIT_COOLDOWN` and are only
   triggered after a failed Codex process reports a rate-limit style error.
 - The driver commits but never pushes, and never force-operates on git.

@@ -400,7 +400,7 @@ start_verify_stack() {
       DATABASE_URL="sqlite:///./$(basename "$VERIFY_DB")" \
       ENVIRONMENT=development \
       setsid "$REPO_ROOT/.venv/bin/python" -m uvicorn src.main:app \
-        --host 0.0.0.0 --port "$VERIFY_BACKEND_PORT" \
+        --host "${VERIFY_BIND_HOST:-127.0.0.1}" --port "$VERIFY_BACKEND_PORT" \
         > "$RUN_LOG_DIR/verify-backend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.be.pid" )
   else
     ( cd "$REPO_ROOT/backend" && \
@@ -408,7 +408,7 @@ start_verify_stack() {
       DATABASE_URL="sqlite:///./$(basename "$VERIFY_DB")" \
       ENVIRONMENT=development \
       "$REPO_ROOT/.venv/bin/python" -m uvicorn src.main:app \
-        --host 0.0.0.0 --port "$VERIFY_BACKEND_PORT" \
+        --host "${VERIFY_BIND_HOST:-127.0.0.1}" --port "$VERIFY_BACKEND_PORT" \
         > "$RUN_LOG_DIR/verify-backend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.be.pid" )
   fi
   VSTACK_BACKEND_PID="$(cat "$RUN_LOG_DIR/.be.pid")"
@@ -429,7 +429,7 @@ start_verify_stack() {
         > "$RUN_LOG_DIR/verify-frontend.log" && \
       NEXT_PUBLIC_API_URL="$VERIFY_API_URL" \
       NEXT_DIST_DIR="$VSTACK_FRONTEND_DIST_DIR" \
-      setsid npx next dev -p "$VERIFY_FRONTEND_PORT" \
+      setsid npx next dev -H "${VERIFY_BIND_HOST:-127.0.0.1}" -p "$VERIFY_FRONTEND_PORT" \
         >> "$RUN_LOG_DIR/verify-frontend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.fe.pid" )
   else
     ( cd "$REPO_ROOT/frontend" && \
@@ -438,7 +438,7 @@ start_verify_stack() {
         > "$RUN_LOG_DIR/verify-frontend.log" && \
       NEXT_PUBLIC_API_URL="$VERIFY_API_URL" \
       NEXT_DIST_DIR="$VSTACK_FRONTEND_DIST_DIR" \
-      npx next dev -p "$VERIFY_FRONTEND_PORT" \
+      npx next dev -H "${VERIFY_BIND_HOST:-127.0.0.1}" -p "$VERIFY_FRONTEND_PORT" \
         >> "$RUN_LOG_DIR/verify-frontend.log" 2>&1 & echo $! > "$RUN_LOG_DIR/.fe.pid" )
   fi
   VSTACK_FRONTEND_PID="$(cat "$RUN_LOG_DIR/.fe.pid")"
