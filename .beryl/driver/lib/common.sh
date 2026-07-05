@@ -156,6 +156,31 @@ flush_driver_runtime() {
   printf '%s %s\n' "$state_counts" "$logs_counts"
 }
 
+# ── Agent safety gates ────────────────────────────────────────────────────--
+# Unattended mode (no approval prompts + writable sandbox) must be an
+# explicit, acknowledged opt-in, not a silent default.
+require_unattended_ack() {
+  [ "${DRIVER_MOCK:-0}" = "1" ] && return 0
+  [ "${CODEX_APPROVAL:-}" = "never" ] || return 0
+  if [ "$(driver_bool_value "DRIVER_UNATTENDED_OK" "${DRIVER_UNATTENDED_OK:-false}")" != "true" ]; then
+    die "CODEX_APPROVAL=\"never\" runs a code-writing agent with no human approval and filesystem write access. If you accept that (ideally inside a container/VM), set DRIVER_UNATTENDED_OK=\"true\" in .beryl/driver/config.env."
+  fi
+  warn "unattended mode enabled: approval=${CODEX_APPROVAL} sandbox=${CODEX_SANDBOX:-<codex default>}. Task briefs, prompts, and config.env are trusted inputs — review WORK_BRANCH diffs before pushing."
+}
+
+# Whitespace-split CODEX_EXTRA_ARGS into EXTRA_ARG_TOKENS with a strict
+# per-token charset, so config.env content cannot expand into quoting tricks
+# or shell metacharacters.
+tokenize_extra_args() {
+  local raw="$1" tok
+  EXTRA_ARG_TOKENS=()
+  read -r -a EXTRA_ARG_TOKENS <<< "$raw"
+  for tok in "${EXTRA_ARG_TOKENS[@]}"; do
+    [[ "$tok" =~ ^[A-Za-z0-9._=/,:@+-]+$ ]] \
+      || die "CODEX_EXTRA_ARGS contains an unsupported token: $tok (allowed: letters, digits, ._=/,:@+-)"
+  done
+}
+
 # ── Codex invocation ──────────────────────────────────────────────────────--
 # run_agent PROMPT LOGFILE -> exit code of the session (tee'd to LOGFILE)
 run_agent() {
@@ -170,8 +195,8 @@ run_agent() {
   [ -n "${CODEX_PROFILE:-}" ] && args+=(--profile "$CODEX_PROFILE")
   [ -n "${CODEX_SANDBOX:-}" ] && args+=(--sandbox "$CODEX_SANDBOX")
   [ -n "${CODEX_APPROVAL:-}" ] && args+=(-c "approval_policy=\"$CODEX_APPROVAL\"")
-  # shellcheck disable=SC2206
-  args+=(${CODEX_EXTRA_ARGS:-})
+  tokenize_extra_args "${CODEX_EXTRA_ARGS:-}"
+  args+=("${EXTRA_ARG_TOKENS[@]}")
   args+=("$prompt")
   "${CODEX_BIN:-codex}" "${args[@]}" 2>&1 | tee "$logfile"
   return "${PIPESTATUS[0]}"

@@ -163,8 +163,16 @@ See `lib/common.sh` `mock_*` functions for the scripted behaviors.
 ## Safety notes
 
 - Headless sessions default to `--sandbox workspace-write` and
-  `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`.
-  Review `WORK_BRANCH` diffs before pushing.
+  `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`, but
+  the driver refuses to start in that unattended mode until you set
+  `DRIVER_UNATTENDED_OK="true"` in your local `config.env`. Review
+  `WORK_BRANCH` diffs before pushing.
+- Task briefs (`tasks/*.md`), prompt templates (`prompts/*.md`), and
+  `config.env` are **trusted inputs**: anyone who can edit them steers an
+  unattended agent. Keep them under the same review bar as code, and prefer
+  running the driver inside a container/VM boundary.
+- `CODEX_EXTRA_ARGS` accepts only simple whitespace-separated tokens; quoting
+  and shell metacharacters are rejected rather than word-split.
 - `VERIFY_STACK_MODE` controls optional runtime stack startup:
   - `auto` starts the bundled legacy backend/frontend verifier only when the
     repository has that layout.
