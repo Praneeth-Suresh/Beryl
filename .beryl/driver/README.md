@@ -1,12 +1,28 @@
 # Agent Driver
 
 A long-running orchestrator that drives the codebase through a series of large
-changes, one task at a time, using **separate headless `codex exec` sessions** for
+changes, one task at a time, using **separate headless agent sessions** for
 each phase so every step runs with a fresh, full context window.
+
+## Choosing the coding agent
+
+The driver is agent-agnostic. `DRIVER_AGENT` in `config.env` selects which
+coding agent runs each phase session:
+
+- `codex` — OpenAI Codex CLI (`codex exec`)
+- `claude` — Claude Code CLI (`claude -p`)
+- `gemini` — Gemini CLI (`gemini -p`)
+- `custom` — any headless command via `CUSTOM_AGENT_CMD` (the phase prompt is
+  appended as the final argument; the command must print its transcript to
+  stdout and exit non-zero on failure)
+
+If `DRIVER_AGENT` is unset and the driver runs on an interactive terminal, it
+presents this list, lets you pick, and saves the choice to `config.env`.
+Non-interactive runs fail fast with instructions instead of guessing.
 
 ## The cycle
 
-For each task, the driver runs phases as independent `codex exec`
+For each task, the driver runs phases as independent headless agent
 sessions:
 
 ```
@@ -89,7 +105,8 @@ only ever asked to do one bounded phase at a time.
 
 ## Prerequisites
 
-- Codex CLI on PATH (`codex exec`).
+- The selected coding agent CLI on PATH (`codex`, `claude`, `gemini`, or your
+  `CUSTOM_AGENT_CMD` binary).
 - Runtime/browser dependencies only when the task or project check policy
   requires runtime verification.
 - A clean-ish git working tree on the base branch.
@@ -99,7 +116,8 @@ only ever asked to do one bounded phase at a time.
 ```bash
 cd .beryl/driver
 cp config.example.env config.env
-# edit config.env: set CODEX_MODEL/CODEX_PROFILE if desired, confirm branch and verification mode
+# edit config.env: set DRIVER_AGENT (or leave empty to choose interactively),
+# per-agent model/flags if desired, confirm branch and verification mode
 ```
 
 ## Run
