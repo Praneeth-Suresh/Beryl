@@ -29,6 +29,9 @@ Options:
   --archive-url URL           GitHub codeload tarball URL.
   --root-conflict POLICY      fail, overwrite, or skip root files. Default: fail.
   --enable-githooks           Set core.hooksPath=.beryl/githooks when installed.
+  --expected-sha256 HEX       Fail unless the downloaded archive matches this
+                              SHA-256 digest. Strongly recommended together
+                              with --ref pinned to a tag or commit SHA.
   --dry-run                   Print resolved components and paths only.
 USAGE
 }
@@ -100,6 +103,26 @@ ensure_https() {
   esac
 }
 
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    fail "need sha256sum or shasum for --expected-sha256"
+  fi
+}
+
+verify_archive_digest() {
+  archive_path="$1"
+  [ -n "$EXPECTED_SHA256" ] || return 0
+  actual_sha256="$(sha256_of "$archive_path")"
+  if [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
+    fail "archive SHA-256 mismatch: expected $EXPECTED_SHA256 got $actual_sha256 (refusing to install)"
+  fi
+  printf "beryl: archive SHA-256 verified\n"
+}
+
 # fetch_https URL OUT
 # --proto/--proto-redir keep every hop (including redirects) on HTTPS, so a
 # redirect cannot downgrade the scheme after the initial ensure_https check.
@@ -150,6 +173,7 @@ extract_remote_paths() {
 
   printf "beryl: fetching archive %s\n" "$ARCHIVE_URL"
   fetch_https "$ARCHIVE_URL" "$archive"
+  verify_archive_digest "$archive"
   prefix="$(tar -tzf "$archive" | sed -n '1s#/$##p; q')"
   [ -n "$prefix" ] || fail "could not detect archive prefix"
 
@@ -232,6 +256,7 @@ RAW_BASE_URL="$DEFAULT_RAW_BASE_URL"
 ARCHIVE_URL="$DEFAULT_ARCHIVE_URL"
 ROOT_CONFLICT="fail"
 ENABLE_GITHOOKS="0"
+EXPECTED_SHA256=""
 DRY_RUN="0"
 TMP_DIR="${TMPDIR:-/tmp}/beryl-install.$$"
 MANIFEST=""
@@ -325,6 +350,15 @@ while [ "$#" -gt 0 ]; do
       ENABLE_GITHOOKS="1"
       shift
       ;;
+    --expected-sha256)
+      [ "$#" -ge 2 ] || fail "--expected-sha256 requires a value"
+      EXPECTED_SHA256="$2"
+      shift 2
+      ;;
+    --expected-sha256=*)
+      EXPECTED_SHA256="${1#--expected-sha256=}"
+      shift
+      ;;
     --dry-run)
       DRY_RUN="1"
       shift
@@ -342,6 +376,13 @@ case "$ROOT_CONFLICT" in
   fail|overwrite|skip) ;;
   *) fail "--root-conflict must be fail, overwrite, or skip" ;;
 esac
+
+if [ -n "$EXPECTED_SHA256" ]; then
+  case "$EXPECTED_SHA256" in
+    *[!0-9a-fA-F]*) fail "--expected-sha256 must be a 64-char hex digest" ;;
+  esac
+  [ "${#EXPECTED_SHA256}" -eq 64 ] || fail "--expected-sha256 must be a 64-char hex digest"
+fi
 
 mkdir -p "$TARGET_DIR"
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
