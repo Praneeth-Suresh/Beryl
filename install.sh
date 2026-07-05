@@ -100,12 +100,20 @@ ensure_https() {
   esac
 }
 
+# fetch_https URL OUT
+# --proto/--proto-redir keep every hop (including redirects) on HTTPS, so a
+# redirect cannot downgrade the scheme after the initial ensure_https check.
+fetch_https() {
+  ensure_https "$1"
+  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --max-redirs 3 \
+    -fsSL "$1" -o "$2"
+}
+
 download_manifest() {
   mkdir -p "$TMP_DIR"
   MANIFEST="$TMP_DIR/beryl.components.json"
-  ensure_https "$RAW_BASE_URL"
   printf "beryl: fetching manifest from %s/.beryl/beryl.components.json\n" "$RAW_BASE_URL"
-  curl -fsSL "$RAW_BASE_URL/.beryl/beryl.components.json" -o "$MANIFEST"
+  fetch_https "$RAW_BASE_URL/.beryl/beryl.components.json" "$MANIFEST"
 }
 
 copy_local_path() {
@@ -136,13 +144,12 @@ copy_local_path() {
 }
 
 extract_remote_paths() {
-  ensure_https "$ARCHIVE_URL"
   archive="$TMP_DIR/beryl.tar.gz"
   stage="$TMP_DIR/stage"
   mkdir -p "$stage"
 
   printf "beryl: fetching archive %s\n" "$ARCHIVE_URL"
-  curl -fsSL "$ARCHIVE_URL" -o "$archive"
+  fetch_https "$ARCHIVE_URL" "$archive"
   prefix="$(tar -tzf "$archive" | sed -n '1s#/$##p; q')"
   [ -n "$prefix" ] || fail "could not detect archive prefix"
 
