@@ -103,6 +103,33 @@ ensure_https() {
   esac
 }
 
+# Root files a manifest may install outside .beryl/. The manifest is fetched
+# from the network in remote installs, so its paths are untrusted input.
+ROOT_PATH_ALLOWLIST="AGENTS.md
+CLAUDE.md
+.cursor/rules/agent-rules.md
+.github/copilot-instructions.md
+.codex/AGENTS.md
+.github/workflows/deterministic-checks.yml"
+
+validate_manifest_sanity() {
+  grep -q '"schemaVersion": 1' "$MANIFEST" || fail "manifest schemaVersion must be 1"
+  grep -q '"installerVersion": "1"' "$MANIFEST" || fail "manifest installerVersion must be 1"
+}
+
+validate_install_path() {
+  rel="$1"
+  case "$rel" in
+    /*) fail "manifest install path must be repository-relative: $rel" ;;
+    ..|../*|*/..|*/../*) fail "manifest install path must not contain ..: $rel" ;;
+  esac
+  case "$rel" in
+    .beryl/*) return 0 ;;
+  esac
+  list_has "$ROOT_PATH_ALLOWLIST" "${rel%/}" \
+    || fail "manifest install path outside .beryl/ is not in the root allowlist: $rel"
+}
+
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{print $1}'
@@ -396,6 +423,7 @@ else
   SOURCE_LABEL="$ARCHIVE_URL"
   download_manifest
 fi
+validate_manifest_sanity
 
 if [ -n "$COMPONENTS_CSV" ]; then
   REQUESTED_COMPONENTS="$(split_csv "$COMPONENTS_CSV")"
@@ -437,6 +465,9 @@ $(component_field "$component" paths)
 $(component_field "$component" rootPaths)"
 done
 INSTALL_PATHS="$(printf "%s\n" "$INSTALL_PATHS" | sed '/^$/d' | awk '!seen[$0]++')"
+for rel in $INSTALL_PATHS; do
+  validate_install_path "$rel"
+done
 
 printf "beryl: installer version %s\n" "$INSTALLER_VERSION"
 printf "beryl: source ref %s\n" "$SOURCE_REF"
