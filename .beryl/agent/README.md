@@ -51,6 +51,22 @@ Configure test immutability detection in `.beryl/agent/test-manifest.conf`.
 - Use `design-tree.md` for evolving or unresolved design choices.
 - Use `.beryl/agent/adr/` when a decision changes durable architecture, boundaries, terminology, data shape, or test strategy.
 
+## Adding skills
+
+Skills live in `.beryl/agent/skills/<skill-name>/SKILL.md`, so repo-specific
+skills stay with the repository instead of with any one coding agent. Ingest
+a skill from a local file, a local directory, or a raw https URL with:
+
+```bash
+./.beryl/agent/scripts/add-skill.sh --list
+./.beryl/agent/scripts/add-skill.sh reviewing-migrations --from ./drafts/migrations-skill.md
+./.beryl/agent/scripts/add-skill.sh reviewing-migrations --from https://example.com/raw/SKILL.md --force
+```
+
+The script validates the name and SKILL.md shape, then prints the
+registration steps (task-routing entry, optional tool-instruction-template
+mention, `sync-agent-env.sh` re-run).
+
 ## Skill naming alias
 
 - `grill-me` is the shorthand alias.
