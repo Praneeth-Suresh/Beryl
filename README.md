@@ -59,16 +59,56 @@ Install the control plane into another project:
 ./.beryl/scripts/setup-project.sh /path/to/project
 ```
 
+Install and immediately bootstrap repo-specific agent context files:
+
+```bash
+./.beryl/scripts/setup-project.sh --bootstrap /path/to/project
+
+# install with explicit bootstrap runner controls
+./.beryl/scripts/setup-project.sh --bootstrap --agent-fallback off --agent-runner custom --agent-command-template "/tmp/agent-runner.sh {prompt_file} {target_dir}" /path/to/project
+```
+
+Install from a remote URL and bootstrap in-place:
+
+```bash
+sh beryl-install.sh --ref <tag-or-commit-sha> --bootstrap-agent --agent-runner codex
+```
+
+If you plan to use driver workflows (task imports, `driver/run.sh`, issue bootstraps), install with:
+
+```bash
+./.beryl/scripts/setup-project.sh --profile full /path/to/project
+# or
+./.beryl/scripts/setup-project.sh --components driver /path/to/project
+```
+
+The `standard` and `minimal` profiles do not install `.beryl/driver/`.
+
+When bootstrap is requested and no runner can be used, install exits non-zero by default when `--agent-fallback off` is set and writes failure details to `.beryl/agent/bootstrap-status.json`.
+
 Optional local pre-commit guardrail:
 
 ```bash
 git config core.hooksPath .beryl/githooks
 ```
 
+Hook setup requires:
+
+- Running inside a Git repository (or after `git init`).
+- Permission to write `.git/config`.
+
+Common failures:
+
+- `fatal: not a git repository` → run the command after `cd` into a repo.
+- `fatal: could not lock config file ...` → the `.git/config` file is read-only or locked by permissions.
+
+When hook setup is blocked, keep the path install complete and rerun after fixing repository write access.
+
 Pass a profile if you know your target profile:
 
 ```bash
 sh beryl-install.sh --ref <tag-or-commit-sha> --profile minimal
+sh beryl-install.sh --ref <tag-or-commit-sha> --profile full
 ```
 
 ## Documentation Map
@@ -125,6 +165,8 @@ When you already have a feature request, run:
 ```bash
 ./.beryl/driver/run.sh
 ```
+
+This path requires the `driver` component. If `./.beryl/driver/run.sh` is missing, install with `--profile full` or `--components driver`.
 
 The driver handles plan -> implement -> verify phases against numbered tasks.
 

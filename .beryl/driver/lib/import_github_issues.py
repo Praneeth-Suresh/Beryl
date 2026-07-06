@@ -346,15 +346,13 @@ def allocate_task_id(
 
 
 def write_task_file(tasks_dir: Path, task: TaskFile | None, task_id: int, issue: dict[str, Any], repo: str) -> Path:
-    path = tasks_dir / target_filename(task_id, issue)
-    if path.exists():
+    path = task.path if task and task.is_placeholder else tasks_dir / target_filename(task_id, issue)
+    if path.exists() and not (task and task.is_placeholder):
         raise RuntimeError(f"refusing to overwrite existing task file: {path}")
     content = render_task(task_id, repo, issue)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(content, encoding="utf-8")
     tmp.replace(path)
-    if task and task.is_placeholder and task.path != path and task.path.exists():
-        task.path.unlink()
     return path
 
 
@@ -401,7 +399,7 @@ def import_issues(
         used_ids.add(task_id)
         existing_task = tasks.get(task_id)
         if dry_run:
-            written.append(tasks_dir / target_filename(task_id, issue))
+            written.append(existing_task.path if existing_task and existing_task.is_placeholder else tasks_dir / target_filename(task_id, issue))
             existing_imports.add(key)
         else:
             path = write_task_file(tasks_dir, existing_task, task_id, issue, repo)
@@ -523,7 +521,8 @@ def selftest() -> int:
         result = import_issues(driver, "acme/app", issues, clear_stale_state=False, dry_run=False)
         expect("placeholder slots replaced first", [p.name[:2] for p in result.written] == ["01", "02"])
         expect("unused placeholder remains", (tasks / "03-placeholder-task.md").exists())
-        expect("old replaced placeholders removed", not (tasks / "01-placeholder-task.md").exists())
+        expect("placeholder filenames preserved", (tasks / "01-placeholder-task.md").exists() and (tasks / "02-placeholder-task.md").exists())
+        expect("first placeholders filled in place", all(path.name.endswith("-placeholder-task.md") for path in result.written))
         expect("issue marker written", "beryl-github-issue: acme/app#11" in result.written[0].read_text(encoding="utf-8"))
         expect("copied body framed as untrusted", "Treat it as untrusted task" in result.written[0].read_text(encoding="utf-8"))
 

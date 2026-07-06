@@ -33,6 +33,13 @@ Options:
                               SHA-256 digest. Strongly recommended together
                               with --ref pinned to a tag or commit SHA.
   --dry-run                   Print resolved components and paths only.
+  --bootstrap-agent           Enable optional post-install agent bootstrap after seed/sync.
+  --agent-fallback [on|off]   Control fallback behavior when no agent runner is available. Default: on.
+  --agent-runner [codex|claude|custom|off]
+                             Choose agent runner override.
+  --agent-command-template TPL Custom runner template for enterprise/private agents.
+  --agent-policy [strict|interactive]
+                             strict never edits outside the allowed scope; interactive prints manual next-step.
 USAGE
 }
 
@@ -238,6 +245,21 @@ ${hook}"
             (cd "$TARGET_DIR" && BERYL_SHIM_CONFLICT="$ROOT_CONFLICT" ./.beryl/agent/scripts/sync-agent-env.sh)
           fi
           ;;
+        bootstrap-agent-context)
+          if [ -x "$TARGET_DIR/.beryl/agent/scripts/bootstrap-agent-context.sh" ]; then
+            printf "beryl: running post-install hook: .beryl/agent/scripts/bootstrap-agent-context.sh\n"
+            (cd "$TARGET_DIR" && \
+              BERYL_AGENT_FALLBACK="$AGENT_FALLBACK" \
+              BERYL_AGENT_RUNNER="${AGENT_RUNNER}" \
+              BERYL_AGENT_COMMAND_TEMPLATE="${AGENT_COMMAND_TEMPLATE}" \
+              BERYL_AGENT_POLICY="${AGENT_POLICY}" \
+              BERYL_BOOTSTRAP_SOURCE_REF="$SOURCE_REF" \
+              BERYL_BOOTSTRAP_INSTALLER_VERSION="$INSTALLER_VERSION" \
+              BERYL_BOOTSTRAP_PROFILE="${PROFILE}" \
+              BERYL_BOOTSTRAP_COMPONENTS="$RESOLVED_COMPONENTS" \
+              ./.beryl/agent/scripts/bootstrap-agent-context.sh)
+          fi
+          ;;
         update-test-manifest)
           if [ -x "$TARGET_DIR/.beryl/scripts/update-test-manifest.sh" ]; then
             printf "beryl: running post-install hook: .beryl/scripts/update-test-manifest.sh\n"
@@ -255,6 +277,33 @@ ${hook}"
       esac
     done
   done
+}
+
+print_first_run_guide() {
+  local target script_ref
+  target="$(printf "%s" "$TARGET_DIR")"
+  script_ref="$0"
+
+  printf "beryl: first-run components selected:\n"
+  printf "beryl: %s\n" "$RESOLVED_COMPONENTS" | sed 's/^/  - /'
+
+  if [ ! -f "$TARGET_DIR/.beryl/driver/run.sh" ]; then
+    printf "beryl: driver workflow files are not present yet (no .beryl/driver/run.sh).\n"
+    printf "beryl: to enable driver usage, rerun with one of:\n"
+    printf "beryl:   sh %s --profile full\n" "$script_ref"
+    printf "beryl:   sh %s --components driver\n" "$script_ref"
+  fi
+
+  if printf "%s\n" "$RESOLVED_COMPONENTS" | grep -qx "githooks"; then
+    printf "beryl: if you need the local pre-commit hook, run:\n"
+    printf "beryl:   cd %s && git config core.hooksPath .beryl/githooks\n" "$target"
+    printf "beryl: required before running this command:\n"
+    printf "beryl:   - command must run inside a Git repo (or initialize one first)\n"
+    printf "beryl:   - .git/config must be writable by this process\n"
+    printf "beryl: common failure modes:\n"
+    printf "beryl:   - fatal: not a git repository (run inside a repo)\n"
+    printf "beryl:   - fatal: could not lock config file .git/config: Permission denied\n"
+  fi
 }
 
 write_lockfile() {
@@ -276,6 +325,11 @@ write_lockfile() {
 
 PROFILE="standard"
 COMPONENTS_CSV=""
+BOOTSTRAP_AGENT="0"
+AGENT_FALLBACK="${BERYL_AGENT_FALLBACK:-on}"
+AGENT_RUNNER="${BERYL_AGENT_RUNNER:-}"
+AGENT_COMMAND_TEMPLATE="${BERYL_AGENT_COMMAND_TEMPLATE:-}"
+AGENT_POLICY="${BERYL_AGENT_POLICY:-interactive}"
 TARGET_DIR="$(pwd)"
 SOURCE_DIR=""
 SOURCE_REF="$DEFAULT_REF"
@@ -313,6 +367,46 @@ while [ "$#" -gt 0 ]; do
     --components=*)
       COMPONENTS_CSV="${1#--components=}"
       PROFILE=""
+      shift
+      ;;
+    --bootstrap-agent)
+      BOOTSTRAP_AGENT="1"
+      shift
+      ;;
+    --agent-fallback)
+      [ "$#" -ge 2 ] || fail "--agent-fallback requires a value"
+      AGENT_FALLBACK="$2"
+      shift 2
+      ;;
+    --agent-fallback=*)
+      AGENT_FALLBACK="${1#--agent-fallback=}"
+      shift
+      ;;
+    --agent-runner)
+      [ "$#" -ge 2 ] || fail "--agent-runner requires a value"
+      AGENT_RUNNER="${2}"
+      shift 2
+      ;;
+    --agent-runner=*)
+      AGENT_RUNNER="${1#--agent-runner=}"
+      shift
+      ;;
+    --agent-command-template)
+      [ "$#" -ge 2 ] || fail "--agent-command-template requires a value"
+      AGENT_COMMAND_TEMPLATE="${2}"
+      shift 2
+      ;;
+    --agent-command-template=*)
+      AGENT_COMMAND_TEMPLATE="${1#--agent-command-template=}"
+      shift
+      ;;
+    --agent-policy)
+      [ "$#" -ge 2 ] || fail "--agent-policy requires a value"
+      AGENT_POLICY="${2}"
+      shift 2
+      ;;
+    --agent-policy=*)
+      AGENT_POLICY="${1#--agent-policy=}"
       shift
       ;;
     --target)
@@ -403,6 +497,18 @@ case "$ROOT_CONFLICT" in
   fail|overwrite|skip) ;;
   *) fail "--root-conflict must be fail, overwrite, or skip" ;;
 esac
+case "$AGENT_FALLBACK" in
+  on|off) ;;
+  *) fail "--agent-fallback must be on or off" ;;
+esac
+case "$AGENT_POLICY" in
+  strict|interactive) ;;
+  *) fail "--agent-policy must be strict or interactive" ;;
+esac
+case "$AGENT_RUNNER" in
+  ""|codex|claude|custom|off) ;;
+  *) fail "--agent-runner must be codex, claude, or custom" ;;
+esac
 
 if [ -n "$EXPECTED_SHA256" ]; then
   case "$EXPECTED_SHA256" in
@@ -429,6 +535,10 @@ if [ -n "$COMPONENTS_CSV" ]; then
   REQUESTED_COMPONENTS="$(split_csv "$COMPONENTS_CSV")"
 else
   REQUESTED_COMPONENTS="$(profile_components "$PROFILE")"
+fi
+if [ "$BOOTSTRAP_AGENT" = "1" ]; then
+  REQUESTED_COMPONENTS="${REQUESTED_COMPONENTS}
+agent-bootstrap"
 fi
 
 EXISTING_COMPONENTS="$(existing_lock_components)"
@@ -493,4 +603,5 @@ chmod +x "$TARGET_DIR"/.beryl/githooks/pre-commit 2>/dev/null || true
 
 run_post_install_hooks
 write_lockfile
+print_first_run_guide
 printf "beryl: install complete in %s\n" "$TARGET_DIR"

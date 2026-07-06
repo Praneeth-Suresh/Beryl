@@ -37,6 +37,9 @@ The paths and commands below are all from this repository:
 | --- | --- | --- |
 | Validate current repository health | `./.beryl/scripts/check.sh` | Runs markdown checks, component checks, test-change checks, and project checks |
 | Install Beryl into another repo | `./.beryl/scripts/setup-project.sh /path/to/project` | Installs control-plane files and optional hook setup |
+| Install with driver workflows | `./.beryl/scripts/setup-project.sh --profile full /path/to/project` | Installs `.beryl/driver/` and `run.sh` for driver-based tasks |
+| Bootstrap repo-specific context | `./.beryl/scripts/setup-project.sh --bootstrap /path/to/project` | Runs controlled headless bootstrap for `.beryl/agent/*.md` |
+| Bootstrap with install flow | `sh beryl-install.sh --profile standard --bootstrap-agent` | Optional install-time bootstrap after `seed-agent-context` |
 | Optional local guardrail | `git config core.hooksPath .beryl/githooks` | Runs `./.beryl/scripts/check.sh` on staged changes |
 | Workflow rules | `.beryl/agent/task-routing.md` | Chooses the right workflow from user intent |
 | Feature workflow | `.beryl/agent/skills/adding-features/SKILL.md` | Defines the feature implementation loop |
@@ -71,6 +74,11 @@ This is the default style after Task 07's contract auto-loading: short, explicit
 
 ## From readme to first task, in practice
 
+For a first run with driver usage, prefer:
+
+1. `./.beryl/scripts/setup-project.sh --profile full /path/to/project`
+2. If you only choose `standard`/`minimal`, add `--components driver` (or `--profile full`) before running any `run.sh` flow.
+
 1. In a repo you want to use with an agent, run:
 
    ```bash
@@ -88,8 +96,20 @@ This is the default style after Task 07's contract auto-loading: short, explicit
    ```bash
    git config core.hooksPath .beryl/githooks
    ```
+   
+   Run this from a Git repo root, and ensure `.git/config` is writable. In restricted environments, failure modes include:
+
+   - `fatal: not a git repository (or any of the parent directories): .git`
+   - `fatal: could not lock config file .git/config: Permission denied`
 
 4. Run step 1 whenever you want a quick safety check before handing work to the agent.
+
+If bootstrap is not available, inspect
+`.beryl/agent/bootstrap-status.json` and rerun setup with a supported runner:
+
+```bash
+sh ./.beryl/scripts/setup-project.sh --bootstrap --agent-runner codex /path/to/project
+```
 
 You now have the exact same path the full workflow uses, just scaled to your first task.
 

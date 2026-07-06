@@ -61,15 +61,15 @@ The driver does **not** rely on the model's chat memory between phases. Instead
 every phase reads/writes durable files on disk, and each prompt is rebuilt from
 scratch from those files:
 
-| File | Role | Lifetime |
-| --- | --- | --- |
-| `tasks/NN-*.md` | Immutable task brief (the source of truth a phase verifies against) | committed |
-| `prompts/*.md` | Phase prompt templates with `{{PLACEHOLDERS}}` | committed |
-| `state/NN/session-state.md` | Per-task working state: plan, slices, failures, attempt no. | gitignored |
-| `state/NN/plan.md` | Latest ratified plan | gitignored |
-| `state/NN/verify.txt` | Latest verify sentinel + reason | gitignored |
-| `state/NN/status` | One of `pending|planning|implementing|verifying|passed|committed|blocked` | gitignored |
-| `logs/<run-id>/NN-PHASE-attemptK.log` | Full stdout/stderr of each session | gitignored |
+| File                                    | Role                                                                | Lifetime   |
+| --------------------------------------- | ------------------------------------------------------------------- | ---------- |
+| `tasks/NN-*.md`                       | Immutable task brief (the source of truth a phase verifies against) | committed  |
+| `prompts/*.md`                        | Phase prompt templates with`{{PLACEHOLDERS}}`                     | committed  |
+| `state/NN/session-state.md`           | Per-task working state: plan, slices, failures, attempt no.         | gitignored |
+| `state/NN/plan.md`                    | Latest ratified plan                                                | gitignored |
+| `state/NN/verify.txt`                 | Latest verify sentinel + reason                                     | gitignored |
+| `state/NN/status`                     | One of `pending                                                     | planning   |
+| `logs/<run-id>/NN-PHASE-attemptK.log` | Full stdout/stderr of each session                                  | gitignored |
 
 Because state lives in files, a phase that crashes or a machine that reboots can
 be resumed: re-running `run.sh` skips tasks already `committed` and resumes the
