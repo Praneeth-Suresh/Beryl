@@ -98,6 +98,133 @@ verify_passed() { head -n1 "$1" 2>/dev/null | grep -qE '^VERIFY: PASS'; }
 verify_failed() { head -n1 "$1" 2>/dev/null | grep -qE '^VERIFY: FAIL'; }
 phase_done_commit()      { last_commit_sentinel "$1" | grep -qE '^COMMIT: (DONE|SKIPPED)( |$)'; }
 
+# ── Linked GitHub issue finalization ─────────────────────────────────────
+task_github_issue_key() {
+  local task_file="$1"
+  if [ "${DRIVER_MOCK:-0}" = "1" ] && [ -n "${MOCK_GITHUB_ISSUE_KEY:-}" ]; then
+    printf '%s\n' "$MOCK_GITHUB_ISSUE_KEY"
+    return 0
+  fi
+  sed -nE 's/.*beryl-github-issue:[[:space:]]*([^#[:space:]]+)#([0-9]+).*/\1#\2/p' "$task_file" 2>/dev/null | head -n1
+}
+
+write_issue_finalize_skipped() {
+  local id="$1" reason="$2" sd
+  sd="$(state_dir_for "$id")"
+  mkdir -p "$sd"
+  {
+    printf 'ISSUE_FINALIZE: SKIPPED\n'
+    printf '%s\n' "$reason"
+  } > "$sd/issue-finalize.txt"
+}
+
+commit_short_sha_from_log() {
+  local log_file="$1" sentinel
+  sentinel="$(last_commit_sentinel "$log_file")"
+  case "$sentinel" in
+    "COMMIT: DONE "*) printf '%s\n' "${sentinel#COMMIT: DONE }" ;;
+    *) printf 'unknown\n' ;;
+  esac
+}
+
+write_github_issue_comment_body() {
+  local body_file="$1" id="$2" task_file="$3" verify_file="$4" commit_sha="$5"
+  {
+    printf 'Beryl driver completed linked task `%s`.\n\n' "$id"
+    printf 'Changes made:\n'
+    printf -- '- Committed the implementation for `%s` on `%s`.\n' "$(basename "$task_file")" "$WORK_BRANCH"
+    printf -- '- Commit: `%s`\n\n' "$commit_sha"
+    printf 'Confidence: high\n'
+    printf 'Basis: the task passed the driver VERIFY phase and was committed by the COMMIT phase. This is automation evidence, not a replacement for human review before pushing or merging.\n\n'
+    printf 'Verification evidence:\n'
+    sed 's/^/> /' "$verify_file" 2>/dev/null || printf '> verify.txt was unavailable\n'
+  } > "$body_file"
+}
+
+finalize_linked_github_issue() {
+  local id="$1" task_file="$2" verify_file="$3" commit_log="$4"
+  local key repo number sd out body_file commit_sha enabled issue_state
+  sd="$(state_dir_for "$id")"
+  mkdir -p "$sd"
+  out="$sd/issue-finalize.txt"
+  key="$(task_github_issue_key "$task_file")"
+  if [ -z "$key" ]; then
+    write_issue_finalize_skipped "$id" "task has no beryl-github-issue marker"
+    return 0
+  fi
+
+  enabled="$(driver_bool_value "GITHUB_ISSUE_FINALIZE" "${GITHUB_ISSUE_FINALIZE:-true}")"
+  if [ "$enabled" != "true" ]; then
+    write_issue_finalize_skipped "$id" "GITHUB_ISSUE_FINALIZE is disabled"
+    return 0
+  fi
+
+  repo="${key%#*}"
+  number="${key##*#}"
+  body_file="$sd/issue-comment.md"
+  commit_sha="$(commit_short_sha_from_log "$commit_log")"
+  write_github_issue_comment_body "$body_file" "$id" "$task_file" "$verify_file" "$commit_sha"
+
+  if [ "${DRIVER_MOCK:-0}" = "1" ]; then
+    if [ "${MOCK_GITHUB_FINALIZE_RESULT:-PASS}" = "FAIL" ]; then
+      {
+        printf 'ISSUE_FINALIZE: FAIL\n'
+        printf 'GitHub issue: %s\n' "$key"
+        printf 'Mock GitHub finalization failure.\n'
+      } > "$out"
+      return 1
+    fi
+    {
+      printf 'ISSUE_FINALIZE: PASS\n'
+      printf 'GitHub issue: %s\n' "$key"
+      printf 'Commented: yes\n'
+      printf 'Closed: yes\n'
+    } > "$out"
+    return 0
+  fi
+
+  if ! command_exists gh; then
+    {
+      printf 'ISSUE_FINALIZE: FAIL\n'
+      printf 'GitHub issue: %s\n' "$key"
+      printf 'required command not found: gh\n'
+    } > "$out"
+    return 1
+  fi
+
+  {
+    printf 'ISSUE_FINALIZE: STARTED\n'
+    printf 'GitHub issue: %s\n' "$key"
+    printf 'Comment body: %s\n' "$body_file"
+  } > "$out"
+
+  if ! gh issue comment "$number" --repo "$repo" --body-file "$body_file" >> "$out" 2>&1; then
+    sed -i '1s/.*/ISSUE_FINALIZE: FAIL/' "$out"
+    return 1
+  fi
+
+  issue_state="$(gh issue view "$number" --repo "$repo" --json state -q .state 2>> "$out" || true)"
+  if [ "$issue_state" = "CLOSED" ]; then
+    {
+      printf 'Issue was already closed after comment.\n'
+      printf 'Commented: yes\n'
+      printf 'Closed: already closed\n'
+    } >> "$out"
+  else
+    if ! gh issue close "$number" --repo "$repo" >> "$out" 2>&1; then
+      sed -i '1s/.*/ISSUE_FINALIZE: FAIL/' "$out"
+      return 1
+    fi
+    {
+      printf 'Commented: yes\n'
+      printf 'Closed: yes\n'
+    } >> "$out"
+  fi
+
+  sed -i '1s/.*/ISSUE_FINALIZE: PASS/' "$out"
+  return 0
+}
+
 # ── Rate limit detection ──────────────────────────────────────────────────--
 is_rate_limited() {
   local logfile="$1"

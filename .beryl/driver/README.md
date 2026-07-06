@@ -51,6 +51,11 @@ sessions:
   and does **not** consume a task attempt. This keeps stale ports/processes from
   being mistaken for app behavior.
 - On **PASS** → **COMMIT** phase commits the change (never pushes).
+- After a successful **COMMIT**, if the task brief has a `beryl-github-issue`
+  marker, the driver comments on the issue with the commit, verification
+  evidence, and confidence level, then attempts to close it. This GitHub
+  finalization is soft-only: failures are recorded in task state but do not
+  fail the local commit.
 
 Each phase is a *separate process invocation*, which is exactly why context stays
 accurate: no single session accumulates the whole multi-task history.
@@ -61,15 +66,17 @@ The driver does **not** rely on the model's chat memory between phases. Instead
 every phase reads/writes durable files on disk, and each prompt is rebuilt from
 scratch from those files:
 
-| File | Role | Lifetime |
-| --- | --- | --- |
-| `tasks/NN-*.md` | Immutable task brief (the source of truth a phase verifies against) | committed |
-| `prompts/*.md` | Phase prompt templates with `{{PLACEHOLDERS}}` | committed |
-| `state/NN/session-state.md` | Per-task working state: plan, slices, failures, attempt no. | gitignored |
-| `state/NN/plan.md` | Latest ratified plan | gitignored |
-| `state/NN/verify.txt` | Latest verify sentinel + reason | gitignored |
-| `state/NN/status` | One of `pending|planning|implementing|verifying|passed|committed|blocked` | gitignored |
-| `logs/<run-id>/NN-PHASE-attemptK.log` | Full stdout/stderr of each session | gitignored |
+| File                                    | Role                                                                | Lifetime   |
+| --------------------------------------- | ------------------------------------------------------------------- | ---------- |
+| `tasks/NN-*.md`                       | Immutable task brief (the source of truth a phase verifies against) | committed  |
+| `prompts/*.md`                        | Phase prompt templates with`{{PLACEHOLDERS}}`                     | committed  |
+| `state/NN/session-state.md`           | Per-task working state: plan, slices, failures, attempt no.         | gitignored |
+| `state/NN/plan.md`                    | Latest ratified plan                                                | gitignored |
+| `state/NN/verify.txt`                 | Latest verify sentinel + reason                                     | gitignored |
+| `state/NN/issue-comment.md`           | GitHub issue completion comment body, when a task is linked         | gitignored |
+| `state/NN/issue-finalize.txt`         | Soft GitHub comment/close result for linked issue tasks             | gitignored |
+| `state/NN/status`                     | One of `pending                                                     | planning   |
+| `logs/<run-id>/NN-PHASE-attemptK.log` | Full stdout/stderr of each session                                  | gitignored |
 
 Because state lives in files, a phase that crashes or a machine that reboots can
 be resumed: re-running `run.sh` skips tasks already `committed` and resumes the
@@ -108,6 +115,9 @@ only ever asked to do one bounded phase at a time.
 ## Prerequisites
 
 - GitHub CLI on PATH (`gh`) when importing issues from GitHub.
+- GitHub CLI on PATH (`gh`) and authenticated when finalizing linked GitHub
+  issues after completed tasks. Missing or failed GitHub finalization is
+  recorded softly and does not fail the local task commit.
 - The selected coding agent CLI on PATH (`codex`, `claude`, `gemini`, or your
   `CUSTOM_AGENT_CMD` binary).
 - Runtime/browser dependencies only when the task or project check policy
@@ -138,6 +148,15 @@ the repository, fetches open issues with `gh issue list`, and creates numbered
 task briefs under `.beryl/driver/tasks/`. Each generated brief includes a stable
 `beryl-github-issue` marker so re-running the importer skips issues that were
 already copied.
+
+The same marker is used after a task commit succeeds. The driver writes a
+completion comment to the linked issue describing the committed task, the
+verification evidence, and a confidence level, then tries to close the issue.
+The comment/close step uses the GitHub CLI and is soft-only. If `gh` is missing,
+unauthenticated, offline, or GitHub rejects the operation, the driver records
+the failure in `.beryl/driver/state/NN/issue-finalize.txt` and still marks the
+locally committed task complete. Set `GITHUB_ISSUE_FINALIZE=false` in
+`.beryl/driver/config.env` to skip this remote finalization during offline runs.
 
 After writing tasks, the importer prompts you to verify that every GitHub issue
 was copied correctly before continuing. Use `--complete-all` for non-interactive

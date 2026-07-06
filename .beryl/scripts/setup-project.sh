@@ -17,6 +17,16 @@ Interactively installs selected Beryl components into TARGET_DIR, configures the
 affected-test gate, optionally enables the Git hook, and can hand off unusual
 setup work to a headless coding agent.
 
+Optional bootstrap controls:
+  --bootstrap                 Fill repo-specific agent context files with a controlled runner.
+  --agent-fallback [on|off]   Continue or fail when bootstrap cannot run.
+  --agent-runner [codex|claude|custom|off]
+                             Choose the bootstrap runner.
+  --agent-command-template TPL
+                             Custom runner template for enterprise/private runners.
+  --agent-policy [strict|interactive]
+                             strict prevents edits outside .beryl/agent/*.md.
+
 If TARGET_DIR is omitted, the script prompts for it.
 USAGE
 }
@@ -242,6 +252,33 @@ run_with_optional_env() {
   fi
 }
 
+run_bootstrap_agent() {
+  local runner="${1:-${AGENT_RUNNER}}"
+  local command_template="${2:-${AGENT_COMMAND_TEMPLATE}}"
+
+  if [[ ! -x "${TARGET_DIR}/.beryl/agent/scripts/bootstrap-agent-context.sh" ]]; then
+    printf "setup-project: bootstrap adapter missing; skipped bootstrap stage.\n"
+    return 0
+  fi
+
+  local component_list=""
+  local component
+  for component in "${RESOLVED_COMPONENTS[@]}"; do
+    component_list+="${component}"$'\n'
+  done
+
+  (cd "${TARGET_DIR}" && \
+    BERYL_AGENT_FALLBACK="${AGENT_FALLBACK}" \
+    BERYL_AGENT_RUNNER="${runner}" \
+    BERYL_AGENT_COMMAND_TEMPLATE="${command_template}" \
+    BERYL_AGENT_POLICY="${AGENT_POLICY}" \
+    BERYL_BOOTSTRAP_SOURCE_REF="${REPO_ROOT}" \
+    BERYL_BOOTSTRAP_INSTALLER_VERSION="setup" \
+    BERYL_BOOTSTRAP_PROFILE="${PROFILE}" \
+    BERYL_BOOTSTRAP_COMPONENTS="${component_list}" \
+    ./.beryl/agent/scripts/bootstrap-agent-context.sh)
+}
+
 read_multiline_prompt() {
   local prompt_file="$1"
 
@@ -259,8 +296,38 @@ read_multiline_prompt() {
 run_agent_fallback() {
   local reason="$1"
   local agent_choice command_template prompt_file prompt_text
+  local runner
 
   printf "\nAI fallback selected: %s\n" "${reason}"
+  if [[ "${BOOTSTRAP_AGENT}" == "1" ]]; then
+    agent_choice="$(choose "Choose a headless coding agent" \
+      "Codex" \
+      "Claude" \
+      "Custom headless command" \
+      "Skip AI fallback")"
+
+    [[ "${agent_choice}" != "Skip AI fallback" ]] || return 0
+
+    runner="${AGENT_RUNNER}"
+    command_template="${AGENT_COMMAND_TEMPLATE}"
+    case "${agent_choice}" in
+      Codex)
+        runner="codex"
+        ;;
+      Claude)
+        runner="claude"
+        ;;
+      "Custom headless command")
+        command_template="$(prompt "Command template")"
+        runner="custom"
+        [[ -n "${command_template}" ]] || fail "custom command template cannot be empty"
+        ;;
+    esac
+
+    run_bootstrap_agent "${runner}" "${command_template}"
+    return $?
+  fi
+
   agent_choice="$(choose "Choose a headless coding agent" \
     "Codex" \
     "Claude" \
@@ -337,6 +404,9 @@ selected_components() {
 install_control_plane() {
   local component path
   mapfile -t SELECTED_COMPONENTS < <(selected_components)
+  if [[ "${BOOTSTRAP_AGENT}" == "1" ]]; then
+    SELECTED_COMPONENTS+=("agent-bootstrap")
+  fi
   mapfile -t RESOLVED_COMPONENTS < <(bc_resolve_components "${MANIFEST_PATH}" "${SELECTED_COMPONENTS[@]}")
 
   printf "setup-project: installing components: %s\n" "${RESOLVED_COMPONENTS[*]}"
@@ -375,6 +445,9 @@ run_setup_checks() {
         sync-agent-env)
           run_with_optional_env "syncing generated agent shims" BERYL_SHIM_CONFLICT "${BERYL_SHIM_CONFLICT:-overwrite}" "${TARGET_DIR}/.beryl/agent/scripts/sync-agent-env.sh"
           ;;
+        bootstrap-agent-context)
+          run_bootstrap_agent
+          ;;
         update-test-manifest)
           run_if_present "creating test manifest" "${TARGET_DIR}/.beryl/scripts/update-test-manifest.sh"
           ;;
@@ -393,8 +466,43 @@ enable_git_hook() {
   fi
 
   if confirm "Enable pre-commit hook with git config core.hooksPath .beryl/githooks?" "y"; then
-    git -C "${TARGET_DIR}" config core.hooksPath .beryl/githooks
-    printf "setup-project: enabled .beryl/githooks/pre-commit\n"
+    if git -C "${TARGET_DIR}" config core.hooksPath .beryl/githooks; then
+      printf "setup-project: enabled .beryl/githooks/pre-commit\n"
+      return 0
+    fi
+
+    printf "setup-project: failed to configure hooks (write to %s/.git/config is required).\n" "${TARGET_DIR}"
+    printf "setup-project: run this after permissions allow writing .git/config:\n"
+    printf "  cd %q && git config core.hooksPath .beryl/githooks\n" "${TARGET_DIR}"
+    printf "setup-project: failure is common when target is read-only or filesystem permissions block .git/config updates.\n"
+  fi
+}
+
+print_first_run_guide() {
+  local component
+
+  printf "\nSetup selected components:\n"
+  for component in "${RESOLVED_COMPONENTS[@]}"; do
+    printf "  - %s\n" "${component}"
+  done
+
+  if ! [[ " ${RESOLVED_COMPONENTS[*]} " == *" driver "* ]]; then
+    printf "\nDriver workflow files were not installed (no .beryl/driver/run.sh).\n"
+    printf "If you need driver mode, rerun setup with one of:\n"
+    printf "  ./.beryl/scripts/setup-project.sh --profile full %q\n" "${TARGET_DIR}"
+    printf "  ./.beryl/scripts/setup-project.sh --components driver %q\n" "${TARGET_DIR}"
+  fi
+
+  if [[ " ${RESOLVED_COMPONENTS[*]} " == *" githooks "* ]]; then
+    printf "\nHook setup command (required prerequisites below):\n"
+    printf "  cd %q && git config core.hooksPath .beryl/githooks\n" "${TARGET_DIR}"
+    printf "Prerequisites:\n"
+    printf "  - run inside a Git repository (or initialize one first)\n"
+    printf "  - .git/config must be writable by this process\n"
+    printf "  - .beryl/githooks must exist in the install path\n"
+    printf "Common failures:\n"
+    printf "  - not a git repository: run from repository root\n"
+    printf "  - config lock/permission denied: fix .git/config write permissions\n"
   fi
 }
 
@@ -403,6 +511,11 @@ main() {
 
   PROFILE=""
   COMPONENTS_CSV=""
+  BOOTSTRAP_AGENT="0"
+  AGENT_FALLBACK="${BERYL_AGENT_FALLBACK:-on}"
+  AGENT_RUNNER="${BERYL_AGENT_RUNNER:-}"
+  AGENT_COMMAND_TEMPLATE="${BERYL_AGENT_COMMAND_TEMPLATE:-}"
+  AGENT_POLICY="${BERYL_AGENT_POLICY:-interactive}"
   TARGET_DIR=""
 
   while (($# > 0)); do
@@ -430,6 +543,46 @@ main() {
         COMPONENTS_CSV="${arg#--components=}"
         shift
         ;;
+      --bootstrap)
+        BOOTSTRAP_AGENT="1"
+        shift
+        ;;
+      --agent-fallback)
+        [[ $# -ge 2 ]] || fail "--agent-fallback requires a value"
+        AGENT_FALLBACK="$2"
+        shift 2
+        ;;
+      --agent-fallback=*)
+        AGENT_FALLBACK="${arg#--agent-fallback=}"
+        shift
+        ;;
+      --agent-runner)
+        [[ $# -ge 2 ]] || fail "--agent-runner requires a value"
+        AGENT_RUNNER="$2"
+        shift 2
+        ;;
+      --agent-runner=*)
+        AGENT_RUNNER="${arg#--agent-runner=}"
+        shift
+        ;;
+      --agent-command-template)
+        [[ $# -ge 2 ]] || fail "--agent-command-template requires a value"
+        AGENT_COMMAND_TEMPLATE="$2"
+        shift 2
+        ;;
+      --agent-command-template=*)
+        AGENT_COMMAND_TEMPLATE="${arg#--agent-command-template=}"
+        shift
+        ;;
+      --agent-policy)
+        [[ $# -ge 2 ]] || fail "--agent-policy requires a value"
+        AGENT_POLICY="$2"
+        shift 2
+        ;;
+      --agent-policy=*)
+        AGENT_POLICY="${arg#--agent-policy=}"
+        shift
+        ;;
       --*)
         fail "unknown argument: ${arg}"
         ;;
@@ -442,6 +595,19 @@ main() {
   done
 
   [[ -z "${PROFILE}" || -z "${COMPONENTS_CSV}" ]] || fail "use --profile or --components, not both"
+
+  case "${AGENT_FALLBACK}" in
+    on|off) ;;
+    *) fail "--agent-fallback must be on or off" ;;
+  esac
+  case "${AGENT_POLICY}" in
+    strict|interactive) ;;
+    *) fail "--agent-policy must be strict or interactive" ;;
+  esac
+  case "${AGENT_RUNNER}" in
+    ""|codex|claude|custom|off) ;;
+    *) fail "--agent-runner must be codex, claude, or custom" ;;
+  esac
 
   if [[ -z "${TARGET_DIR}" ]]; then
     target_input="$(prompt "Target project directory")"
@@ -512,6 +678,7 @@ main() {
     run_agent_fallback "user requested additional setup"
   fi
 
+  print_first_run_guide
   printf "\nSetup complete for %s\n" "${TARGET_DIR}"
   printf "Next normal command: cd %q && ./.beryl/scripts/check.sh\n" "${TARGET_DIR}"
 }

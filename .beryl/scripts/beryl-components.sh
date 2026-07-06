@@ -126,7 +126,7 @@ bc_validate_manifest() {
 
     while IFS= read -r hook; do
       case "${hook}" in
-        ""|seed-agent-context|sync-agent-env|update-test-manifest|enable-githooks) ;;
+        ""|seed-agent-context|bootstrap-agent-context|sync-agent-env|update-test-manifest|enable-githooks) ;;
         *) bc_fail "${component} has unknown postInstall hook: ${hook}" ;;
       esac
     done < <(bc_component_field "${manifest}" "${component}" postInstall)

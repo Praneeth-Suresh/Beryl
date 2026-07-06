@@ -42,3 +42,4 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 - `.beryl/scripts/paths.sh` is the shared boundary between Beryl root and host repo root.
 - `.beryl/driver/run.sh` verifies tasks against the task brief and host repository checks. Runtime stack startup is optional and configured through `VERIFY_STACK_MODE`; it is not part of the default Beryl boundary.
 - `.beryl/driver/import-github-issues.sh` imports GitHub issues into `.beryl/driver/tasks/` using the GitHub CLI as the external adapter. It preserves existing unfinished driver state by allocating new task ids around it.
+- Linked GitHub issue finalization is a soft side effect of `.beryl/driver/run.sh` after a task commit succeeds. It writes issue comment/close evidence under `.beryl/driver/state/<task-id>/` and must not make a verified local commit fail because GitHub is unavailable.
