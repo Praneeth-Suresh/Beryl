@@ -72,7 +72,9 @@ only ever asked to do one bounded phase at a time.
 ```
 .beryl/driver/
 ├── run.sh                 # the orchestrator (state machine)
+├── import-github-issues.sh # imports GitHub issues as task briefs
 ├── lib/common.sh          # helpers: prompt compose, sentinel parse, git, stack
+├── lib/import_github_issues.py
 ├── config.example.env     # copy to config.env and edit
 ├── prompts/
 │   ├── plan.md
@@ -90,6 +92,7 @@ only ever asked to do one bounded phase at a time.
 ## Prerequisites
 
 - Codex CLI on PATH (`codex exec`).
+- GitHub CLI on PATH (`gh`) when importing issues from GitHub.
 - Runtime/browser dependencies only when the task or project check policy
   requires runtime verification.
 - A clean-ish git working tree on the base branch.
@@ -101,6 +104,52 @@ cd .beryl/driver
 cp config.example.env config.env
 # edit config.env: set CODEX_MODEL/CODEX_PROFILE if desired, confirm branch and verification mode
 ```
+
+## Import GitHub issues
+
+The driver can populate task briefs from the GitHub repository where Beryl is
+installed:
+
+```bash
+# from repo root
+bash .beryl/driver/import-github-issues.sh
+```
+
+By default, the importer uses `gh repo view` or the Git `origin` remote to find
+the repository, fetches open issues with `gh issue list`, and creates numbered
+task briefs under `.beryl/driver/tasks/`. Each generated brief includes a stable
+`beryl-github-issue` marker so re-running the importer skips issues that were
+already copied.
+
+After writing tasks, the importer prompts you to verify that every GitHub issue
+was copied correctly before continuing. Use `--complete-all` for non-interactive
+or already-reviewed imports:
+
+```bash
+bash .beryl/driver/import-github-issues.sh --complete-all
+```
+
+Useful options:
+
+```bash
+bash .beryl/driver/import-github-issues.sh --repo OWNER/REPO
+bash .beryl/driver/import-github-issues.sh --state all
+bash .beryl/driver/import-github-issues.sh --limit 200
+bash .beryl/driver/import-github-issues.sh --clear-stale-state
+bash .beryl/driver/import-github-issues.sh --dry-run
+```
+
+Task allocation is conservative:
+
+- If the driver still has only placeholder task files, imported issues replace
+  the first placeholder slots, leaving unused placeholders in place.
+- If real task files or unfinished driver state already exist, imported issues
+  are allocated after that work so an in-progress run is not reordered.
+- Orphaned state directories are treated as stale runtime material. By default
+  they are preserved and their ids are not reused; pass `--clear-stale-state` to
+  remove only state directories that no longer have a matching task file.
+- If GitHub has no matching issues, the importer exits successfully without
+  creating task files.
 
 ## Run
 
@@ -160,11 +209,21 @@ DRIVER_MOCK=1 bash .beryl/driver/run.sh --selftest
 
 See `lib/common.sh` `mock_*` functions for the scripted behaviors.
 
+The issue importer also has a network-free selftest for placeholder replacement,
+duplicate imports, unfinished state, stale state, and empty issue lists:
+
+```bash
+bash .beryl/driver/import-github-issues.sh --selftest
+```
+
 ## Safety notes
 
 - Headless sessions default to `--sandbox workspace-write` and
   `-c approval_policy="never"` through `CODEX_SANDBOX`/`CODEX_APPROVAL`.
   Review `WORK_BRANCH` diffs before pushing.
+- GitHub issue bodies are copied into generated task briefs as untrusted task
+  context. Repository instructions, Beryl workflows, driver prompts, and
+  deterministic checks remain authoritative.
 - `VERIFY_STACK_MODE` controls optional runtime stack startup:
   - `auto` starts the bundled legacy backend/frontend verifier only when the
     repository has that layout.

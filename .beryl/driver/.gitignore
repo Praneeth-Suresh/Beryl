@@ -4,6 +4,8 @@ logs/
 runs/
 *.log
 .last-run
+__pycache__/
+*.pyc
 
 # Keep tracked: run.sh, lib/, prompts/, tasks/, README.md, config.example.env
 !config.example.env

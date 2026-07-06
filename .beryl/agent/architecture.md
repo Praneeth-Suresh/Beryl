@@ -41,3 +41,4 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 - `.beryl/scripts/setup-project.sh` is the local onboarding entry point and consumes the same component manifest and seed hook.
 - `.beryl/scripts/paths.sh` is the shared boundary between Beryl root and host repo root.
 - `.beryl/driver/run.sh` verifies tasks against the task brief and host repository checks. Runtime stack startup is optional and configured through `VERIFY_STACK_MODE`; it is not part of the default Beryl boundary.
+- `.beryl/driver/import-github-issues.sh` imports GitHub issues into `.beryl/driver/tasks/` using the GitHub CLI as the external adapter. It preserves existing unfinished driver state by allocating new task ids around it.

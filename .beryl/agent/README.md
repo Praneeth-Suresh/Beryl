@@ -6,6 +6,14 @@ This directory is the canonical source of truth for agent behavior in this repos
 
 The system follows the core rule from `Plan.md`: generation speed is useful only when deterministic feedback loops are stronger than the generation loop. These files make that rule executable.
 
+## Folder model
+
+<p align="center">
+  <img src="../../assets/beryl-agent-folder-map.png" alt="Beryl agent folder map: one repo-owned control plane for routing, policies, checks, decisions, generated shims, and review evidence" width="960" />
+</p>
+
+The important move is ownership: the repository carries the contract, not a chat transcript and not one overloaded markdown file. Routing, policies, checks, architecture context, and decisions live together so each agent session can reload the same working agreement before it edits code.
+
 ## Source of truth model
 
 1. `.beryl/agent/` files are canonical.
