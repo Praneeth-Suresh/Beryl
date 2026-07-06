@@ -20,12 +20,14 @@ Beryl is a relocatable hard guarantee layer for agent-ready repositories: canoni
 | Product positioning | Position Beryl as the repository hard guarantee layer for agent-ready repositories, adjacent to but distinct from skill packs and runtime harnesses. | 2026-07-04 | N/A |
 | Install agent context | Seed target-owned `.beryl/agent/` canonical docs from generic templates instead of copying Beryl's own project docs. | 2026-07-04 | `.beryl/agent/adr/0007-seed-generic-agent-context-on-install.md` |
 | GitHub issue import | Import GitHub issues into driver task briefs through a separate importer script that uses GitHub CLI as the adapter, preserves in-progress driver state, and treats copied issue bodies as untrusted context. | 2026-07-06 | N/A |
+| GitHub issue finalization | After a linked driver task commits, add a completion comment and attempt to close the GitHub issue as a soft-only side effect recorded in driver state. | 2026-07-06 | N/A |
 
 ## Pressure Points
 
 - Root instruction shims can drift if `.beryl/agent/scripts/sync-agent-env.sh` cannot write all external tool locations.
 - The shell manifest parser depends on the intentionally compact manifest object shape.
 - GitHub issue imports depend on a locally authenticated `gh` CLI and must not reuse task ids that still have unfinished or stale driver state.
+- GitHub issue finalization depends on `gh` and network/auth state, so it must remain observable and soft-only instead of becoming part of the local commit gate.
 - "Hard guarantee" must remain a process claim backed by files, scripts, manifests, and review gates, not a claim that Beryl guarantees correct code or replaces human judgment.
 
 ## Recording Rule (Design Tree vs ADR)

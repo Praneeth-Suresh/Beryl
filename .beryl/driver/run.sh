@@ -36,7 +36,7 @@ export REPO_ROOT WORK_BRANCH BASE_BRANCH VERIFY_BASE_URL VERIFY_API_URL \
        CUSTOM_AGENT_CMD DRIVER_UNATTENDED_OK DRIVER_MOCK \
        RATE_LIMIT_COOLDOWN MAX_RATE_LIMIT_WAITS VERIFY_STACK_MODE \
        VERIFY_FRONTEND_PORT_SETTING VERIFY_BACKEND_PORT_SETTING \
-       FLUSH_ON_COMPLETE
+       FLUSH_ON_COMPLETE GITHUB_ISSUE_FINALIZE
 
 # shellcheck disable=SC1091
 . "$DRIVER_DIR/lib/common.sh"
@@ -309,6 +309,13 @@ run_task() {
         return 2
       fi
       if phase_done_commit "$clog"; then
+        if last_commit_sentinel "$clog" | grep -qE '^COMMIT: DONE( |$)'; then
+          if ! finalize_linked_github_issue "$id" "$TASK_FILE" "$sd/verify.txt" "$clog"; then
+            warn "task $id: GitHub issue finalization failed softly; see $(state_dir_for "$id")/issue-finalize.txt"
+          fi
+        else
+          write_issue_finalize_skipped "$id" "commit phase skipped; no GitHub issue finalization attempted"
+        fi
         set_status "$id" "committed"
         log "task $id: committed (no push). Done."
         return 0
@@ -469,6 +476,21 @@ selftest() {
     run_task "$TID" >/dev/null 2>&1
   _expect "O: skipped verify stack still verifies" "$(get_status "$TID")" "committed"
   _expect "O: skipped verify stack leaves attempt == 1" "$(get_attempt "$TID")" "1"
+
+  # Scenario P: linked GitHub issue finalization runs after a successful commit.
+  _reset "$TID"; set_attempt "$TID" 1
+  MOCK_GITHUB_ISSUE_KEY=acme/app#11 MOCK_GITHUB_FINALIZE_RESULT=PASS \
+  MOCK_PLAN_RESULT=READY MOCK_IMPL_RESULT=DONE MOCK_VERIFY_SCRIPT="PASS" MOCK_COMMIT_RESULT=DONE \
+    run_task "$TID" >/dev/null 2>&1
+  _expect "P: linked issue finalization recorded" "$(sed -n '1p' "$(state_dir_for "$TID")/issue-finalize.txt")" "ISSUE_FINALIZE: PASS"
+
+  # Scenario Q: GitHub issue finalization failure is soft and leaves task committed.
+  _reset "$TID"; set_attempt "$TID" 1
+  MOCK_GITHUB_ISSUE_KEY=acme/app#11 MOCK_GITHUB_FINALIZE_RESULT=FAIL \
+  MOCK_PLAN_RESULT=READY MOCK_IMPL_RESULT=DONE MOCK_VERIFY_SCRIPT="PASS" MOCK_COMMIT_RESULT=DONE \
+    run_task "$TID" >/dev/null 2>&1
+  _expect "Q: soft finalization failure keeps task committed" "$(get_status "$TID")" "committed"
+  _expect "Q: soft finalization failure is recorded" "$(sed -n '1p' "$(state_dir_for "$TID")/issue-finalize.txt")" "ISSUE_FINALIZE: FAIL"
 
   _restore_selftest_state
   if [ "$fails" -eq 0 ]; then
