@@ -7,12 +7,17 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # Pinned to a full commit SHA so a moved tag cannot silently change
+        # the executed action. Dependabot keeps the digest current.
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Run deterministic checks
         run: ./.beryl/scripts/check.sh

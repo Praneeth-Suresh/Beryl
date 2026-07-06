@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=paths.sh
 source "${SCRIPT_DIR}/paths.sh"
+# shellcheck source=safe-conf.sh
+source "${SCRIPT_DIR}/safe-conf.sh"
 CONFIG_PATH="${BERYL_ROOT}/agent/affected-tests.conf"
 
 fail() {
@@ -63,10 +65,11 @@ GLOBAL_CHANGE_GLOBS=()
 RELATED_CHANGE_GLOBS=()
 IGNORED_CHANGE_GLOBS=()
 
-if [[ -f "${CONFIG_PATH}" ]]; then
-  # shellcheck disable=SC1090
-  source "${CONFIG_PATH}"
-fi
+# Parsed as data, never sourced: a hostile .conf in a PR must not be able to
+# execute shell in CI or at pre-commit.
+sc_load_conf "${CONFIG_PATH}" \
+  FULL_TEST_CMD RELATED_TEST_CMD \
+  GLOBAL_CHANGE_GLOBS RELATED_CHANGE_GLOBS IGNORED_CHANGE_GLOBS
 
 match_any() {
   local value="$1"

@@ -2,9 +2,12 @@
 set -eu
 
 INSTALLER_VERSION="1"
+# Canonical repository slug. Every default URL must be derived from this so a
+# single owner rename cannot leave a stale (potentially claimable) slug behind.
+REPO_SLUG="Praneeth-Suresh/Beryl"
 DEFAULT_REF="main"
-DEFAULT_RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/main"
-DEFAULT_ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/main"
+DEFAULT_RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$DEFAULT_REF"
+DEFAULT_ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$DEFAULT_REF"
 
 fail() {
   printf "ERROR: %s\n" "$*" >&2
@@ -26,6 +29,9 @@ Options:
   --archive-url URL           GitHub codeload tarball URL.
   --root-conflict POLICY      fail, overwrite, or skip root files. Default: fail.
   --enable-githooks           Set core.hooksPath=.beryl/githooks when installed.
+  --expected-sha256 HEX       Fail unless the downloaded archive matches this
+                              SHA-256 digest. Strongly recommended together
+                              with --ref pinned to a tag or commit SHA.
   --dry-run                   Print resolved components and paths only.
 USAGE
 }
@@ -97,12 +103,67 @@ ensure_https() {
   esac
 }
 
+# Root files a manifest may install outside .beryl/. The manifest is fetched
+# from the network in remote installs, so its paths are untrusted input.
+ROOT_PATH_ALLOWLIST="AGENTS.md
+CLAUDE.md
+.cursor/rules/agent-rules.md
+.github/copilot-instructions.md
+.codex/AGENTS.md
+.github/workflows/deterministic-checks.yml"
+
+validate_manifest_sanity() {
+  grep -q '"schemaVersion": 1' "$MANIFEST" || fail "manifest schemaVersion must be 1"
+  grep -q '"installerVersion": "1"' "$MANIFEST" || fail "manifest installerVersion must be 1"
+}
+
+validate_install_path() {
+  rel="$1"
+  case "$rel" in
+    /*) fail "manifest install path must be repository-relative: $rel" ;;
+    ..|../*|*/..|*/../*) fail "manifest install path must not contain ..: $rel" ;;
+  esac
+  case "$rel" in
+    .beryl/*) return 0 ;;
+  esac
+  list_has "$ROOT_PATH_ALLOWLIST" "${rel%/}" \
+    || fail "manifest install path outside .beryl/ is not in the root allowlist: $rel"
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    fail "need sha256sum or shasum for --expected-sha256"
+  fi
+}
+
+verify_archive_digest() {
+  archive_path="$1"
+  [ -n "$EXPECTED_SHA256" ] || return 0
+  actual_sha256="$(sha256_of "$archive_path")"
+  if [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
+    fail "archive SHA-256 mismatch: expected $EXPECTED_SHA256 got $actual_sha256 (refusing to install)"
+  fi
+  printf "beryl: archive SHA-256 verified\n"
+}
+
+# fetch_https URL OUT
+# --proto/--proto-redir keep every hop (including redirects) on HTTPS, so a
+# redirect cannot downgrade the scheme after the initial ensure_https check.
+fetch_https() {
+  ensure_https "$1"
+  curl --proto '=https' --proto-redir '=https' --tlsv1.2 --max-redirs 3 \
+    -fsSL "$1" -o "$2"
+}
+
 download_manifest() {
   mkdir -p "$TMP_DIR"
   MANIFEST="$TMP_DIR/beryl.components.json"
-  ensure_https "$RAW_BASE_URL"
   printf "beryl: fetching manifest from %s/.beryl/beryl.components.json\n" "$RAW_BASE_URL"
-  curl -fsSL "$RAW_BASE_URL/.beryl/beryl.components.json" -o "$MANIFEST"
+  fetch_https "$RAW_BASE_URL/.beryl/beryl.components.json" "$MANIFEST"
 }
 
 copy_local_path() {
@@ -133,13 +194,13 @@ copy_local_path() {
 }
 
 extract_remote_paths() {
-  ensure_https "$ARCHIVE_URL"
   archive="$TMP_DIR/beryl.tar.gz"
   stage="$TMP_DIR/stage"
   mkdir -p "$stage"
 
   printf "beryl: fetching archive %s\n" "$ARCHIVE_URL"
-  curl -fsSL "$ARCHIVE_URL" -o "$archive"
+  fetch_https "$ARCHIVE_URL" "$archive"
+  verify_archive_digest "$archive"
   prefix="$(tar -tzf "$archive" | sed -n '1s#/$##p; q')"
   [ -n "$prefix" ] || fail "could not detect archive prefix"
 
@@ -222,6 +283,7 @@ RAW_BASE_URL="$DEFAULT_RAW_BASE_URL"
 ARCHIVE_URL="$DEFAULT_ARCHIVE_URL"
 ROOT_CONFLICT="fail"
 ENABLE_GITHOOKS="0"
+EXPECTED_SHA256=""
 DRY_RUN="0"
 TMP_DIR="${TMPDIR:-/tmp}/beryl-install.$$"
 MANIFEST=""
@@ -274,14 +336,14 @@ while [ "$#" -gt 0 ]; do
     --ref)
       [ "$#" -ge 2 ] || fail "--ref requires a value"
       SOURCE_REF="$2"
-      RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/$SOURCE_REF"
-      ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/$SOURCE_REF"
+      RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$SOURCE_REF"
+      ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$SOURCE_REF"
       shift 2
       ;;
     --ref=*)
       SOURCE_REF="${1#--ref=}"
-      RAW_BASE_URL="https://raw.githubusercontent.com/praneeth/Beryl/$SOURCE_REF"
-      ARCHIVE_URL="https://codeload.github.com/praneeth/Beryl/tar.gz/$SOURCE_REF"
+      RAW_BASE_URL="https://raw.githubusercontent.com/$REPO_SLUG/$SOURCE_REF"
+      ARCHIVE_URL="https://codeload.github.com/$REPO_SLUG/tar.gz/$SOURCE_REF"
       shift
       ;;
     --raw-base-url)
@@ -315,6 +377,15 @@ while [ "$#" -gt 0 ]; do
       ENABLE_GITHOOKS="1"
       shift
       ;;
+    --expected-sha256)
+      [ "$#" -ge 2 ] || fail "--expected-sha256 requires a value"
+      EXPECTED_SHA256="$2"
+      shift 2
+      ;;
+    --expected-sha256=*)
+      EXPECTED_SHA256="${1#--expected-sha256=}"
+      shift
+      ;;
     --dry-run)
       DRY_RUN="1"
       shift
@@ -333,6 +404,13 @@ case "$ROOT_CONFLICT" in
   *) fail "--root-conflict must be fail, overwrite, or skip" ;;
 esac
 
+if [ -n "$EXPECTED_SHA256" ]; then
+  case "$EXPECTED_SHA256" in
+    *[!0-9a-fA-F]*) fail "--expected-sha256 must be a 64-char hex digest" ;;
+  esac
+  [ "${#EXPECTED_SHA256}" -eq 64 ] || fail "--expected-sha256 must be a 64-char hex digest"
+fi
+
 mkdir -p "$TARGET_DIR"
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 
@@ -345,6 +423,7 @@ else
   SOURCE_LABEL="$ARCHIVE_URL"
   download_manifest
 fi
+validate_manifest_sanity
 
 if [ -n "$COMPONENTS_CSV" ]; then
   REQUESTED_COMPONENTS="$(split_csv "$COMPONENTS_CSV")"
@@ -386,6 +465,9 @@ $(component_field "$component" paths)
 $(component_field "$component" rootPaths)"
 done
 INSTALL_PATHS="$(printf "%s\n" "$INSTALL_PATHS" | sed '/^$/d' | awk '!seen[$0]++')"
+for rel in $INSTALL_PATHS; do
+  validate_install_path "$rel"
+done
 
 printf "beryl: installer version %s\n" "$INSTALLER_VERSION"
 printf "beryl: source ref %s\n" "$SOURCE_REF"
