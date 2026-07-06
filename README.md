@@ -9,10 +9,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/static/v1?label=repository&amp;message=agent-ready&amp;color=0f766e&amp;labelColor=111827&amp;style=flat-square" alt="Agent-ready repository" />
-  <img src="https://img.shields.io/static/v1?label=checks&amp;message=deterministic&amp;color=2563eb&amp;labelColor=111827&amp;style=flat-square" alt="Deterministic checks" />
-  <img src="https://img.shields.io/static/v1?label=review&amp;message=human-owned&amp;color=111827&amp;labelColor=111827&amp;style=flat-square" alt="Human-owned review" />
-  <img src="https://img.shields.io/static/v1?label=control%20plane&amp;message=installable&amp;color=b45309&amp;labelColor=111827&amp;style=flat-square" alt="Installable control plane" />
+  <img src="https://img.shields.io/static/v1?label=repository&message=agent-ready&color=0f766e&labelColor=111827&style=flat-square" alt="Agent-ready repository" />
+  <img src="https://img.shields.io/static/v1?label=checks&message=deterministic&color=2563eb&labelColor=111827&style=flat-square" alt="Deterministic checks" />
+  <img src="https://img.shields.io/static/v1?label=review&message=human-owned&color=111827&labelColor=111827&style=flat-square" alt="Human-owned review" />
+  <img src="https://img.shields.io/static/v1?label=control%20plane&message=installable&color=b45309&labelColor=111827&style=flat-square" alt="Installable control plane" />
+</p>
+
+<p align="center">
+  <img src="assets/beryl-readme-hero.png" alt="Beryl launch slide: Hard guarantees for agent-ready repositories" width="960" />
 </p>
 
 Beryl is a hard guarantee layer for AI-assisted development. It turns the agent workflow into files, checks, and review-ready boundaries before agent output is trusted.
@@ -126,13 +130,21 @@ The driver handles plan -> implement -> verify phases against numbered tasks.
 
 ## Operating Model
 
-| Layer | Purpose |
-| --- | --- |
-| Human intent | Defines the desired outcome |
-| Agent routing | Selects the right workflow before edits |
-| Repository rules | Provides the persistent contract from `.beryl/agent/` |
-| Deterministic checks | Verifies edits through `./.beryl/scripts/check.sh` |
-| Human review | Keeps final ownership with the user |
+| Layer                | Purpose                                                |
+| -------------------- | ------------------------------------------------------ |
+| Human intent         | Defines the desired outcome                            |
+| Agent routing        | Selects the right workflow before edits                |
+| Repository rules     | Provides the persistent contract from`.beryl/agent/` |
+| Deterministic checks | Verifies edits through`./.beryl/scripts/check.sh`    |
+| Human review         | Keeps final ownership with the user                    |
+
+## Value Ladder
+
+Beryl starts as a practical safety layer for one repository, then scales without changing the operating model:
+
+<p align="center">
+  <img src="assets/beryl-value-ladder.png" alt="Beryl value ladder: start with one repo, then scale to an engineering team and company fleet" width="960" />
+</p>
 
 ## Origin
 
