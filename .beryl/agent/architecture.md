@@ -37,9 +37,10 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 ## Delivery Interfaces
 
 - `.beryl/beryl.components.json` is the source of truth for components, profiles, dependencies, selected paths, root contract paths, and post-install hooks.
-- `install.sh` is the raw-GitHub entry point. It resolves dependencies, installs only selected manifest paths, seeds generic target-owned agent context, runs declared hooks, and writes `.beryl/lock.json` last.
+- `install.sh` is the raw-GitHub entry point. It resolves dependencies, installs only selected manifest paths, optionally prompts for profile/component and agent-bootstrap choices through `--interactive`, seeds generic target-owned agent context, runs declared hooks, and writes `.beryl/lock.json` last.
 - `.beryl/scripts/setup-project.sh` is the local onboarding entry point and consumes the same component manifest and seed hook.
 - `.beryl/scripts/paths.sh` is the shared boundary between Beryl root and host repo root.
-- `.beryl/driver/run.sh` verifies tasks against the task brief and host repository checks. Runtime stack startup is optional and configured through `VERIFY_STACK_MODE`; it is not part of the default Beryl boundary.
+- `.beryl/driver/run.sh` verifies tasks against the task brief and host repository checks. Runtime stack startup is optional and configured through `VERIFY_STACK_MODE`; it is not part of the default Beryl boundary. When `DRIVER_OPTIMIZE_WORKTREES` or `--optimize-worktrees` is enabled, it first delegates to `.beryl/driver/optimize-worktrees.sh` to build and verify a task DAG and prepare parallel-ready task worktrees before the still-sequential task loop starts.
 - `.beryl/driver/import-github-issues.sh` imports GitHub issues into `.beryl/driver/tasks/` using the GitHub CLI as the external adapter. It preserves existing unfinished driver state by allocating new task ids around it.
+- `.beryl/driver/optimize-worktrees.sh` is the optional driver worktree optimization entry point. It treats agent-proposed DAG JSON as untrusted input, verifies it through `.beryl/driver/lib/worktree_optimizer.py`, and records optimizer state under `.beryl/driver/state/optimization/`.
 - Linked GitHub issue finalization is a soft side effect of `.beryl/driver/run.sh` after a task commit succeeds. It writes issue comment/close evidence under `.beryl/driver/state/<task-id>/` and must not make a verified local commit fail because GitHub is unavailable.

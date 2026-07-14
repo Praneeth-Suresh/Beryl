@@ -26,6 +26,10 @@ if [[ ! -x "${BERYL_ROOT}/scripts/validate-components.sh" ]]; then
   fail "Missing .beryl/scripts/validate-components.sh (or not executable)."
 fi
 
+if [[ ! -x "${BERYL_ROOT}/scripts/check-install-surface.sh" ]]; then
+  fail "Missing .beryl/scripts/check-install-surface.sh (or not executable)."
+fi
+
 if [[ ! -x "${BERYL_ROOT}/scripts/check-secrets.sh" ]]; then
   fail "Missing .beryl/scripts/check-secrets.sh (or not executable)."
 fi
@@ -34,6 +38,7 @@ printf "Running deterministic checks...\n"
 
 "${BERYL_ROOT}/scripts/check-md.sh"
 "${BERYL_ROOT}/scripts/validate-components.sh"
+"${BERYL_ROOT}/scripts/check-install-surface.sh"
 "${BERYL_ROOT}/scripts/check-secrets.sh" --selftest
 if [[ "${CHECK_AFFECTED_MODE:-worktree}" == "staged" ]]; then
   "${BERYL_ROOT}/scripts/check-secrets.sh" --staged

@@ -8,6 +8,8 @@
 #   bash .beryl/driver/run.sh --task 03       # one task
 #   bash .beryl/driver/run.sh --from 02       # from task 02 onward
 #   bash .beryl/driver/run.sh --resume        # skip committed, resume current
+#   bash .beryl/driver/run.sh --optimize-worktrees     # prepare optional task worktrees
+#   bash .beryl/driver/run.sh --no-optimize-worktrees  # disable optional task worktrees
 #   bash .beryl/driver/run.sh --flush-on-complete      # force cleanup on successful full run
 #   bash .beryl/driver/run.sh --no-flush-on-complete   # preserve runtime state/logs this run
 #   bash .beryl/driver/run.sh --status        # print status table and exit
@@ -36,7 +38,8 @@ export REPO_ROOT WORK_BRANCH BASE_BRANCH VERIFY_BASE_URL VERIFY_API_URL \
        CUSTOM_AGENT_CMD DRIVER_UNATTENDED_OK DRIVER_MOCK \
        RATE_LIMIT_COOLDOWN MAX_RATE_LIMIT_WAITS VERIFY_STACK_MODE \
        VERIFY_FRONTEND_PORT_SETTING VERIFY_BACKEND_PORT_SETTING \
-       FLUSH_ON_COMPLETE GITHUB_ISSUE_FINALIZE
+       FLUSH_ON_COMPLETE GITHUB_ISSUE_FINALIZE \
+       DRIVER_OPTIMIZE_WORKTREES DRIVER_WORKTREE_ROOT
 
 # shellcheck disable=SC1091
 . "$DRIVER_DIR/lib/common.sh"
@@ -44,6 +47,7 @@ export REPO_ROOT WORK_BRANCH BASE_BRANCH VERIFY_BASE_URL VERIFY_API_URL \
 # ── Args ─────────────────────────────────────────────────────────────────--
 ONLY_TASK=""; FROM_TASK=""; MODE="run"
 FLUSH_ON_COMPLETE_CLI=""
+DRIVER_OPTIMIZE_WORKTREES_CLI=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --task) ONLY_TASK="$2"; shift 2 ;;
@@ -51,9 +55,11 @@ while [ $# -gt 0 ]; do
     --resume) MODE="resume"; shift ;;
     --status) MODE="status"; shift ;;
     --selftest) MODE="selftest"; shift ;;
+    --optimize-worktrees) DRIVER_OPTIMIZE_WORKTREES_CLI="true"; shift ;;
+    --no-optimize-worktrees) DRIVER_OPTIMIZE_WORKTREES_CLI="false"; shift ;;
     --flush-on-complete) FLUSH_ON_COMPLETE_CLI="true"; shift ;;
     --no-flush-on-complete) FLUSH_ON_COMPLETE_CLI="false"; shift ;;
-    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) die "unknown arg: $1" ;;
   esac
 done
@@ -63,8 +69,15 @@ EFFECTIVE_FLUSH_ON_COMPLETE="$(driver_bool_value "FLUSH_ON_COMPLETE" "$FLUSH_ON_
 if [ -n "$FLUSH_ON_COMPLETE_CLI" ]; then
   EFFECTIVE_FLUSH_ON_COMPLETE="$(driver_bool_value "flush-on-complete CLI override" "$FLUSH_ON_COMPLETE_CLI")"
 fi
+DRIVER_OPTIMIZE_WORKTREES="${DRIVER_OPTIMIZE_WORKTREES:-false}"
+EFFECTIVE_DRIVER_OPTIMIZE_WORKTREES="$(driver_bool_value "DRIVER_OPTIMIZE_WORKTREES" "$DRIVER_OPTIMIZE_WORKTREES")"
+if [ -n "$DRIVER_OPTIMIZE_WORKTREES_CLI" ]; then
+  EFFECTIVE_DRIVER_OPTIMIZE_WORKTREES="$(driver_bool_value "optimize-worktrees CLI override" "$DRIVER_OPTIMIZE_WORKTREES_CLI")"
+fi
+export EFFECTIVE_DRIVER_OPTIMIZE_WORKTREES
 
 RUN_ID="$(date '+%Y%m%d-%H%M%S')"
+export RUN_ID
 RUN_LOG_DIR="$(logs_root)/$RUN_ID"
 mkdir -p "$RUN_LOG_DIR"
 export RUN_LOG_DIR
@@ -142,6 +155,18 @@ finish_successful_run() {
   logs_removed="$3"
   logs_preserved="$4"
   log "runtime flush cleared driver state/logs after successful full run: removed ${state_removed} state item(s), ${logs_removed} log item(s); preserved ${state_preserved} tracked state file(s), ${logs_preserved} tracked log file(s)."
+}
+
+run_worktree_optimization() {
+  [ "$EFFECTIVE_DRIVER_OPTIMIZE_WORKTREES" = "true" ] || return 0
+  local args=()
+  [ -n "$ONLY_TASK" ] && args+=(--task "$ONLY_TASK")
+  [ -n "$FROM_TASK" ] && args+=(--from "$FROM_TASK")
+  log "optional worktree optimization enabled; verifying task DAG before implementation."
+  if ! bash "$DRIVER_DIR/optimize-worktrees.sh" "${args[@]}"; then
+    warn "worktree optimization failed; stopping before task implementation. Inspect $(state_root)/optimization/status."
+    return 1
+  fi
 }
 
 # ── One phase runner: sets global PHASE_LOG; returns agent exit code ───────--
@@ -364,6 +389,18 @@ selftest() {
     rm -rf "$saved_state"
   }
 
+  if [ "$EFFECTIVE_DRIVER_OPTIMIZE_WORKTREES" = "true" ]; then
+    rm -rf "$(state_root)/optimization"
+    if run_worktree_optimization >/dev/null 2>&1; then
+      _expect "OPT: optimization status pass" "$(sed -n '1p' "$(state_root)/optimization/status")" "OPTIMIZE_WORKTREES: PASS"
+      _expect "OPT: verified DAG recorded" "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status"))' "$(state_root)/optimization/dag.verified.json")" "verified"
+      _expect "OPT: mock worktrees recorded" "$(grep -c '^0' "$(state_root)/optimization/worktrees.txt")" "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1])).get("tasks", [])))' "$(state_root)/optimization/tasks.json")"
+    else
+      warn "  FAIL: OPT: optimization preflight failed"
+      fails=$((fails+1))
+    fi
+  fi
+
   # Scenario A: pass on first verify -> committed, attempt stays 1
   _reset "$TID"; set_attempt "$TID" 1
   MOCK_PLAN_RESULT=READY MOCK_IMPL_RESULT=DONE MOCK_VERIFY_SCRIPT="PASS" MOCK_COMMIT_RESULT=DONE \
@@ -510,6 +547,10 @@ main() {
   select_driver_agent
   require_unattended_ack
   ensure_branch
+  if ! run_worktree_optimization; then
+    print_status
+    exit 2
+  fi
 
   local started=0 t id rc
   for t in $(list_tasks); do

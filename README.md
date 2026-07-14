@@ -30,15 +30,30 @@ You get repository-owned defaults for where the contract lives, how work is rout
 Recommended install: download the installer, inspect it, then run it pinned to
 a ref you trust (a tag or commit SHA instead of the moving `main`):
 
+Linux/macOS:
+
 ```bash
+BERYL_REF=main
 curl --proto '=https' --tlsv1.2 -fsSL \
   https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh -o beryl-install.sh
-less beryl-install.sh   # inspect before executing
-sh beryl-install.sh --ref <tag-or-commit-sha>
+less beryl-install.sh
+sh beryl-install.sh --ref "$BERYL_REF" --interactive
 ```
 
-To verify the downloaded archive against a published digest, add
-`--expected-sha256 <hex>`; the installer refuses to install on mismatch.
+Windows PowerShell, followed by Git Bash or WSL:
+
+```powershell
+$env:BERYL_REF = "main"
+Invoke-WebRequest `
+  -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh" `
+  -OutFile "beryl-install.sh"
+bash beryl-install.sh --ref "$env:BERYL_REF" --interactive
+```
+
+For repeatable installs, replace `main` with a trusted tag or commit SHA before
+running the command. The interactive command asks which component set to install,
+including whether to include driver workflows, and whether a coding agent should
+help fill Beryl project context.
 
 Convenience one-liner (executes remote code without inspection — only use it
 when you accept that trade-off):
@@ -47,69 +62,28 @@ when you accept that trade-off):
 curl -fsSL https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh | sh
 ```
 
+## The Three Commands That Matter
+
+| Script | What it does |
+| --- | --- |
+| `install.sh` | Remote install entry point. It installs selected Beryl profiles or components into the current repository. |
+| `.beryl/scripts/setup-project.sh` | Interactive onboarding for an existing or new project. It lets you choose the component set, including whether driver workflows are installed, and whether a coding agent should help fill project context. |
+| `.beryl/scripts/check.sh` | Deterministic safety gate for Markdown, test-manifest integrity, and configured project checks. |
+
+Install Beryl into another project interactively:
+
+```bash
+./.beryl/scripts/setup-project.sh /path/to/project
+```
+
 Run the primary repo safety gate:
 
 ```bash
 ./.beryl/scripts/check.sh
 ```
 
-Install the control plane into another project:
-
-```bash
-./.beryl/scripts/setup-project.sh /path/to/project
-```
-
-Install and immediately bootstrap repo-specific agent context files:
-
-```bash
-./.beryl/scripts/setup-project.sh --bootstrap /path/to/project
-
-# install with explicit bootstrap runner controls
-./.beryl/scripts/setup-project.sh --bootstrap --agent-fallback off --agent-runner custom --agent-command-template "/tmp/agent-runner.sh {prompt_file} {target_dir}" /path/to/project
-```
-
-Install from a remote URL and bootstrap in-place:
-
-```bash
-sh beryl-install.sh --ref <tag-or-commit-sha> --bootstrap-agent --agent-runner codex
-```
-
-If you plan to use driver workflows (task imports, `driver/run.sh`, issue bootstraps), install with:
-
-```bash
-./.beryl/scripts/setup-project.sh --profile full /path/to/project
-# or
-./.beryl/scripts/setup-project.sh --components driver /path/to/project
-```
-
-The `standard` and `minimal` profiles do not install `.beryl/driver/`.
-
-When bootstrap is requested and no runner can be used, install exits non-zero by default when `--agent-fallback off` is set and writes failure details to `.beryl/agent/bootstrap-status.json`.
-
-Optional local pre-commit guardrail:
-
-```bash
-git config core.hooksPath .beryl/githooks
-```
-
-Hook setup requires:
-
-- Running inside a Git repository (or after `git init`).
-- Permission to write `.git/config`.
-
-Common failures:
-
-- `fatal: not a git repository` → run the command after `cd` into a repo.
-- `fatal: could not lock config file ...` → the `.git/config` file is read-only or locked by permissions.
-
-When hook setup is blocked, keep the path install complete and rerun after fixing repository write access.
-
-Pass a profile if you know your target profile:
-
-```bash
-sh beryl-install.sh --ref <tag-or-commit-sha> --profile minimal
-sh beryl-install.sh --ref <tag-or-commit-sha> --profile full
-```
+Detailed install flags, profiles, component examples, bootstrap controls, and
+hook troubleshooting live in [.beryl/scripts/README.md](./.beryl/scripts/README.md).
 
 ## Documentation Map
 
@@ -121,7 +95,9 @@ Use this map before opening multiple files:
   - [Theory.md](./Theory.md): Goals, motivations, and project reasoning.
   - [Practise.md](./Practise.md): Applied examples.
   - [Cheatsheet.md](./Cheatsheet.md): Canonical command-and-workflow reference.
-  - [current.md](./current.md): Current snapshot context.
+  - [RepositoryUpkeep.md](./RepositoryUpkeep.md): Tracked process for idea intake, material promotion, maintenance cadence, and upkeep verification.
+  - [AgenticSecurity.md](./AgenticSecurity.md): Security controls, hardening status, and near-term roadmap for agentic coding workflows.
+  - `current.md`: Ignored local scratch context; promote durable material into tracked docs instead.
   - [gitignore-sample.md](./gitignore-sample.md): Ignore pattern template.
   - [assets/brand/beryl-brand-guide.md](./assets/brand/beryl-brand-guide.md): Brand and messaging reference.
 - Agent instruction surfaces
@@ -144,31 +120,6 @@ Use this map before opening multiple files:
   - [.beryl/agent/skills/debugging/SKILL.md](./.beryl/agent/skills/debugging/SKILL.md): Debug workflow.
   - [.beryl/driver/README.md](./.beryl/driver/README.md): Driver behavior and session flow.
   - [.beryl/agent/README.md](./.beryl/agent/README.md): Source-of-truth index for agent contexts.
-
-## Using Beryl from scratch in another repo
-
-```bash
-# copy command used in this repo setup
-./.beryl/scripts/setup-project.sh /path/to/new-project
-```
-
-Optional hook setup is available during setup or at any time with:
-
-```bash
-git config core.hooksPath .beryl/githooks
-```
-
-## Adding Features (driver flow)
-
-When you already have a feature request, run:
-
-```bash
-./.beryl/driver/run.sh
-```
-
-This path requires the `driver` component. If `./.beryl/driver/run.sh` is missing, install with `--profile full` or `--components driver`.
-
-The driver handles plan -> implement -> verify phases against numbered tasks.
 
 ## Operating Model
 
