@@ -27,8 +27,18 @@ You get repository-owned defaults for where the contract lives, how work is rout
 
 **Recommended first read:** [Quickstart.md](./Quickstart.md) — short, story-style onboarding from first read to first safe agent task.
 
-Recommended install: download the installer, inspect it, then run it pinned to
-a ref you trust (a tag or commit SHA instead of the moving `main`):
+### Set Up With a Coding Agent
+
+Give your coding agent this prompt:
+
+```text
+Set up Beryl for this repository. Read and follow
+.beryl/agent/skills/using-beryl/SKILL.md for the complete setup and working
+instructions. Run the prescribed checks and report the results.
+```
+
+Recommended install: download and run the installer pinned to a ref you trust
+(a tag or commit SHA instead of the moving `main`):
 
 Linux/macOS:
 
@@ -36,18 +46,18 @@ Linux/macOS:
 BERYL_REF=main
 curl --proto '=https' --tlsv1.2 -fsSL \
   https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh -o beryl-install.sh
-less beryl-install.sh
 sh beryl-install.sh --ref "$BERYL_REF" --interactive
 ```
 
-Windows PowerShell, followed by Git Bash or WSL:
+Windows: download in PowerShell, then run the installer from Git Bash or WSL
+(native PowerShell execution is not supported):
 
 ```powershell
 $env:BERYL_REF = "main"
 Invoke-WebRequest `
   -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh" `
   -OutFile "beryl-install.sh"
-bash beryl-install.sh --ref "$env:BERYL_REF" --interactive
+bash -lc 'sh beryl-install.sh --ref "$BERYL_REF" --interactive'
 ```
 
 For repeatable installs, replace `main` with a trusted tag or commit SHA before
