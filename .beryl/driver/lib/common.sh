@@ -141,6 +141,16 @@ write_github_issue_comment_body() {
   } > "$body_file"
 }
 
+rewrite_first_line() {
+  local file="$1" line="$2" tmp
+  tmp="${file}.tmp.$$"
+  {
+    printf '%s\n' "$line"
+    sed '1d' "$file"
+  } > "$tmp"
+  mv "$tmp" "$file"
+}
+
 finalize_linked_github_issue() {
   local id="$1" task_file="$2" verify_file="$3" commit_log="$4"
   local key repo number sd out body_file commit_sha enabled issue_state
@@ -199,7 +209,7 @@ finalize_linked_github_issue() {
   } > "$out"
 
   if ! gh issue comment "$number" --repo "$repo" --body-file "$body_file" >> "$out" 2>&1; then
-    sed -i '1s/.*/ISSUE_FINALIZE: FAIL/' "$out"
+    rewrite_first_line "$out" "ISSUE_FINALIZE: FAIL"
     return 1
   fi
 
@@ -212,7 +222,7 @@ finalize_linked_github_issue() {
     } >> "$out"
   else
     if ! gh issue close "$number" --repo "$repo" >> "$out" 2>&1; then
-      sed -i '1s/.*/ISSUE_FINALIZE: FAIL/' "$out"
+      rewrite_first_line "$out" "ISSUE_FINALIZE: FAIL"
       return 1
     fi
     {
@@ -221,7 +231,7 @@ finalize_linked_github_issue() {
     } >> "$out"
   fi
 
-  sed -i '1s/.*/ISSUE_FINALIZE: PASS/' "$out"
+  rewrite_first_line "$out" "ISSUE_FINALIZE: PASS"
   return 0
 }
 
@@ -236,8 +246,9 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 # ── Driver config parsing and runtime cleanup ─────────────────────────────
 driver_bool_value() {
-  local name="$1" value="$2"
-  case "${value,,}" in
+  local name="$1" value="$2" normalized
+  normalized="$(printf '%s' "$value" | LC_ALL=C tr '[:upper:]' '[:lower:]')"
+  case "$normalized" in
     1|true|yes|on) echo "true" ;;
     0|false|no|off) echo "false" ;;
     *) die "invalid $name='$value'; expected one of true/false, yes/no, on/off, or 1/0" ;;

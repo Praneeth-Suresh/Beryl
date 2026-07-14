@@ -96,5 +96,5 @@ ${rel}"
 
 tm_normalize_manifest() {
   local file="$1"
-  awk '{h=$1; $1=""; sub(/^ +/, ""); print h"  "$0}' "$file"
+  awk '{sub(/\r$/, ""); h=$1; $1=""; sub(/^ +/, ""); print h"  "$0}' "$file"
 }
