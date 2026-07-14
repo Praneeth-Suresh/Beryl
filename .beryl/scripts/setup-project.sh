@@ -381,14 +381,49 @@ split_csv() {
   printf "%s\n" "${csv}" | tr ',' '\n' | sed 's/^ *//; s/ *$//; /^$/d'
 }
 
-select_components_interactive() {
-  local profile
+prompt_target_dir() {
+  local target_type
 
-  profile="$(choose "Choose the Beryl install profile" \
-    "standard" \
-    "minimal" \
-    "full")"
-  bc_profile_components "${MANIFEST_PATH}" "${profile}"
+  target_type="$(choose "What are you setting up?" \
+    "Existing project" \
+    "New project")"
+
+  case "${target_type}" in
+    "Existing project")
+      prompt "Existing project directory"
+      ;;
+    "New project")
+      prompt "New project directory"
+      ;;
+  esac
+}
+
+select_components_interactive() {
+  local selection components_csv
+
+  selection="$(choose "Choose the Beryl component set" \
+    "Standard profile - agent instructions, shims, checks, and githooks" \
+    "Minimal profile - agent instructions and tool shims only" \
+    "Full profile - standard plus CI and driver workflows" \
+    "Custom components - comma-separated manifest components")"
+
+  case "${selection}" in
+    "Standard profile"*)
+      bc_profile_components "${MANIFEST_PATH}" "standard"
+      ;;
+    "Minimal profile"*)
+      bc_profile_components "${MANIFEST_PATH}" "minimal"
+      ;;
+    "Full profile"*)
+      bc_profile_components "${MANIFEST_PATH}" "full"
+      ;;
+    "Custom components"*)
+      printf "\nAvailable components:\n" >&2
+      bc_component_names "${MANIFEST_PATH}" | sed 's/^/  - /' >&2
+      components_csv="$(prompt "Components to install" "agent-core,checks")"
+      split_csv "${components_csv}"
+      ;;
+  esac
 }
 
 selected_components() {
@@ -430,10 +465,12 @@ install_control_plane() {
 
 run_setup_checks() {
   local component hook
+  local -a hooks
   local -A ran=()
 
   for component in "${RESOLVED_COMPONENTS[@]}"; do
-    while IFS= read -r hook; do
+    mapfile -t hooks < <(bc_component_field "${MANIFEST_PATH}" "${component}" postInstall)
+    for hook in "${hooks[@]}"; do
       [[ -n "${hook}" ]] || continue
       [[ -z "${ran[${hook}]:-}" ]] || continue
       ran["${hook}"]=1
@@ -455,7 +492,7 @@ run_setup_checks() {
           enable_git_hook
           ;;
       esac
-    done < <(bc_component_field "${MANIFEST_PATH}" "${component}" postInstall)
+    done
   done
 }
 
@@ -610,7 +647,7 @@ main() {
   esac
 
   if [[ -z "${TARGET_DIR}" ]]; then
-    target_input="$(prompt "Target project directory")"
+    target_input="$(prompt_target_dir)"
     TARGET_DIR="${target_input}"
   fi
 
@@ -622,6 +659,11 @@ main() {
   ensure_target_dir "${TARGET_DIR}"
 
   printf "setup-project: target %s\n" "${TARGET_DIR}"
+  if [[ "${BOOTSTRAP_AGENT}" != "1" ]]; then
+    if confirm "Have a coding agent help fill Beryl project context now?" "n"; then
+      BOOTSTRAP_AGENT="1"
+    fi
+  fi
   install_control_plane
   ensure_git_repo
 

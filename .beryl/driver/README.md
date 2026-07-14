@@ -75,6 +75,7 @@ scratch from those files:
 | `state/NN/verify.txt`                 | Latest verify sentinel + reason                                     | gitignored |
 | `state/NN/issue-comment.md`           | GitHub issue completion comment body, when a task is linked         | gitignored |
 | `state/NN/issue-finalize.txt`         | Soft GitHub comment/close result for linked issue tasks             | gitignored |
+| `state/optimization/`                 | Optional task DAG, verification report, waves, and worktree records | gitignored |
 | `state/NN/status`                     | One of `pending                                                     | planning   |
 | `logs/<run-id>/NN-PHASE-attemptK.log` | Full stdout/stderr of each session                                  | gitignored |
 
@@ -96,14 +97,17 @@ only ever asked to do one bounded phase at a time.
 .beryl/driver/
 ├── run.sh                 # the orchestrator (state machine)
 ├── import-github-issues.sh # imports GitHub issues as task briefs
+├── optimize-worktrees.sh   # optional DAG/worktree optimization preflight
 ├── lib/common.sh          # helpers: prompt compose, sentinel parse, git, stack
 ├── lib/import_github_issues.py
+├── lib/worktree_optimizer.py
 ├── config.example.env     # copy to config.env and edit
 ├── prompts/
 │   ├── plan.md
 │   ├── implement.md
 │   ├── verify.md
-│   └── commit.md
+│   ├── commit.md
+│   └── optimize.md
 ├── tasks/                 # one brief per task, run in listed order
 │   ├── 01-align-score-breakdown-with-network-graph.md
 │   └── 02-analysis-card-clickable-navigation.md
@@ -197,6 +201,8 @@ bash .beryl/driver/run.sh --task 03       # run a single task by number
 bash .beryl/driver/run.sh --from 02       # run task 02 onward
 bash .beryl/driver/run.sh --status        # print per-task status and exit
 bash .beryl/driver/run.sh --resume        # continue where a previous run stopped
+bash .beryl/driver/run.sh --optimize-worktrees     # prepare parallel worktrees first
+bash .beryl/driver/run.sh --no-optimize-worktrees  # override config and skip optimization
 bash .beryl/driver/run.sh --flush-on-complete      # force full-success cleanup
 bash .beryl/driver/run.sh --no-flush-on-complete   # preserve state/logs this run
 ```
@@ -208,6 +214,40 @@ When all tasks are `committed`, push manually after your own review:
 ```bash
 git push -u origin feat/agent-driver-build   # only when YOU are ready
 ```
+
+## Optional worktree optimization
+
+Set `DRIVER_OPTIMIZE_WORKTREES=true` in `.beryl/driver/config.env`, or pass
+`--optimize-worktrees`, to run a preflight before any selected task starts.
+The preflight:
+
+- collects the selected task briefs using the same run scope as `run.sh`
+  (`all`, `--task NN`, or `--from NN`);
+- asks the configured agent for a task DAG through `prompts/optimize.md`;
+- verifies the DAG deterministically with `lib/worktree_optimizer.py`;
+- computes topological waves; and
+- prepares per-task Git worktrees below `DRIVER_WORKTREE_ROOT` only when a
+  verified wave contains more than one ready task.
+
+Optimization state is written under `.beryl/driver/state/optimization/`:
+
+| File | Meaning |
+| --- | --- |
+| `tasks.json` | Selected task ids, titles, and paths. |
+| `dag.raw.json` | Agent-proposed DAG after JSON extraction. |
+| `dag.verified.json` | Deterministically verified DAG, dependencies, waves, and `parallelizable`. |
+| `waves.txt` | Human-readable topological waves. |
+| `worktrees.txt` | Created task worktree branch/path records, or a no-parallel-wave note. |
+| `status` | `OPTIMIZE_WORKTREES: PASS` or `OPTIMIZE_WORKTREES: FAIL` with detail. |
+
+If DAG verification or worktree creation fails, the driver blocks before
+implementation begins. Existing behavior is unchanged when optimization is not
+enabled.
+
+This first slice prepares worktrees for parallel development. It does not yet
+auto-run worker drivers in those worktrees, auto-merge task branches, or change
+the main task loop: `run.sh` still executes selected tasks sequentially on
+`WORK_BRANCH`.
 
 ## Runtime state and log retention
 
@@ -242,9 +282,18 @@ max-attempts blocking, resume-skip) end to end without any model calls:
 
 ```bash
 DRIVER_MOCK=1 bash .beryl/driver/run.sh --selftest
+DRIVER_MOCK=1 DRIVER_OPTIMIZE_WORKTREES=true bash .beryl/driver/run.sh --selftest
 ```
 
 See `lib/common.sh` `mock_*` functions for the scripted behaviors.
+
+The worktree optimizer has a deterministic selftest for valid independent and
+serial DAGs, unknown nodes, cycles, duplicate dependencies, self-dependencies,
+and single-task no-op selection:
+
+```bash
+bash .beryl/driver/optimize-worktrees.sh --selftest
+```
 
 The issue importer also has a network-free selftest for placeholder replacement,
 duplicate imports, unfinished state, stale state, and empty issue lists:

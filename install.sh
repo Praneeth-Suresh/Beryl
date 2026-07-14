@@ -17,9 +17,10 @@ fail() {
 usage() {
   cat <<'USAGE'
 Usage:
-  sh install.sh [--profile minimal|standard|full] [--components a,b] [--target DIR]
+  sh install.sh [--interactive] [--profile minimal|standard|full] [--components a,b] [--target DIR]
 
 Options:
+  --interactive              Prompt for component/profile and agent bootstrap choices.
   --profile NAME              Install a named profile. Default: standard.
   --components a,b            Install explicit components plus dependencies.
   --target DIR                Install into DIR. Default: current directory.
@@ -75,6 +76,83 @@ component_field() {
 
 component_names() {
   sed -n 's/^.*"kind":"component","name":"\([^"]*\)".*$/\1/p' "$MANIFEST"
+}
+
+init_interactive_io() {
+  input_path="${BERYL_INSTALL_PROMPT_INPUT:-/dev/tty}"
+  output_path="${BERYL_INSTALL_PROMPT_OUTPUT:-/dev/tty}"
+
+  [ -r "$input_path" ] || fail "--interactive needs readable prompt input: $input_path"
+  [ -w "$output_path" ] || fail "--interactive needs writable prompt output: $output_path"
+
+  exec 3<"$input_path"
+  exec 4>"$output_path"
+}
+
+prompt_interactive() {
+  label="$1"
+  default="${2:-}"
+  value=""
+
+  if [ -n "$default" ]; then
+    printf "%s [%s]: " "$label" "$default" >&4
+  else
+    printf "%s: " "$label" >&4
+  fi
+  IFS= read -r value <&3 || fail "input ended while reading: $label"
+  printf "%s" "${value:-$default}"
+}
+
+confirm_interactive() {
+  label="$1"
+  default="${2:-y}"
+  value=""
+
+  case "$default" in
+    y|Y) suffix="Y/n" ;;
+    n|N) suffix="y/N" ;;
+    *) fail "confirm default must be y or n" ;;
+  esac
+
+  while true; do
+    printf "%s [%s]: " "$label" "$suffix" >&4
+    IFS= read -r value <&3 || fail "input ended while reading: $label"
+    value="${value:-$default}"
+    case "$value" in
+      y|Y|yes|YES) return 0 ;;
+      n|N|no|NO) return 1 ;;
+      *) printf "Please answer y or n.\n" >&4 ;;
+    esac
+  done
+}
+
+choose_install_components_interactive() {
+  choice=""
+
+  printf "\nChoose the Beryl component set\n" >&4
+  printf "  1) Standard profile - agent instructions, shims, checks, and githooks\n" >&4
+  printf "  2) Minimal profile - agent instructions and tool shims only\n" >&4
+  printf "  3) Full profile - standard plus CI and driver workflows\n" >&4
+  printf "  4) Custom components - comma-separated manifest components\n" >&4
+
+  while true; do
+    printf "Choose 1-4 [1]: " >&4
+    IFS= read -r choice <&3 || fail "input ended while choosing Beryl component set"
+    choice="${choice:-1}"
+    case "$choice" in
+      1) printf "profile:standard"; return 0 ;;
+      2) printf "profile:minimal"; return 0 ;;
+      3) printf "profile:full"; return 0 ;;
+      4)
+        printf "\nAvailable components:\n" >&4
+        component_names | sed 's/^/  - /' >&4
+        components_csv="$(prompt_interactive "Components to install" "agent-core,checks")"
+        printf "components:%s" "$components_csv"
+        return 0
+        ;;
+      *) printf "Please choose a listed option.\n" >&4 ;;
+    esac
+  done
 }
 
 existing_lock_components() {
@@ -325,6 +403,8 @@ write_lockfile() {
 
 PROFILE="standard"
 COMPONENTS_CSV=""
+INTERACTIVE="0"
+EXPLICIT_COMPONENT_SELECTION="0"
 BOOTSTRAP_AGENT="0"
 AGENT_FALLBACK="${BERYL_AGENT_FALLBACK:-on}"
 AGENT_RUNNER="${BERYL_AGENT_RUNNER:-}"
@@ -349,24 +429,32 @@ while [ "$#" -gt 0 ]; do
       usage
       exit 0
       ;;
+    --interactive)
+      INTERACTIVE="1"
+      shift
+      ;;
     --profile)
       [ "$#" -ge 2 ] || fail "--profile requires a value"
       PROFILE="$2"
+      EXPLICIT_COMPONENT_SELECTION="1"
       shift 2
       ;;
     --profile=*)
       PROFILE="${1#--profile=}"
+      EXPLICIT_COMPONENT_SELECTION="1"
       shift
       ;;
     --components)
       [ "$#" -ge 2 ] || fail "--components requires a value"
       COMPONENTS_CSV="$2"
       PROFILE=""
+      EXPLICIT_COMPONENT_SELECTION="1"
       shift 2
       ;;
     --components=*)
       COMPONENTS_CSV="${1#--components=}"
       PROFILE=""
+      EXPLICIT_COMPONENT_SELECTION="1"
       shift
       ;;
     --bootstrap-agent)
@@ -507,7 +595,7 @@ case "$AGENT_POLICY" in
 esac
 case "$AGENT_RUNNER" in
   ""|codex|claude|custom|off) ;;
-  *) fail "--agent-runner must be codex, claude, or custom" ;;
+  *) fail "--agent-runner must be codex, claude, custom, or off" ;;
 esac
 
 if [ -n "$EXPECTED_SHA256" ]; then
@@ -530,6 +618,30 @@ else
   download_manifest
 fi
 validate_manifest_sanity
+
+if [ "$INTERACTIVE" = "1" ]; then
+  init_interactive_io
+  if [ "$EXPLICIT_COMPONENT_SELECTION" = "0" ]; then
+    interactive_selection="$(choose_install_components_interactive)"
+    case "$interactive_selection" in
+      profile:*)
+        PROFILE="${interactive_selection#profile:}"
+        COMPONENTS_CSV=""
+        ;;
+      components:*)
+        COMPONENTS_CSV="${interactive_selection#components:}"
+        PROFILE=""
+        ;;
+      *) fail "unexpected interactive component selection: $interactive_selection" ;;
+    esac
+  fi
+
+  if [ "$BOOTSTRAP_AGENT" != "1" ]; then
+    if confirm_interactive "Have a coding agent help fill Beryl project context after install?" "n"; then
+      BOOTSTRAP_AGENT="1"
+    fi
+  fi
+fi
 
 if [ -n "$COMPONENTS_CSV" ]; then
   REQUESTED_COMPONENTS="$(split_csv "$COMPONENTS_CSV")"

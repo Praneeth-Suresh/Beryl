@@ -817,6 +817,8 @@ ensure_branch() {
 # control flow is exercised exactly as in real mode.
 mock_agent() {
   local prompt="$1"
+  local phase_header
+  phase_header="$(printf '%s\n' "$prompt" | sed -n '1,4p')"
   # STATE_DIR is embedded in the prompt (we also have PH_STATE_DIR in env).
   local sd="$PH_STATE_DIR"
   mkdir -p "$sd"
@@ -834,7 +836,7 @@ mock_agent() {
     echo "[mock] forced process failure"
     return "$MOCK_FORCE_EXIT"
   fi
-  if printf '%s' "$prompt" | grep -q 'PLAN phase'; then
+  if printf '%s' "$phase_header" | grep -q 'PLAN phase'; then
     echo "[mock] planning"
     if [ "${MOCK_PLAN_NOISY_SUCCESS:-0}" -ne 0 ]; then
       echo "normal project text: status === 429 and CDN rate limiting"
@@ -845,14 +847,14 @@ mock_agent() {
     printf 'mock plan for attempt %s\n' "$PH_ATTEMPT" > "$sd/plan.md"
     if [ "${MOCK_PLAN_RESULT:-READY}" = "BLOCKED" ]; then
       echo "PLAN: BLOCKED mock-block"; else echo "PLAN: READY"; fi
-  elif printf '%s' "$prompt" | grep -q 'IMPLEMENT phase'; then
+  elif printf '%s' "$phase_header" | grep -q 'IMPLEMENT phase'; then
     echo "[mock] implementing"
     if [ "${MOCK_IMPL_INSTRUCTION_ECHO:-0}" -ne 0 ]; then
       echo "IMPLEMENT: DONE"
     fi
     if [ "${MOCK_IMPL_RESULT:-DONE}" = "INCOMPLETE" ]; then
       echo "IMPLEMENT: INCOMPLETE mock-incomplete"; else echo "IMPLEMENT: DONE"; fi
-  elif printf '%s' "$prompt" | grep -q 'VERIFY phase'; then
+  elif printf '%s' "$phase_header" | grep -q 'VERIFY phase'; then
     # pick verdict for this attempt from MOCK_VERIFY_SCRIPT (1-indexed)
     local idx="$PH_ATTEMPT"; local verdict
     verdict="$(echo "${MOCK_VERIFY_SCRIPT:-PASS}" | awk -v i="$idx" '{print $i}')"
@@ -865,7 +867,7 @@ mock_agent() {
       printf 'VERIFY: FAIL\n1. mock criterion unmet (attempt %s)\n' "$idx" > "$sd/verify.txt"
       echo "VERIFY: FAIL"
     fi
-  elif printf '%s' "$prompt" | grep -q 'COMMIT phase'; then
+  elif printf '%s' "$phase_header" | grep -q 'COMMIT phase'; then
     echo "[mock] committing"
     if [ "${MOCK_COMMIT_INSTRUCTION_ECHO:-0}" -ne 0 ]; then
       echo "COMMIT: DONE <short-sha>"
