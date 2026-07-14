@@ -55,11 +55,17 @@ bc_component_field() {
   bc_array_field_from_line "${line}" "${field}"
 }
 
+bc_line_list_has() {
+  local list="$1"
+  local item="$2"
+  printf "%s\n" "${list}" | grep -qxF "${item}"
+}
+
 bc_resolve_components() {
   local manifest="$1"
   shift
   local -a requested=("$@")
-  local -A seen=()
+  local seen=""
   local -a ordered=()
   local component
 
@@ -68,7 +74,9 @@ bc_resolve_components() {
     local dep
 
     [[ -n "${item}" ]] || return 0
-    [[ -z "${seen[${item}]:-}" ]] || return 0
+    if bc_line_list_has "${seen}" "${item}"; then
+      return 0
+    fi
 
     [[ -n "$(bc_manifest_line "${manifest}" component "${item}")" ]] || bc_fail "unknown component: ${item}"
 
@@ -76,7 +84,8 @@ bc_resolve_components() {
       [[ -n "${dep}" ]] && bc_resolve_visit "${dep}"
     done < <(bc_component_field "${manifest}" "${item}" requires)
 
-    seen["${item}"]=1
+    seen="${seen}
+${item}"
     ordered+=("${item}")
   }
 
@@ -133,11 +142,14 @@ bc_validate_manifest() {
   done < <(bc_component_names "${manifest}")
 
   while IFS= read -r profile; do
-    mapfile -t selected < <(bc_profile_components "${manifest}" "${profile}")
-    ((${#selected[@]} > 0)) || bc_fail "profile has no components: ${profile}"
-    for component in "${selected[@]}"; do
+    selected="$(bc_profile_components "${manifest}" "${profile}")"
+    [[ -n "${selected}" ]] || bc_fail "profile has no components: ${profile}"
+    while IFS= read -r component; do
+      [[ -n "${component}" ]] || continue
       [[ -n "$(bc_manifest_line "${manifest}" component "${component}")" ]] || bc_fail "profile ${profile} references unknown component ${component}"
-    done
-    bc_resolve_components "${manifest}" "${selected[@]}" >/dev/null
+    done <<EOF
+${selected}
+EOF
+    bc_resolve_components "${manifest}" ${selected} >/dev/null
   done < <(bc_profile_names "${manifest}")
 }

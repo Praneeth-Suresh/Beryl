@@ -438,11 +438,17 @@ selected_components() {
 
 install_control_plane() {
   local component path
-  mapfile -t SELECTED_COMPONENTS < <(selected_components)
+  SELECTED_COMPONENTS=()
+  while IFS= read -r component; do
+    [[ -n "${component}" ]] && SELECTED_COMPONENTS+=("${component}")
+  done < <(selected_components)
   if [[ "${BOOTSTRAP_AGENT}" == "1" ]]; then
     SELECTED_COMPONENTS+=("agent-bootstrap")
   fi
-  mapfile -t RESOLVED_COMPONENTS < <(bc_resolve_components "${MANIFEST_PATH}" "${SELECTED_COMPONENTS[@]}")
+  RESOLVED_COMPONENTS=()
+  while IFS= read -r component; do
+    [[ -n "${component}" ]] && RESOLVED_COMPONENTS+=("${component}")
+  done < <(bc_resolve_components "${MANIFEST_PATH}" "${SELECTED_COMPONENTS[@]}")
 
   printf "setup-project: installing components: %s\n" "${RESOLVED_COMPONENTS[*]}"
 
@@ -466,14 +472,20 @@ install_control_plane() {
 run_setup_checks() {
   local component hook
   local -a hooks
-  local -A ran=()
+  local ran_hooks=""
 
   for component in "${RESOLVED_COMPONENTS[@]}"; do
-    mapfile -t hooks < <(bc_component_field "${MANIFEST_PATH}" "${component}" postInstall)
+    hooks=()
+    while IFS= read -r hook; do
+      [[ -n "${hook}" ]] && hooks+=("${hook}")
+    done < <(bc_component_field "${MANIFEST_PATH}" "${component}" postInstall)
     for hook in "${hooks[@]}"; do
       [[ -n "${hook}" ]] || continue
-      [[ -z "${ran[${hook}]:-}" ]] || continue
-      ran["${hook}"]=1
+      if printf "%s\n" "${ran_hooks}" | grep -qxF "${hook}"; then
+        continue
+      fi
+      ran_hooks="${ran_hooks}
+${hook}"
 
       case "${hook}" in
         seed-agent-context)

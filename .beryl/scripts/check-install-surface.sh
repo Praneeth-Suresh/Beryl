@@ -21,7 +21,6 @@ manifest_expected_paths() {
   local value="$2"
   local requested=""
   local resolved=""
-  local -a paths
 
   case "${mode}" in
     profile)
@@ -37,14 +36,10 @@ manifest_expected_paths() {
 
   resolved="$(bc_resolve_components "${REPO_ROOT}/.beryl/beryl.components.json" ${requested})"
 
-  mapfile -t paths < <(
-    for component in ${resolved}; do
-      bc_component_field "${REPO_ROOT}/.beryl/beryl.components.json" "${component}" paths
-      bc_component_field "${REPO_ROOT}/.beryl/beryl.components.json" "${component}" rootPaths
-    done | sed '/^$/d' | awk '!seen[$0]++'
-  )
-
-  printf "%s\n" "${paths[@]}"
+  for component in ${resolved}; do
+    bc_component_field "${REPO_ROOT}/.beryl/beryl.components.json" "${component}" paths
+    bc_component_field "${REPO_ROOT}/.beryl/beryl.components.json" "${component}" rootPaths
+  done | sed '/^$/d' | awk '!seen[$0]++'
 }
 
 install_dry_run_paths() {
@@ -98,7 +93,6 @@ check_scope() {
   local label="$1"
   local mode="$2"
   local value="$3"
-  local -a actual_lines expected_lines
   local expected
   local actual
 
@@ -108,23 +102,26 @@ check_scope() {
   actual="$(mktemp)"
   trap 'rm -f "$expected" "$actual"' RETURN
 
-  mapfile -t actual_lines < <(install_dry_run_paths "${mode}" "${value}")
-  printf "%s\n" "${actual_lines[@]}" | sed '/^$/d' | sort -u > "${actual}"
+  install_dry_run_paths "${mode}" "${value}" | sed '/^$/d' | sort -u > "${actual}"
 
-  mapfile -t expected_lines < <(
+  (
     if [ "${mode}" = "profile" ]; then
       manifest_expected_paths profile "${value}"
     else
       manifest_expected_paths components "${value}"
     fi
-  )
-  printf "%s\n" "${expected_lines[@]}" | sed '/^$/d' | sort -u > "${expected}"
+  ) | sed '/^$/d' | sort -u > "${expected}"
 
   expect_no_diff "${label}" "${expected}" "${actual}"
   printf "check-install-surface: %s OK\n" "${label}"
 }
 
 printf "check-install-surface: validating install path scope against manifest\n"
+
+if [[ ! -f "${REPO_ROOT}/install.sh" ]]; then
+  printf "check-install-surface: install.sh is not present in this installed target (skipping)\n"
+  exit 0
+fi
 
 check_scope "profile:minimal" "profile" "minimal"
 check_scope "profile:standard" "profile" "standard"

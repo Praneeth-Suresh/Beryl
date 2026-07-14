@@ -15,16 +15,17 @@ fail() {
 # - no TAB characters
 # Applies to all markdown files in the repository except .git.
 
-mapfile -t md_files < <(
-  cd "${REPO_ROOT}" && find . -type f -name '*.md' -not -path './.git/*' | LC_ALL=C sort
-)
+md_files="$(cd "${REPO_ROOT}" && find . -type f -name '*.md' -not -path './.git/*' | LC_ALL=C sort)"
 
-if ((${#md_files[@]} == 0)); then
+if [[ -z "${md_files}" ]]; then
   printf "check-md: no markdown files found (skipping)\n"
   exit 0
 fi
 
-for f in "${md_files[@]}"; do
+count=0
+while IFS= read -r f; do
+  [[ -n "${f}" ]] || continue
+  count=$((count + 1))
   path="${REPO_ROOT}/${f#./}"
 
   # Unclosed code fences: count of ``` lines should be even.
@@ -38,6 +39,8 @@ for f in "${md_files[@]}"; do
   if LC_ALL=C grep -n $'\t' "${path}" >/dev/null 2>&1; then
     fail "check-md: Tab character found in ${f#./}."
   fi
-done
+done <<EOF
+${md_files}
+EOF
 
-printf "check-md: OK (%d files)\n" "${#md_files[@]}"
+printf "check-md: OK (%d files)\n" "${count}"

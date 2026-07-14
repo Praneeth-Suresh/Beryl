@@ -63,34 +63,28 @@ sha256_of() {
 }
 
 snapshot_files() {
-  local -n out_ref="$1"
+  local output="$1"
   local file rel
 
+  : >"${output}"
   while IFS= read -r -d '' file; do
     rel="${file#${TARGET_DIR}/}"
-    out_ref["${rel}"]="$(sha256_of "${file}")"
-  done < <(find "${TARGET_DIR}" -type f -print0 | sort -z)
+    printf '%s\t%s\n' "$(sha256_of "${file}")" "${rel}" >>"${output}"
+  done < <(find "${TARGET_DIR}" -type f -print0)
+  LC_ALL=C sort -o "${output}" "${output}"
 }
 
 changed_paths() {
-  local -n before_ref="$1"
-  local -n after_ref="$2"
-  local -n out_ref="$3"
-  local path
-
-  out_ref=()
-
-  for path in "${!after_ref[@]}"; do
-    if [[ -z "${before_ref[${path}]:-}" ]]; then
-      out_ref+=("${path}")
-    elif [[ "${before_ref[${path}]}" != "${after_ref[${path}]}" ]]; then
-      out_ref+=("${path}")
-    fi
-  done
-
-  for path in "${!before_ref[@]}"; do
-    [[ -n "${after_ref[${path}]:-}" ]] || out_ref+=("${path}")
-  done
+  local before="$1"
+  local after="$2"
+  awk -F '\t' '
+    NR == FNR { before[$2] = $1; next }
+    { after[$2] = $1 }
+    END {
+      for (path in after) if (!(path in before) || before[path] != after[path]) print path
+      for (path in before) if (!(path in after)) print path
+    }
+  ' "${before}" "${after}" | LC_ALL=C sort
 }
 
 allowed_change_path() {
@@ -109,34 +103,42 @@ has_template_placeholders() {
 }
 
 required_state() {
-  local -n missing_ref="$1"
-  local -n filled_ref="$2"
   local rel target_file template_file
-
-  missing_ref=()
-  filled_ref=()
+  local state
 
   for rel in "${REQUIRED_FILES[@]}"; do
+    state="filled"
     target_file="${TARGET_DIR}/.beryl/agent/${rel}"
     template_file="${REQUIRED_TEMPLATE_ROOT}/${rel}"
 
     if [[ ! -f "${target_file}" ]]; then
-      missing_ref+=("${rel}")
-      continue
+      state="missing"
+    elif [[ -f "${template_file}" ]] && cmp -s "${target_file}" "${template_file}"; then
+      state="missing"
+    elif [[ -f "${template_file}" ]] && has_template_placeholders "${target_file}"; then
+      state="missing"
     fi
 
-    if [[ -f "${template_file}" ]] && cmp -s "${target_file}" "${template_file}"; then
-      missing_ref+=("${rel}")
-      continue
-    fi
-
-    if [[ -f "${template_file}" ]] && has_template_placeholders "${target_file}"; then
-      missing_ref+=("${rel}")
-      continue
-    fi
-
-    filled_ref+=("${rel}")
+    printf "%s\t%s\n" "${state}" "${rel}"
   done
+}
+
+load_required_state() {
+  local missing_name="$1"
+  local filled_name="$2"
+  local state rel
+
+  eval "${missing_name}=()"
+  eval "${filled_name}=()"
+
+  while IFS=$'\t' read -r state rel; do
+    [[ -n "${rel}" ]] || continue
+    case "${state}" in
+      missing) eval "${missing_name}+=(\"\${rel}\")" ;;
+      filled) eval "${filled_name}+=(\"\${rel}\")" ;;
+      *) fail "unknown required-state marker: ${state}" ;;
+    esac
+  done < <(required_state)
 }
 
 resolve_runner() {
@@ -327,8 +329,8 @@ main() {
   local fallback="${BERYL_AGENT_FALLBACK:-on}"
   local policy="${BERYL_AGENT_POLICY:-interactive}"
   local -a pre_missing=() pre_filled=() post_missing=() post_filled=() errors=()
-  local -a changed=()
-  local -A before_snapshot=() after_snapshot=()
+  local before_snapshot=""
+  local after_snapshot=""
   local status=""
   local runner=""
   local run_output=""
@@ -348,8 +350,11 @@ main() {
     *) fail "--agent-policy must be strict or interactive" ;;
   esac
 
-  snapshot_files before_snapshot
-  required_state pre_missing pre_filled
+  before_snapshot="$(mktemp)"
+  after_snapshot="$(mktemp)"
+  trap 'rm -f "${before_snapshot}" "${after_snapshot}"' RETURN
+  snapshot_files "${before_snapshot}"
+  load_required_state pre_missing pre_filled
 
   if (( ${#pre_missing[@]} == 0 )); then
     status="already-complete"
@@ -398,19 +403,19 @@ main() {
     status="completed"
   fi
 
-  snapshot_files after_snapshot
-  changed_paths before_snapshot after_snapshot changed
+  snapshot_files "${after_snapshot}"
 
   if [[ "${policy}" == "strict" ]]; then
-    for path in "${changed[@]}"; do
+    while IFS= read -r path; do
+      [[ -n "${path}" ]] || continue
       if ! allowed_change_path "${path}"; then
         status="failed"
         errors+=("strict policy violation: ${path}")
       fi
-    done
+    done < <(changed_paths "${before_snapshot}" "${after_snapshot}")
   fi
 
-  required_state post_missing post_filled
+  load_required_state post_missing post_filled
   if [[ "${status}" != "failed" && "${#post_missing[@]}" -gt 0 ]]; then
     status="partial"
     errors+=("one or more required files remain unfilled")

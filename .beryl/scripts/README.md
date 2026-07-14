@@ -5,8 +5,10 @@ profiles, bootstrap controls, and optional hook setup.
 
 ## Install Beryl
 
-`install.sh` is a POSIX shell installer. On Windows, run it through Git Bash,
-WSL, or another shell that provides `sh` or `bash`.
+`install.sh` is a POSIX shell installer. The installed control-plane scripts
+support the system Bash shipped with macOS and Git Bash or WSL on Windows.
+Native PowerShell is supported for downloading the installer only; run it from
+Git Bash or WSL after download.
 
 Linux/macOS:
 
@@ -14,7 +16,6 @@ Linux/macOS:
 BERYL_REF=main
 curl --proto '=https' --tlsv1.2 -fsSL \
   https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh -o beryl-install.sh
-less beryl-install.sh
 sh beryl-install.sh --ref "$BERYL_REF" --interactive
 ```
 
@@ -25,13 +26,16 @@ $env:BERYL_REF = "main"
 Invoke-WebRequest `
   -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh" `
   -OutFile "beryl-install.sh"
-bash beryl-install.sh --ref "$env:BERYL_REF" --interactive
+bash -lc 'sh beryl-install.sh --ref "$BERYL_REF" --interactive'
 ```
 
 For repeatable installs, set `BERYL_REF` to a trusted tag or commit SHA instead
 of `main`. The interactive command asks which component set to install,
 including whether to include driver workflows, and whether a coding agent should
 help fill Beryl project context.
+
+To inspect the downloaded file before running it, use `less beryl-install.sh` as
+an explicit optional review step.
 
 Convenience one-liner, only when you accept executing remote code without local
 inspection:

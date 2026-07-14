@@ -133,17 +133,19 @@ if ! git -C "${REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
-mapfile -t changed_files < <(collect_changed_files | LC_ALL=C sort -u)
+changed_files="$(collect_changed_files | LC_ALL=C sort -u)"
 
-if ((${#changed_files[@]} == 0)); then
+if [[ -z "${changed_files}" ]]; then
   printf "check-affected: no changed files in %s mode (OK)\n" "${mode}"
   exit 0
 fi
 
 related_files=()
 
-for rel in "${changed_files[@]}"; do
+changed_count=0
+while IFS= read -r rel; do
   [[ -z "${rel}" ]] && continue
+  changed_count=$((changed_count + 1))
 
   if ((${#GLOBAL_CHANGE_GLOBS[@]} > 0)) && match_any "${rel}" "${GLOBAL_CHANGE_GLOBS[@]}"; then
     printf "check-affected: global trigger changed: %s\n" "${rel}"
@@ -159,10 +161,12 @@ for rel in "${changed_files[@]}"; do
   if ((${#IGNORED_CHANGE_GLOBS[@]} > 0)) && match_any "${rel}" "${IGNORED_CHANGE_GLOBS[@]}"; then
     continue
   fi
-done
+done <<EOF
+${changed_files}
+EOF
 
 if ((${#related_files[@]} == 0)); then
-  printf "check-affected: no project test files selected from %s changed file(s) (OK)\n" "${#changed_files[@]}"
+  printf "check-affected: no project test files selected from %s changed file(s) (OK)\n" "${changed_count}"
   exit 0
 fi
 

@@ -12,7 +12,14 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         # Pinned to a full commit SHA so a moved tag cannot silently change
@@ -24,3 +31,6 @@ jobs:
 
       - name: Run agent doctor
         run: ./.beryl/agent/scripts/agent-doctor.sh
+
+      - name: Run cross-platform install and setup smoke test
+        run: ./.beryl/scripts/portability-smoke.sh

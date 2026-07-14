@@ -73,7 +73,7 @@ tm_load_manifest_config() {
 tm_collect_manifest_files() {
   local root_dir="$1"
   local rel
-  local -A seen=()
+  local collected=""
 
   while IFS= read -r -d '' path; do
     rel="${path#${root_dir}/}"
@@ -87,13 +87,14 @@ tm_collect_manifest_files() {
       continue
     fi
 
-    seen["${rel}"]=1
+    collected="${collected}
+${rel}"
   done < <(find "${root_dir}" -type f -not -path "${root_dir}/.git/*" -print0)
 
-  printf "%s\n" "${!seen[@]}" | LC_ALL=C sort
+  printf "%s\n" "${collected}" | sed '/^$/d' | LC_ALL=C sort -u
 }
 
 tm_normalize_manifest() {
   local file="$1"
-  awk '{h=$1; $1=""; sub(/^ +/, ""); print h"  "$0}' "$file"
+  awk '{sub(/\r$/, ""); h=$1; $1=""; sub(/^ +/, ""); print h"  "$0}' "$file"
 }

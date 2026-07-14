@@ -89,6 +89,19 @@ cleanup_on_exit() {
 trap cleanup_on_exit EXIT
 trap 'trap - INT TERM; stop_verify_stack; exit 130' INT TERM
 
+copy_driver_state() {
+  local source="$1"
+  local destination="$2"
+  cp -R "${source}" "${destination}"
+}
+
+resume_time_after() {
+  local seconds="$1"
+  date -d "+${seconds} seconds" '+%H:%M %Z %b %d' 2>/dev/null \
+    || date -v+"${seconds}"S '+%H:%M %Z %b %d' 2>/dev/null \
+    || date '+%H:%M %Z %b %d'
+}
+
 list_tasks() { ls "$(tasks_dir)"/[0-9]*.md 2>/dev/null | sort; }
 
 print_status() {
@@ -210,7 +223,7 @@ Address every point above in this re-plan."
       fi
       local wait_secs=$((RATE_LIMIT_COOLDOWN * rl_waits))
       [ $wait_secs -gt 43200 ] && wait_secs=43200
-      local resume_at; resume_at="$(date -d "+${wait_secs} seconds" '+%H:%M %Z %b %d' 2>/dev/null || date '+%H:%M %Z %b %d')"
+      local resume_at; resume_at="$(resume_time_after "${wait_secs}")"
       warn "task $id: $phase rate-limited. Sleeping ${wait_secs}s (~$(( wait_secs/3600 ))h). Resume ~$resume_at. [$rl_waits/$MAX_RATE_LIMIT_WAITS]"
       sleep "$wait_secs"
       log "task $id: $phase waking from rate-limit cooldown. Retrying..."
@@ -378,13 +391,13 @@ selftest() {
   TASK_FILE="$(list_tasks | grep -E "/${TID}-" | head -n1)"
   local saved_state; saved_state="$(mktemp -d "${TMPDIR:-/tmp}/driver-selftest.XXXXXX")" || return 1
   if [ -d "$(state_root)/$TID" ]; then
-    cp -a "$(state_root)/$TID" "$saved_state/$TID"
+    copy_driver_state "$(state_root)/$TID" "$saved_state/$TID"
   fi
   _restore_selftest_state() {
     rm -rf "$(state_root)/$TID"
     if [ -d "$saved_state/$TID" ]; then
       mkdir -p "$(state_root)"
-      cp -a "$saved_state/$TID" "$(state_root)/$TID"
+      copy_driver_state "$saved_state/$TID" "$(state_root)/$TID"
     fi
     rm -rf "$saved_state"
   }
