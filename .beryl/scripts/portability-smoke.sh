@@ -18,6 +18,8 @@ install_profile() {
   sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${target}" --profile "${profile}"
   [[ -f "${target}/.beryl/lock.json" ]] || fail "${profile}: lockfile was not written"
   [[ -f "${target}/AGENTS.md" ]] || fail "${profile}: generated shim missing"
+  [[ -f "${target}/LICENSE" ]] || fail "${profile}: Apache license missing"
+  [[ -f "${target}/NOTICE" ]] || fail "${profile}: Apache notice missing"
 
   if [[ "${profile}" != "minimal" ]]; then
     (cd "${target}" && ./.beryl/scripts/check.sh)
@@ -39,6 +41,8 @@ printf 'n\nn\n1\n1\ny\nn\n' | \
   bash "${REPO_ROOT}/.beryl/scripts/setup-project.sh" --profile standard "${setup_target}"
 [[ -x "${setup_target}/.beryl/scripts/check.sh" ]] || fail 'setup: check.sh missing'
 [[ -f "${setup_target}/AGENTS.md" ]] || fail 'setup: generated shim missing'
+[[ -f "${setup_target}/LICENSE" ]] || fail 'setup: Apache license missing'
+[[ -f "${setup_target}/NOTICE" ]] || fail 'setup: Apache notice missing'
 [[ -f "${setup_target}/tests/.manifest.sha256" ]] || fail 'setup: test manifest missing'
 
 printf 'portability-smoke: PASS\n'
