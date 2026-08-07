@@ -128,7 +128,7 @@ bc_validate_manifest() {
     while IFS= read -r path; do
       [[ -n "${path}" ]] || continue
       case "${path}" in
-        AGENTS.md|CLAUDE.md|.cursor/rules/agent-rules.md|.github/copilot-instructions.md|.codex/AGENTS.md|.github/workflows/deterministic-checks.yml) ;;
+        AGENTS.md|CLAUDE.md|.cursor/rules/agent-rules.md|.github/copilot-instructions.md|.codex/AGENTS.md|.github/workflows/deterministic-checks.yml|LICENSE|NOTICE) ;;
         *) bc_fail "${component} rootPath is not in the root-shim allowlist: ${path}" ;;
       esac
     done < <(bc_component_field "${manifest}" "${component}" rootPaths)

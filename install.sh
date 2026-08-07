@@ -195,7 +195,9 @@ CLAUDE.md
 .cursor/rules/agent-rules.md
 .github/copilot-instructions.md
 .codex/AGENTS.md
-.github/workflows/deterministic-checks.yml"
+.github/workflows/deterministic-checks.yml
+LICENSE
+NOTICE"
 
 validate_manifest_sanity() {
   grep -q '"schemaVersion": 1' "$MANIFEST" || fail "manifest schemaVersion must be 1"

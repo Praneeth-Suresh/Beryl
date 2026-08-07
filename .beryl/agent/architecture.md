@@ -7,6 +7,7 @@
 | Beryl Control Plane | Agent instructions, task workflows, deterministic checks, component manifest, installer, optional hooks, and driver prompts under `.beryl/` | Host application source, host test commands beyond configured adapters, and external tool root lookup locations | `.beryl/beryl.components.json`, `install.sh`, `.beryl/scripts/check.sh`, `.beryl/scripts/setup-project.sh` |
 | Root Contracts | Files external tools require at fixed root paths: generated instruction shims, GitHub workflow, and `.gitignore` | Canonical instruction content and Beryl implementation files | `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, `.codex/AGENTS.md`, `.github/workflows/deterministic-checks.yml`, `.gitignore` |
 | Agent Context Seeds | Generic project-owned canonical files used when installing Beryl into a target repository | Beryl's own project brief, architecture, design decisions, vocabulary, or ADR history | `.beryl/agent/templates/install/`, `.beryl/agent/scripts/seed-agent-context.sh` |
+| Project Legal and Community | Apache-2.0 license and notice, public contribution, trademark-use, support, security, and consulting policies | Beryl control-plane behavior and host-project legal policies | `LICENSE`, `NOTICE`, `TRADEMARKS.md`, `CONTRIBUTING.md`, `SUPPORT.md`, `SECURITY.md`, `SERVICES.md` |
 
 ## Boundary Rules
 
@@ -14,7 +15,7 @@
 2. Internal files of another context are forbidden imports.
 3. External APIs, SDKs, and persistence details must be accessed through adapters.
 4. Domain logic must not depend directly on HTTP objects, ORM records, UI state, or vendor client types.
-5. Beryl-owned implementation files live under `.beryl/`; root files are allowed only when an external tool requires that location.
+5. Beryl-owned implementation files live under `.beryl/`; root files are allowed only for external-tool contracts or project legal and community documents.
 6. Scripts use `BERYL_ROOT` for Beryl-owned paths and `REPO_ROOT` for host project scans, Git operations, generated root shims, and test manifests.
 
 ## Public Interface Rule
@@ -37,6 +38,7 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 ## Delivery Interfaces
 
 - `.beryl/beryl.components.json` is the source of truth for components, profiles, dependencies, selected paths, root contract paths, and post-install hooks.
+- `LICENSE` and `NOTICE` are part of every agent-core install surface so downstream recipients receive the Apache-2.0 terms and required attribution notices with Beryl.
 - `install.sh` is the raw-GitHub entry point. It resolves dependencies, installs only selected manifest paths, optionally prompts for profile/component and agent-bootstrap choices through `--interactive`, seeds generic target-owned agent context, runs declared hooks, and writes `.beryl/lock.json` last.
 - `.beryl/scripts/setup-project.sh` is the local onboarding entry point and consumes the same component manifest and seed hook.
 - `.beryl/scripts/paths.sh` is the shared boundary between Beryl root and host repo root.

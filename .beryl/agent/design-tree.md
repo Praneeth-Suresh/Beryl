@@ -24,6 +24,7 @@ Beryl is a relocatable hard guarantee layer for agent-ready repositories: canoni
 | Driver worktree optimization | Keep driver task execution sequential by default, but add an opt-in preflight that asks an agent for a task DAG, verifies it deterministically, and prepares task worktrees for parallel-ready waves. | 2026-07-13 | N/A |
 | Repository upkeep | Use `RepositoryUpkeep.md` as the tracked guide for idea intake, scratch promotion, maintenance cadence, and upkeep verification instead of relying on ignored `current.md` or hidden chat history. | 2026-07-13 | N/A |
 | Supported shell hosts | Support macOS system Bash and Windows Git Bash or WSL for installed scripts; keep native PowerShell limited to downloading the POSIX installer. Verify the supported hosts in GitHub Actions. | 2026-07-15 | N/A |
+| Open-source distribution | License Beryl under Apache-2.0, ship `LICENSE` and `NOTICE` in every install surface, and document separate trademark, contribution, support, security, and consulting boundaries. | 2026-08-07 | N/A |
 
 ## Pressure Points
 

@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/static/v1?label=checks&message=deterministic&color=2563eb&labelColor=111827&style=flat-square" alt="Deterministic checks" />
   <img src="https://img.shields.io/static/v1?label=review&message=human-owned&color=111827&labelColor=111827&style=flat-square" alt="Human-owned review" />
   <img src="https://img.shields.io/static/v1?label=control%20plane&message=installable&color=b45309&labelColor=111827&style=flat-square" alt="Installable control plane" />
+  <img src="https://img.shields.io/static/v1?label=license&message=Apache-2.0&color=d97706&labelColor=111827&style=flat-square" alt="Apache-2.0 licensed" />
 </p>
 
 <p align="center">
@@ -22,6 +23,28 @@
 Beryl is a hard guarantee layer for AI-assisted development. It turns the agent workflow into files, checks, and review-ready boundaries before agent output is trusted.
 
 You get repository-owned defaults for where the contract lives, how work is routed, and which checks run. Beryl does not replace review. It makes review and recovery easier.
+
+## Open Source License
+
+Beryl is open source under the [Apache License, Version 2.0](./LICENSE).
+You may use, modify, redistribute, and commercialize Beryl. When distributing
+it or derivative works, preserve the license and applicable notices, identify
+modified files, and follow the [NOTICE](./NOTICE) requirements. Apache-2.0 also
+includes an express patent license and patent-termination provision; read the
+full license for its terms, conditions, warranty disclaimer, and limitation of
+liability.
+
+The license does not grant rights to use the Beryl name or logos beyond normal
+descriptive use. See [TRADEMARKS.md](./TRADEMARKS.md).
+
+## Community, Support, and Services
+
+- [Contribute](./CONTRIBUTING.md) code or documentation under Apache-2.0.
+- Get best-effort community help through [Support](./SUPPORT.md), or report a
+  vulnerability through the [Security Policy](./SECURITY.md).
+- Beryl remains free and open source; [consulting services](./SERVICES.md)
+  provide tailored setup, migrations, governance design, training, audits, and
+  ongoing advisory support.
 
 ## Quick Start
 
