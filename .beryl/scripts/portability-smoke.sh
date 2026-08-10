@@ -20,6 +20,10 @@ install_profile() {
   [[ -f "${target}/AGENTS.md" ]] || fail "${profile}: generated shim missing"
   [[ -f "${target}/LICENSE" ]] || fail "${profile}: Apache license missing"
   [[ -f "${target}/NOTICE" ]] || fail "${profile}: Apache notice missing"
+  [[ -f "${target}/.beryl/agent/skills/initial-build/SKILL.md" ]] || \
+    fail "${profile}: initial-build skill missing"
+  [[ ! -e "${target}/.beryl/agent/hierarchy.md" ]] || \
+    fail "${profile}: hierarchy.md must not be created during install"
 
   if [[ "${profile}" != "minimal" ]]; then
     (cd "${target}" && ./.beryl/scripts/check.sh)
@@ -44,5 +48,7 @@ printf 'n\nn\n1\n1\ny\nn\n' | \
 [[ -f "${setup_target}/LICENSE" ]] || fail 'setup: Apache license missing'
 [[ -f "${setup_target}/NOTICE" ]] || fail 'setup: Apache notice missing'
 [[ -f "${setup_target}/tests/.manifest.sha256" ]] || fail 'setup: test manifest missing'
+[[ -f "${setup_target}/.beryl/agent/skills/initial-build/SKILL.md" ]] || fail 'setup: initial-build skill missing'
+[[ ! -e "${setup_target}/.beryl/agent/hierarchy.md" ]] || fail 'setup: hierarchy.md must not be created during install'
 
 printf 'portability-smoke: PASS\n'

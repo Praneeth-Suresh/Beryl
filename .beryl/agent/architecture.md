@@ -46,3 +46,11 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 - `.beryl/driver/import-github-issues.sh` imports GitHub issues into `.beryl/driver/tasks/` using the GitHub CLI as the external adapter. It preserves existing unfinished driver state by allocating new task ids around it.
 - `.beryl/driver/optimize-worktrees.sh` is the optional driver worktree optimization entry point. It treats agent-proposed DAG JSON as untrusted input, verifies it through `.beryl/driver/lib/worktree_optimizer.py`, and records optimizer state under `.beryl/driver/state/optimization/`.
 - Linked GitHub issue finalization is a soft side effect of `.beryl/driver/run.sh` after a task commit succeeds. It writes issue comment/close evidence under `.beryl/driver/state/<task-id>/` and must not make a verified local commit fail because GitHub is unavailable.
+- `.beryl/agent/skills/initial-build/SKILL.md` is the public workflow entry point for explicit large or greenfield application builds. It owns clarification, repository discovery, hierarchical planning, ratification, dependency-ordered implementation, context promotion, and completion rules while remaining model- and tool-neutral.
+- `.beryl/agent/hierarchy.md` is a Git-tracked, build-scoped lifecycle artifact. It is created only after an initial-build plan is ratified, is authoritative for active node order and progress, resumes an interrupted build when present, and is deleted only after all nodes and checks pass and durable context has been promoted.
+
+### Initial Build Lifecycle Boundary
+
+The initial-build workflow is part of the Beryl Control Plane. It may read host-project files for discovery and may edit host-project source through the normal feature workflow after ratification, but its planning state has one explicit repository interface: `.beryl/agent/hierarchy.md`.
+
+The hierarchy schema must identify each node's stable id, parent, dependencies, deliverable, acceptance checks, status, and canonical context targets. Node progress, sequencing notes, and temporary rationale stay in the hierarchy; settled scope, architectural boundaries, terminology, and durable verification rules are promoted to the relevant canonical files before completion. The workflow must not create a hierarchy for ordinary feature work.

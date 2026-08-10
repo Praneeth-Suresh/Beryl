@@ -13,6 +13,7 @@ checks. Use this page to get to the path you need quickly.
 - [I want to install Beryl myself](#install-beryl-yourself)
 - [Beryl is already installed](#beryl-is-already-installed)
 - [I want to run my first agent task](#run-your-first-agent-task)
+- [I want to start a large application build](#start-a-large-application-build)
 - [I want the driver workflow](#use-driver-workflows)
 - [Something failed](#when-something-fails)
 
@@ -101,6 +102,24 @@ Implement the approved feature plan.
 
 Review the diff and the reported check output before merging.
 
+## Start a Large Application Build
+
+After Beryl is installed, give the agent an explicit request such as:
+
+```text
+I want to build a large application for [users and outcome].
+
+Use the initial-build workflow. Discover this repository first, then ask me
+clarifying questions one at a time. Propose a hierarchical dependency plan and
+wait for my ratification before editing code.
+```
+
+The agent creates the Git-tracked `.beryl/agent/hierarchy.md` only after you
+ratify the plan. It implements dependency-ready nodes, records checks and
+progress there, and promotes durable decisions into the canonical agent files.
+The hierarchy is deleted only after every node and required check passes; an
+existing hierarchy causes the next session to resume the active build.
+
 ## Use Driver Workflows
 
 Install with the full profile when you want `.beryl/driver/run.sh` and
@@ -134,6 +153,7 @@ If Beryl is already installed without the driver component, rerun setup with
 | Route an agent task | `.beryl/agent/task-routing.md` |
 | Check testing rules | `.beryl/agent/testing-policy.md` |
 | Check repo operating rules | `.beryl/agent/agent-rules.md` |
+| Plan a large or greenfield build | `.beryl/agent/skills/initial-build/SKILL.md` |
 
 ## Where to go deeper
 

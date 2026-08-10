@@ -39,6 +39,8 @@ These operating defaults apply in every agent session even when the user does no
 - Never weaken tests to make implementation pass.
 - If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
 - Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
+- For an explicit large or greenfield application request, load the `initial-build` workflow. Discover the repository, ask clarification questions one at a time, and obtain plan ratification before creating `.beryl/agent/hierarchy.md` or editing build code.
+- Treat `.beryl/agent/hierarchy.md` as Git-tracked active-build state. Resume it when present, update it after each dependency-ordered slice, and delete it only after every node and check passes and durable context has been promoted.
 
 ## Skill Use
 
@@ -47,6 +49,7 @@ Skills live in `.beryl/agent/skills/<skill-name>/SKILL.md`.
 Task workflows:
 
 - `planning`: plans, designs, approaches, and feature planning gates.
+- `initial-build`: clarifies, plans, ratifies, and implements large or greenfield applications through a tracked transient hierarchy.
 - `adding-features`: feature implementation after a user-ratified plan.
 - `debugging`: bugs, failures, regressions, exceptions, and failing checks.
 - `explaining-codebase`: codebase walkthroughs and explanations without edits.
@@ -97,6 +100,11 @@ For post-run cleanup prompts, do not implement new features. Read changed files 
 - Keep session debugging history bounded in `.beryl/agent/session-state.md`; summarize failures, cap entries, and clear resolved errors.
 
 Before deleting or consolidating root planning or documentation files, list every file, what is preserved, what is lost, and where replacement content lives, then wait for explicit approval.
+
+The completed initial-build hierarchy is a narrow exception: after every node
+and required check passes and durable context has been promoted, delete only
+`.beryl/agent/hierarchy.md` as specified by the `initial-build` workflow. Do not
+extend this exception to other planning or documentation files.
 
 ## Browser Verification Rule
 

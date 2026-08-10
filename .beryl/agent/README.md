@@ -84,7 +84,7 @@ mention, `sync-agent-env.sh` re-run).
 ## Task routing
 
 - `task-routing.md` maps the user's current intent to one workflow skill.
-- Load one task workflow first: `planning`, `adding-features`, `debugging`, or `explaining-codebase`.
+- Load one task workflow first: `planning`, `initial-build`, `adding-features`, `debugging`, or `explaining-codebase`.
 - Feature implementation requires a user-ratified plan. If no approved plan exists, plan first and stop.
 - Feature-slice bookkeeping is internal and temporary. Use ignored `session-state.md` only when needed for resume.
 - Use sub-agents only when the user explicitly asks for them.
@@ -95,3 +95,18 @@ mention, `sync-agent-env.sh` re-run).
 - Keep temporary implementation state out of canonical files.
 - Clear `.beryl/agent/session-state.md` after a feature is complete.
 - Promote only durable decisions to `design-tree.md`, `architecture.md`, `ubiquitous-language.md`, or `adr/`.
+
+## Initial Builds
+
+Explicit large or greenfield application requests use
+`.beryl/agent/skills/initial-build/SKILL.md`. The workflow discovers the
+repository, asks clarification questions one at a time, proposes a hierarchical
+dependency plan, and waits for user ratification before editing the build.
+
+After ratification it creates the Git-tracked but transient
+`.beryl/agent/hierarchy.md`. The hierarchy records node ids, parents,
+dependencies, deliverables, checks, statuses, evidence, and canonical context
+targets. It is the active build's source of truth and allows later sessions to
+resume. Durable decisions are promoted to canonical Markdown as the build
+progresses; the hierarchy is deleted only when every node and required check
+passes. Ordinary feature work does not create this file.

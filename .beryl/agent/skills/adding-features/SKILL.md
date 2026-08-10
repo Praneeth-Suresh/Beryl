@@ -10,6 +10,11 @@ Feature implementation requires an approved plan.
 
 - If no approved plan exists, run the planning workflow first and stop after presenting the plan.
 - Do not edit implementation code until the user ratifies the plan.
+- If `.beryl/agent/hierarchy.md` exists, route back to the initial-build workflow
+  and implement only a dependency-ready hierarchy node. Do not create a second
+  feature plan outside the active hierarchy.
+- An explicit large or greenfield build request must use the initial-build
+  workflow before this feature workflow is selected.
 - After ratification, implement only the next internal feature slice.
 - Before coding, state the success checks that will prove the selected slice or redirect worked.
 - Before coding, propose commit boundaries for the selected work.

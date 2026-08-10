@@ -48,6 +48,7 @@ required_canonical=(
   "${BERYL_ROOT}/agent/mcp.json"
   "${BERYL_ROOT}/agent/skills/planning/SKILL.md"
   "${BERYL_ROOT}/agent/skills/adding-features/SKILL.md"
+  "${BERYL_ROOT}/agent/skills/initial-build/SKILL.md"
   "${BERYL_ROOT}/agent/skills/debugging/SKILL.md"
   "${BERYL_ROOT}/agent/skills/explaining-codebase/SKILL.md"
   "${BERYL_ROOT}/agent/skills/grill-me/SKILL.md"
