@@ -5,6 +5,7 @@
   "rawBaseUrl": "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main",
   "archiveUrl": "https://codeload.github.com/Praneeth-Suresh/Beryl/tar.gz/main",
   "rootShims": ["AGENTS.md","CLAUDE.md",".cursor/rules/agent-rules.md",".github/copilot-instructions.md",".codex/AGENTS.md"],
+  "updatePreservePaths":[".beryl/agent/project-brief.md",".beryl/agent/design-tree.md",".beryl/agent/architecture.md",".beryl/agent/ubiquitous-language.md",".beryl/agent/testing-policy.md",".beryl/agent/session-state.md",".beryl/agent/adr/",".beryl/agent/custom-settings/",".beryl/agent/affected-tests.conf",".beryl/agent/test-manifest.conf",".beryl/driver/config.env",".beryl/driver/tasks/",".beryl/driver/state/",".beryl/.updates/"],
   "profiles": [
     {"kind":"profile","name":"minimal","components":["agent-core","tool-shims"]},
     {"kind":"profile","name":"standard","components":["agent-core","tool-shims","checks","githooks"]},

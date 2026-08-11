@@ -61,6 +61,8 @@ walkthrough from first read to first safe agent task.
   installer yourself.
 - [Use a Local Beryl Checkout](#use-a-local-beryl-checkout): best when you
   already have this repository on disk.
+- [Update an Existing Installation](#update-an-existing-installation): safely
+  retrieve current Beryl features without replacing target-owned context.
 - [Run Checks](#run-checks): verify the installed repository.
 
 ### Set Up With A Coding Agent
@@ -125,6 +127,29 @@ If you already have Beryl checked out locally, install it into another project:
 ./.beryl/scripts/setup-project.sh /path/to/project
 ```
 
+### Update An Existing Installation
+
+An update requires the existing target's `.beryl/lock.json`. By default it
+reuses that lockfile's requested components, so updating does not silently
+change the installed feature set:
+
+```bash
+BERYL_REF=v1.2.3
+sh beryl-install.sh --ref "$BERYL_REF" --update --target /path/to/project
+```
+
+Use `--profile` or `--components` only when deliberately replacing the
+requested component selection. For a remotely downloaded release, pin
+`--ref` to a trusted tag or commit SHA and provide the archive digest from a
+trusted release channel with `--expected-sha256`.
+
+The update stages and validates the selected release before applying it. It
+tracks Beryl-managed files in `.beryl/lock.json` and preserves target-owned
+project context, configuration, driver tasks/state, and unknown user files.
+Successful updates retain replaced files below `.beryl/.updates/<timestamp>/`.
+If an update fails, its diagnostic names the phase, component, path, reason,
+and rollback result.
+
 ### Run Checks
 
 From the installed repository:
@@ -156,7 +181,7 @@ review the diff.
 
 | Script                              | What it does                                                                                                                                                                                                |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `install.sh`                      | Remote install entry point. It installs selected Beryl profiles or components into the current repository.                                                                                                  |
+| `install.sh`                      | Remote install and update entry point. `--update` safely refreshes the existing locked component selection, or an explicit replacement selection.                                                                 |
 | `.beryl/scripts/setup-project.sh` | Interactive onboarding for an existing or new project. It lets you choose the component set, including whether driver workflows are installed, and whether a coding agent should help fill project context. |
 | `.beryl/scripts/check.sh`         | Deterministic safety gate for Markdown, test-manifest integrity, and configured project checks.                                                                                                             |
 
@@ -188,3 +213,6 @@ Beryl starts as a practical safety layer for one repository, then scales without
 Beryl started as a practical answer to unattended agent runs that were hard to supervise. The repository now carries the control plane so the process is explicit, repeated, and reviewable.
 
 Interested in this area? Email me at praneeth.suresh.s@gmail.com.
+# Update bootstrap safety
+
+`install.sh --update` is transactional only for repository files. It rejects `--bootstrap-agent`; run agent bootstrap separately after a successful update.

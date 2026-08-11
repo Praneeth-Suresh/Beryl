@@ -87,6 +87,49 @@ Use `--profile full` or `--components driver` when you need task imports,
 `.beryl/driver/run.sh`, or issue-driven driver workflows. `minimal` and
 `standard` do not install `.beryl/driver/`.
 
+### Update An Existing Installation
+
+`--update` safely refreshes an existing installation:
+
+```bash
+BERYL_REF=v1.2.3
+BERYL_ARCHIVE_SHA256='replace-with-trusted-release-digest'
+sh beryl-install.sh \
+  --ref "$BERYL_REF" \
+  --expected-sha256 "$BERYL_ARCHIVE_SHA256" \
+  --update \
+  --target /path/to/project
+```
+
+The target must already have `.beryl/lock.json`; updates do not bootstrap a
+new installation. With no `--profile` or `--components`, the installer reuses
+the lockfile's `requestedComponents`. Passing either flag deliberately
+replaces that requested selection and resolves its dependencies. Use a trusted
+tag or commit SHA instead of a moving ref, and obtain the SHA-256 digest from
+a trusted release channel; digest verification applies to remote archive
+downloads.
+
+Before mutation, the installer stages the selected Beryl paths, validates the
+manifest, builds a file-level managed-path ledger, and snapshots every path it
+may mutate. The manifest's `updatePreservePaths` keeps target-owned canonical
+agent context, custom settings, driver configuration, tasks, state, and prior
+update backups outside the update surface. Files that are not Beryl-owned by
+the lockfile ledger remain in place. A legacy lockfile without the ledger is
+migrated conservatively: newly staged Beryl paths are considered managed, but
+no old path is removed.
+
+On success, replaced files are retained below
+`.beryl/.updates/<timestamp>/`, and the summary reports the source ref,
+components, updated and preserved counts, and backup path. On failure, the
+installer restores its snapshot and emits:
+
+```text
+beryl: update failed phase=<phase> component=<component> path=<path> reason=<reason> rollback=<result>
+```
+
+The lockfile is written only after apply, post-install hooks, and staged-file
+verification complete successfully.
+
 ### Bootstrap Controls
 
 Bootstrap asks a headless coding agent to help fill target-owned Beryl project
@@ -114,6 +157,8 @@ Useful flags:
 - `--profile minimal|standard|full`: install a named profile. Default:
   `standard`.
 - `--components a,b`: install explicit components plus dependencies.
+- `--update`: refresh an existing locked installation while preserving
+  target-owned paths; requires `TARGET/.beryl/lock.json`.
 - `--target DIR`: install into a target directory. Default: current directory.
 - `--interactive`: prompt for profile/components and agent bootstrap.
 - `--bootstrap-agent`: run the optional agent context bootstrap hook.
@@ -258,3 +303,6 @@ Common failures:
 
 When hook setup is blocked, keep the path install complete and rerun the hook
 command after fixing repository write access.
+# Update bootstrap safety
+
+The transactional installer rejects `--update --bootstrap-agent`; bootstrap separately after the update completes.

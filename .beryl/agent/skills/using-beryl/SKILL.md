@@ -88,6 +88,29 @@ report that the setup used a moving ref.
    Report missing prerequisites or unavailable checks instead of claiming that
    the target is verified.
 
+## Updating Beryl
+
+Use the downloaded `install.sh` to update an existing target only after
+confirming that `TARGET/.beryl/lock.json` exists. The default update retains
+the lockfile's `requestedComponents`; pass `--profile` or `--components` only
+when the user explicitly wants to replace that requested feature selection.
+
+```bash
+BERYL_REF=v1.2.3
+sh beryl-install.sh --ref "$BERYL_REF" --update --target /path/to/target
+```
+
+For a remote update, ask the user for a trusted tag or commit SHA when none is
+provided, and use `--expected-sha256` when they supply a trusted release
+archive digest. Do not describe a moving ref such as `main` as repeatable.
+
+The updater stages and validates the selected release, then updates only its
+file-level managed surface. It preserves target-owned canonical agent context,
+custom configuration, driver tasks and state, and user-added files. A
+successful update retains replaced files under `.beryl/.updates/<timestamp>/`.
+If it fails, report the structured phase/component/path/reason/rollback output
+and do not claim the update succeeded.
+
 ## Working With Beryl
 
 1. Read `.beryl/agent/task-routing.md` and load the one matching workflow
@@ -104,3 +127,6 @@ report that the setup used a moving ref.
 - Remote scripts reference:
   `https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/.beryl/scripts/README.md`
 - Installed agent control plane: `.beryl/agent/README.md`
+# Update bootstrap safety
+
+When updating an installation, do not pass `--bootstrap-agent`; complete the transactional update first and run bootstrap as a separate action.

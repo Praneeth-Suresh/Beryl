@@ -26,6 +26,7 @@ Beryl is a relocatable hard guarantee layer for agent-ready repositories: canoni
 | Supported shell hosts | Support macOS system Bash and Windows Git Bash or WSL for installed scripts; keep native PowerShell limited to downloading the POSIX installer. Verify the supported hosts in GitHub Actions. | 2026-07-15 | N/A |
 | Open-source distribution | License Beryl under Apache-2.0, ship `LICENSE` and `NOTICE` in every install surface, and document separate trademark, contribution, support, security, and consulting boundaries. | 2026-08-07 | N/A |
 | Initial-build hierarchy lifecycle | Route explicit large or greenfield builds through clarification, hierarchical planning, ratification, and dependency-ordered implementation. Keep `.beryl/agent/hierarchy.md` Git-tracked but transient: create it only after ratification, update it during the build, promote durable knowledge to canonical docs, and delete it only after every node and check passes. | 2026-08-10 | `.beryl/agent/adr/0008-tracked-transient-initial-build-hierarchy.md` |
+| Transactional installation updates | Treat `install.sh --update` as a lockfile-required, staged transaction. Track Beryl ownership per file in the lockfile, preserve manifest-declared target-owned paths and unowned content, snapshot mutations for rollback, and retain successful replacements under `.beryl/.updates/`. | 2026-08-11 | `.beryl/agent/adr/0009-transactional-ownership-aware-updates.md` |
 
 ## Pressure Points
 
@@ -37,6 +38,7 @@ Beryl is a relocatable hard guarantee layer for agent-ready repositories: canoni
 - Repository upkeep depends on maintainers promoting only durable decisions, terms, commands, and review rules into tracked files; scratch notes remain non-authoritative.
 - "Hard guarantee" must remain a process claim backed by files, scripts, manifests, and review gates, not a claim that Beryl guarantees correct code or replaces human judgment.
 - The initial-build workflow must keep hierarchy progress separate from durable project context: deleting a completed hierarchy must not delete decisions, boundaries, vocabulary, or verification knowledge that future work needs.
+- Updates must distinguish Beryl-managed runtime files from target-owned context and configuration. Legacy lockfiles cannot prove prior per-file ownership, so their migration must avoid deletion and keep replacements recoverable.
 
 ## Recording Rule (Design Tree vs ADR)
 

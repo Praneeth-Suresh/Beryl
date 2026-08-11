@@ -77,6 +77,23 @@ git config core.hooksPath .beryl/githooks
 Only run the hook command inside a Git repository where `.git/config` is
 writable.
 
+To retrieve current Beryl features without replacing your repository-owned
+context, configuration, driver data, or other user files, download the
+installer for a trusted release and update the target:
+
+```bash
+BERYL_REF=v1.2.3
+sh beryl-install.sh --ref "$BERYL_REF" --update --target /path/to/project
+```
+
+The target must already contain `.beryl/lock.json`. The update reuses the
+lockfile's requested components unless `--profile` or `--components` is passed
+explicitly, which replaces that selection. For remote updates, prefer a tag or
+commit SHA and pair it with `--expected-sha256` using a digest from a trusted
+release channel. A successful update reports its backup under
+`.beryl/.updates/<timestamp>/`; a failed update reports its phase, component,
+path, reason, and rollback result.
+
 ## Run Your First Agent Task
 
 Start with a plan. Send your agent a short request like:
@@ -147,6 +164,7 @@ If Beryl is already installed without the driver component, rerun setup with
 | --- | --- |
 | Install into another repo from a local checkout | `./.beryl/scripts/setup-project.sh /path/to/project` |
 | Install full driver workflow | `./.beryl/scripts/setup-project.sh --profile full /path/to/project` |
+| Update an existing installation | `sh beryl-install.sh --update --target /path/to/project` |
 | Bootstrap repo-specific context | `./.beryl/scripts/setup-project.sh --bootstrap /path/to/project` |
 | Run deterministic checks | `./.beryl/scripts/check.sh` |
 | Enable local pre-commit checks | `git config core.hooksPath .beryl/githooks` |
@@ -163,3 +181,6 @@ If Beryl is already installed without the driver component, rerun setup with
 - [.beryl/agent/task-routing.md](./.beryl/agent/task-routing.md): workflow selection
 - [.beryl/agent/skills/planning/SKILL.md](./.beryl/agent/skills/planning/SKILL.md): planning workflow
 - [.beryl/agent/skills/adding-features/SKILL.md](./.beryl/agent/skills/adding-features/SKILL.md): feature workflow
+# Update bootstrap safety
+
+Do not combine `--update` with `--bootstrap-agent`. Update first, then run bootstrap separately because agent actions are outside the file transaction.
