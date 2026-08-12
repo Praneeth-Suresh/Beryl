@@ -48,13 +48,14 @@ descriptive use. See [TRADEMARKS.md](./TRADEMARKS.md).
 
 ## Quick Start
 
-**Recommended first read:** [Quickstart.md](./Quickstart.md) for the shortest
+**Recommended first read:** Read [this section](#what-you-can-do-with-beryl) to 
+  understand the installed workflow before choosing commands.
+
+Use [Quickstart.md](./Quickstart.md) for the shortest
 walkthrough from first read to first safe agent task.
 
 ### Choose A Setup Workflow
 
-- [What You Can Do With Beryl](#what-you-can-do-with-beryl): understand the
-  installed workflow before choosing commands.
 - [Set Up With a Coding Agent](#set-up-with-a-coding-agent): best when you
   want the agent to install Beryl and consolidate existing agent instructions.
 - [Install Directly](#install-directly): best when you want to run the
