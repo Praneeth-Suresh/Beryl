@@ -21,3 +21,13 @@ host-project behavior.
 
 Security fixes are assessed against the current `main` branch. Releases may
 state more specific support windows when they are introduced.
+
+## Safe installation reports
+
+When reporting an installation concern, include the full 40-character commit
+SHA, the matching trusted release archive digest source, the exact lifecycle command, and
+whether the operation was install, update, restore, uninstall, adoption, or
+standalone bootstrap. Do not attach credentials, private repository URLs, or
+agent bootstrap prompts. Beryl's published instructions download an installer
+to a file over HTTPS with redirect restrictions; do not use a pipe-to-shell
+command when reproducing a report.

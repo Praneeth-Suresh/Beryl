@@ -5,16 +5,18 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 ## Routing Rule
 
 1. Classify the user's current request.
-2. Load exactly one matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
-3. Load canonical project files only when that workflow asks for them.
-4. If the task changes, re-route before continuing.
-5. For non-trivial work with multiple viable implementation paths, present the paths and wait for user approval unless the user explicitly allowed the agent to choose.
+2. If `.beryl/agent/hierarchy.md` exists, resume the active initial-build workflow before classifying a new request, unless the user explicitly asks to pause or abandon that build.
+3. Load exactly one matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
+4. Load canonical project files only when that workflow asks for them.
+5. If the task changes, re-route before continuing.
+6. For non-trivial work with multiple viable implementation paths, present the paths and wait for user approval unless the user explicitly allowed the agent to choose.
 
 ## Intent Map
 
 | User Intent | Signals | Load |
 | --- | --- | --- |
 | Planning | plan, design, approach, architecture proposal, break this down | `.beryl/agent/skills/planning/SKILL.md` |
+| Initial build | explicit request for a large application, greenfield application, or first coordinated build | `.beryl/agent/skills/initial-build/SKILL.md` |
 | Feature addition | add, implement, build, create feature, new workflow, support behavior | `.beryl/agent/skills/adding-features/SKILL.md` |
 | Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/debugging/SKILL.md` |
 | Codebase explanation | explain, walk me through, understand, map the codebase, where is this handled | `.beryl/agent/skills/explaining-codebase/SKILL.md` |
@@ -32,6 +34,15 @@ Feature implementation requires an approved plan.
 - Track feature-slice state internally in `.beryl/agent/session-state.md` only when needed for interruption or resume.
 - Clear `.beryl/agent/session-state.md` when the feature is complete.
 - Store only durable decisions in canonical files such as `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, `.beryl/agent/ubiquitous-language.md`, or `.beryl/agent/adr/*`.
+
+## Initial Build Routing Gate
+
+- Use `initial-build` only when the user explicitly requests a large application, a greenfield application, or the first coordinated build of a repository. Do not infer this route from ordinary feature size alone.
+- Load the initial-build skill before asking build questions or editing files. Ask at most one clarification question per turn and wait for the answer before asking the next.
+- Perform repository discovery before proposing the hierarchy. The discovery record may guide the plan, but it is not a substitute for user clarification.
+- Present the scope, hierarchy, dependencies, deliverables, checks, context targets, and implementation order for user ratification. Do not create `.beryl/agent/hierarchy.md` or edit build code before explicit approval.
+- After ratification, create the Git-tracked hierarchy with the schema defined by the initial-build skill. Update it and the relevant canonical Markdown as implementation progresses.
+- Delete the hierarchy only after every node and required check passes and durable context promotion is complete. If a hierarchy already exists, resume it rather than creating a parallel plan.
 
 ## Sub-Agent Policy
 

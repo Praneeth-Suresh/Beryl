@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/paths.sh"
 # shellcheck source=safe-conf.sh
 source "${SCRIPT_DIR}/safe-conf.sh"
+# shellcheck source=test-manifest-lib.sh
+source "${SCRIPT_DIR}/test-manifest-lib.sh"
 CONFIG_PATH="${BERYL_ROOT}/agent/affected-tests.conf"
 
 fail() {
@@ -70,16 +72,6 @@ IGNORED_CHANGE_GLOBS=()
 sc_load_conf "${CONFIG_PATH}" \
   FULL_TEST_CMD RELATED_TEST_CMD \
   GLOBAL_CHANGE_GLOBS RELATED_CHANGE_GLOBS IGNORED_CHANGE_GLOBS
-
-match_any() {
-  local value="$1"
-  shift
-  local pattern
-  for pattern in "$@"; do
-    [[ "${value}" == ${pattern} ]] && return 0
-  done
-  return 1
-}
 
 collect_changed_files() {
   case "${mode}" in
@@ -147,18 +139,18 @@ while IFS= read -r rel; do
   [[ -z "${rel}" ]] && continue
   changed_count=$((changed_count + 1))
 
-  if ((${#GLOBAL_CHANGE_GLOBS[@]} > 0)) && match_any "${rel}" "${GLOBAL_CHANGE_GLOBS[@]}"; then
+  if ((${#GLOBAL_CHANGE_GLOBS[@]} > 0)) && tm_match_any "${rel}" "${GLOBAL_CHANGE_GLOBS[@]}"; then
     printf "check-affected: global trigger changed: %s\n" "${rel}"
     run_full_tests
     exit 0
   fi
 
-  if ((${#RELATED_CHANGE_GLOBS[@]} > 0)) && match_any "${rel}" "${RELATED_CHANGE_GLOBS[@]}"; then
+  if ((${#RELATED_CHANGE_GLOBS[@]} > 0)) && tm_match_any "${rel}" "${RELATED_CHANGE_GLOBS[@]}"; then
     related_files+=("${rel}")
     continue
   fi
 
-  if ((${#IGNORED_CHANGE_GLOBS[@]} > 0)) && match_any "${rel}" "${IGNORED_CHANGE_GLOBS[@]}"; then
+  if ((${#IGNORED_CHANGE_GLOBS[@]} > 0)) && tm_match_any "${rel}" "${IGNORED_CHANGE_GLOBS[@]}"; then
     continue
   fi
 done <<EOF

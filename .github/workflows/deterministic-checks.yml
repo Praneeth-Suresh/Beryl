@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  portability:
     strategy:
       fail-fast: false
       matrix:
@@ -27,10 +27,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Run deterministic checks
-        run: ./.beryl/scripts/check.sh
+        run: ./.beryl/scripts/check.sh --development
 
       - name: Run agent doctor
-        run: ./.beryl/agent/scripts/agent-doctor.sh
+        run: ./.beryl/agent/scripts/agent-doctor.sh --development
 
       - name: Run cross-platform install and setup smoke test
         run: ./.beryl/scripts/portability-smoke.sh
+
+  lifecycle-regressions:
+    name: Lifecycle, security, and documentation regressions (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Run every tracked shell regression test
+        run: ./.beryl/scripts/run-lifecycle-tests.sh

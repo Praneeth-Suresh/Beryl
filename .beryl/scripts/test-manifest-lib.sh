@@ -55,9 +55,15 @@ tm_load_manifest_config() {
       "tests/**"
       "spec/**"
       "src/**/__tests__/**"
+      "*.test.*"
       "**/*.test.*"
+      "*.spec.*"
       "**/*.spec.*"
+      "*_test.go"
       "**/*_test.go"
+      "test_*.py"
+      "*_test.py"
+      "**/test_*.py"
       "**/*_test.py"
     )
   fi

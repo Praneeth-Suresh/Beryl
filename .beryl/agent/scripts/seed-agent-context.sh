@@ -30,6 +30,30 @@ esac
 
 [[ -d "${TEMPLATE_ROOT}" ]] || fail "missing install templates: ${TEMPLATE_ROOT#${REPO_ROOT}/}"
 
+ensure_session_state_ignore() {
+  local gitignore="${REPO_ROOT}/.gitignore"
+  local ignore_entry=".beryl/agent/session-state.md"
+
+  if [[ -L "${gitignore}" ]]; then
+    fail ".gitignore must not be a symlink when adding the session-state ignore rule"
+  fi
+  if [[ -e "${gitignore}" && ! -f "${gitignore}" ]]; then
+    fail ".gitignore must be a regular file when adding the session-state ignore rule"
+  fi
+
+  touch "${gitignore}"
+  if grep -qxF "${ignore_entry}" "${gitignore}"; then
+    printf "already ignored: %s\n" "${ignore_entry}"
+    return 0
+  fi
+
+  if [[ -s "${gitignore}" ]] && [[ "$(tail -c 1 "${gitignore}" 2>/dev/null || true)" != $'\n' ]]; then
+    printf '\n' >>"${gitignore}"
+  fi
+  printf "%s\n" "${ignore_entry}" >>"${gitignore}"
+  printf "updated .gitignore: %s\n" "${ignore_entry}"
+}
+
 while IFS= read -r source_file; do
   rel="${source_file#${TEMPLATE_ROOT}/}"
   target_file="${TARGET_ROOT}/${rel}"
@@ -56,5 +80,7 @@ while IFS= read -r source_file; do
   chmod 0644 "${target_file}"
   printf "seeded: %s\n" "${target_file#${REPO_ROOT}/}"
 done < <(find "${TEMPLATE_ROOT}" -type f | sort)
+
+ensure_session_state_ignore
 
 printf "Agent context seed complete. Template source: .beryl/agent/templates/install/\n"

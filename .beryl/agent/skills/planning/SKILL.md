@@ -10,6 +10,13 @@ Turn a requested change into a small, reviewable plan before implementation.
 - A feature request has no approved implementation plan yet.
 - The change is non-trivial, cross-context, security-sensitive, or architecturally ambiguous.
 
+## Initial Build Handoff
+
+When the request explicitly describes a large or greenfield application, route to
+`.beryl/agent/skills/initial-build/SKILL.md` instead of using this general planning
+workflow. A request to plan an ordinary feature remains in this workflow. If an
+active `.beryl/agent/hierarchy.md` exists, resume the initial-build workflow.
+
 ## Process
 
 1. Restate the requested outcome.
