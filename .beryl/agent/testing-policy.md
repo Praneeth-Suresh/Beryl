@@ -7,7 +7,7 @@
 | Markdown sanity | `./.beryl/scripts/check-md.sh` | available | Unclosed fences and tabs |
 | Test manifest immutability check | `./.beryl/scripts/check-tests-unchanged.sh` | available | Detects changes in configured test scope from `.beryl/agent/test-manifest.conf` |
 | Affected test gate | `./.beryl/scripts/check-affected.sh --worktree` | available | Selects related tests from changed files and uses full-test fallback for broad changes |
-| Aggregate deterministic gate | `./.beryl/scripts/check.sh` | available | Runs all deterministic checks |
+| Aggregate deterministic gate | `./.beryl/scripts/check.sh --development` | available | Source-checkout command; installed projects run `./.beryl/scripts/check.sh` |
 | Format | `not available yet` | unavailable | No formatter configured yet |
 | Lint | `not available yet` | unavailable | No linter configured yet |
 | Typecheck | `not available yet` | unavailable | No typed code configured yet |
@@ -42,8 +42,8 @@ If generated output is unavailable, explain why and run the closest deterministi
 
 Commit-time tests run through the affected test gate so developers get fast feedback without choosing test subsets manually.
 
-- The pre-commit hook sets `CHECK_AFFECTED_MODE=staged` and runs `./.beryl/scripts/check.sh`.
-- Manual `./.beryl/scripts/check.sh` uses worktree mode by default and selects from all changes relative to `HEAD`.
+- Installed-project pre-commit hooks set `CHECK_AFFECTED_MODE=staged` and run `./.beryl/scripts/check.sh`.
+- In this Beryl source checkout, run `./.beryl/scripts/check.sh --development`; installed projects run `./.beryl/scripts/check.sh` in worktree mode by default.
 - `.beryl/scripts/check-affected.sh` reads `.beryl/agent/affected-tests.conf`.
 - Changes to broad configuration, dependency, hook, or test-strategy files force `FULL_TEST_CMD` when configured.
 - Source and test changes run `RELATED_TEST_CMD` with changed files appended when configured.

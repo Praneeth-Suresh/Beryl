@@ -41,19 +41,21 @@ install_profile full
 
 copy_update_source() {
   local destination="$1"
+  local rel source destination_file
 
-  mkdir -p "${destination}/.cursor/rules" "${destination}/.github/workflows" \
-    "${destination}/.codex"
-  cp -R "${REPO_ROOT}/.beryl" "${destination}/.beryl"
-  cp "${REPO_ROOT}/AGENTS.md" "${REPO_ROOT}/CLAUDE.md" "${REPO_ROOT}/LICENSE" \
-    "${REPO_ROOT}/NOTICE" "${destination}/"
-  cp "${REPO_ROOT}/.cursor/rules/agent-rules.md" \
-    "${destination}/.cursor/rules/agent-rules.md"
-  cp "${REPO_ROOT}/.github/copilot-instructions.md" \
-    "${destination}/.github/copilot-instructions.md"
-  cp "${REPO_ROOT}/.github/workflows/deterministic-checks.yml" \
-    "${destination}/.github/workflows/deterministic-checks.yml"
-  cp "${REPO_ROOT}/.codex/AGENTS.md" "${destination}/.codex/AGENTS.md"
+  # Keep current candidate changes while respecting the same tracked-release
+  # boundary that local --source-dir enforces. The clone supplies Git metadata;
+  # only current tracked regular files are overlaid and staged.
+  git clone -q "${REPO_ROOT}" "${destination}"
+  while IFS= read -r -d '' rel; do
+    source="${REPO_ROOT}/${rel}"
+    destination_file="${destination}/${rel}"
+    [[ ! -L "${source}" ]] || fail "update source fixture must not copy symlink: ${rel}"
+    [[ -f "${source}" ]] || fail "update source fixture tracked file missing or unsupported: ${rel}"
+    mkdir -p "$(dirname "${destination_file}")"
+    cp -p "${source}" "${destination_file}"
+  done < <(git -C "${REPO_ROOT}" ls-files -z)
+  git -C "${destination}" add -u
 }
 
 lock_array_has() {
@@ -70,7 +72,21 @@ assert_file_contains() {
   local expected="$2"
   local label="$3"
 
-  grep -qF "${expected}" "${file}" || fail "${label}: expected ${file} to contain ${expected}"
+  grep -qF -- "${expected}" "${file}" || fail "${label}: expected ${file} to contain ${expected}"
+}
+
+snapshot_tree() {
+  local source="$1"
+  local output="$2"
+  tar -cf "${output}" -C "${source}" .
+}
+
+assert_tree_unchanged() {
+  local source="$1"
+  local before="$2"
+  local after="${before}.after"
+  snapshot_tree "${source}" "${after}"
+  cmp -s "${before}" "${after}" || fail "target changed after rejected lifecycle operation: ${source}"
 }
 
 update_source="${TMP_DIR}/update-source"
@@ -79,6 +95,10 @@ printf '\nissue-28-updated-managed-feature\n' >>"${update_source}/.beryl/driver/
 printf '#!/bin/sh\nprintf "issue-28 managed feature\\n"\n' \
   >"${update_source}/.beryl/driver/issue28-update-feature.sh"
 chmod +x "${update_source}/.beryl/driver/issue28-update-feature.sh"
+git -C "${update_source}" init -q
+git -C "${update_source}" add -A
+git -C "${update_source}" -c user.email=tests@example.invalid -c user.name='Beryl tests' \
+  commit -qm 'release fixture'
 
 # Start from a full, populated installation and deliberately downgrade its
 # lockfile to the pre-update schema. This proves the update migration is safe
@@ -145,7 +165,7 @@ if sh "${REPO_ROOT}/install.sh" --update --bootstrap-agent --source-dir "${updat
   fail 'update bootstrap: non-transactional bootstrap unexpectedly accepted'
 fi
 assert_file_contains "${bootstrap_output}" \
-  'beryl: update failed phase=validate component=agent-bootstrap path=--bootstrap-agent' \
+  '--bootstrap-agent is a standalone action' \
   'update bootstrap diagnostic'
 cmp -s "${TMP_DIR}/bootstrap-lock-before.json" "${bootstrap_update_target}/.beryl/lock.json" || \
   fail 'update bootstrap: lockfile changed before bootstrap rejection'
@@ -166,8 +186,8 @@ lock_array_has "${override_target}/.beryl/lock.json" requestedComponents driver 
 [[ -f "${override_target}/.beryl/driver/issue28-update-feature.sh" ]] || \
   fail 'update override: driver feature missing after explicit selection'
 
-# Explicitly reducing a profile removes Beryl-managed runtime files from a
-# deselected component, while manifest-declared driver state remains target-owned.
+# A profile reduction cannot use a prior lock as deletion authority: deselected
+# runtime files remain visible for an explicit later uninstall/migration.
 downgrade_target="${TMP_DIR}/update-downgrade"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${downgrade_target}" --profile full
 printf 'DRIVER_CONFIG=keep\n' >"${downgrade_target}/.beryl/driver/config.env"
@@ -177,8 +197,8 @@ printf 'state sentinel\n' >"${downgrade_target}/.beryl/driver/state/local/status
 sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${downgrade_target}" \
   --profile standard >"${TMP_DIR}/update-downgrade.out" 2>&1 || \
   fail 'update downgrade: expected full-to-standard update to succeed'
-[[ ! -e "${downgrade_target}/.beryl/driver/run.sh" ]] || \
-  fail 'update downgrade: managed driver runtime remained after deselection'
+[[ -e "${downgrade_target}/.beryl/driver/run.sh" ]] || \
+  fail 'update downgrade: ambiguous managed driver runtime was deleted'
 assert_file_contains "${downgrade_target}/.beryl/driver/config.env" \
   'DRIVER_CONFIG=keep' 'update downgrade preservation'
 assert_file_contains "${downgrade_target}/.beryl/driver/tasks/99-preserved.md" \
@@ -214,7 +234,7 @@ tampered_lock_target="${TMP_DIR}/update-tampered-lock-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${tampered_lock_target}" --profile full
 printf 'user-owned ledger sentinel\n' >"${tampered_lock_target}/.beryl/user-added.txt"
 tampered_lock="${tampered_lock_target}/.beryl/lock.json"
-awk '/"managedPaths":/ { sub(/]$/, ",\".beryl/user-added.txt\"]") } 1' "${tampered_lock}" \
+sed 's/"managedPaths": \[/"managedPaths": [".beryl\/user-added.txt",/' "${tampered_lock}" \
   >"${tampered_lock}.next"
 mv "${tampered_lock}.next" "${tampered_lock}"
 cp "${tampered_lock}" "${TMP_DIR}/tampered-lock-before.json"
@@ -224,32 +244,65 @@ if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --targe
   fail 'update tampered lock: unowned ledger entry unexpectedly accepted'
 fi
 assert_file_contains "${tampered_lock_output}" \
-  'beryl: update failed phase=validate component=lockfile path=.beryl/user-added.txt' \
+  'beryl: update failed phase=validate component=lockfile path=.beryl/user-added.txt reason=unowned-managed-path' \
   'update tampered lock diagnostic'
 assert_file_contains "${tampered_lock_target}/.beryl/user-added.txt" \
   'user-owned ledger sentinel' 'update tampered lock preservation'
 cmp -s "${TMP_DIR}/tampered-lock-before.json" "${tampered_lock}" || \
   fail 'update tampered lock: lockfile changed after validation failure'
 
-# A source staging failure must identify the exact managed component and path,
-# rather than collapsing the diagnostic to an opaque source failure.
+# A forged digest is still not deletion authority: a ledger path must be
+# selected by the independently staged historical component manifest.
+forged_authority_target="${TMP_DIR}/update-forged-authority-target"
+sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${forged_authority_target}" --profile full
+printf 'user-owned forged authority sentinel\n' >"${forged_authority_target}/.beryl/user-owned.txt"
+forged_digest="$(sha256sum "${forged_authority_target}/.beryl/user-owned.txt" | awk '{print $1}')"
+forged_lock="${forged_authority_target}/.beryl/lock.json"
+sed \
+  -e 's/"managedPaths": \[/"managedPaths": [".beryl\/user-owned.txt",/' \
+  -e "s/\"managedPathDigests\": \[/\"managedPathDigests\": [\".beryl\\/user-owned.txt:${forged_digest}\",/" \
+  "${forged_lock}" >"${forged_lock}.next"
+mv "${forged_lock}.next" "${forged_lock}"
+cp "${forged_lock}" "${TMP_DIR}/forged-authority-lock-before.json"
+forged_authority_output="${TMP_DIR}/update-forged-authority.out"
+if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" \
+  --target "${forged_authority_target}" --profile standard >"${forged_authority_output}" 2>&1; then
+  fail 'update forged authority: unselected valid-digest path unexpectedly accepted'
+fi
+assert_file_contains "${forged_authority_output}" 'path-not-selected-by-historical-manifest' 'update forged authority diagnostic'
+assert_file_contains "${forged_authority_target}/.beryl/user-owned.txt" \
+  'user-owned forged authority sentinel' 'update forged authority preservation'
+cmp -s "${TMP_DIR}/forged-authority-lock-before.json" "${forged_lock}" || \
+  fail 'update forged authority: lockfile changed after refusal'
+
+# Local source staging requires a tracked release checkout. A copied directory
+# is rejected before target mutation, with a stage diagnostic that names the
+# source boundary rather than a later missing component file.
 stage_failure_source="${TMP_DIR}/update-stage-failure-source"
 copy_update_source "${stage_failure_source}"
-mv "${stage_failure_source}/.beryl/agent/README.md" \
-  "${TMP_DIR}/update-stage-failure-agent-readme.md"
+# Retain current candidate files but deliberately remove Git metadata for this
+# negative source-boundary case.
+mv "${stage_failure_source}/.git" "${TMP_DIR}/update-stage-failure-source.git"
 stage_failure_target="${TMP_DIR}/update-stage-failure-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${stage_failure_target}" --profile full
+cp "${stage_failure_target}/.beryl/lock.json" "${TMP_DIR}/update-stage-failure-lock-before.json"
 stage_failure_output="${TMP_DIR}/update-stage-failure.out"
 if sh "${REPO_ROOT}/install.sh" --update --source-dir "${stage_failure_source}" \
   --target "${stage_failure_target}" >"${stage_failure_output}" 2>&1; then
   fail 'update stage failure: missing managed source unexpectedly succeeded'
 fi
 assert_file_contains "${stage_failure_output}" \
-  'beryl: update failed phase=stage component=agent-core path=.beryl/agent/README.md' \
+  'beryl: update failed phase=stage component=source-tree' \
   'update stage diagnostic'
+assert_file_contains "${stage_failure_output}" \
+  'local --source-dir must be a Git checkout' \
+  'update stage diagnostic'
+cmp -s "${TMP_DIR}/update-stage-failure-lock-before.json" \
+  "${stage_failure_target}/.beryl/lock.json" || \
+  fail 'update stage failure: target lock changed before source rejection'
 
-# A managed leaf symlink may be replaced, but its external referent must never
-# be followed or changed by the updater.
+# A managed leaf symlink is hostile state. The updater must reject it before
+# mutation and leave both the target symlink and external referent unchanged.
 symlink_target="${TMP_DIR}/update-symlink-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${symlink_target}" --profile full
 external_readme="${TMP_DIR}/external-driver-readme.md"
@@ -258,15 +311,16 @@ printf '#!/bin/sh\nexit 0\n' >"${symlink_target}/.beryl/scripts/user-local.sh"
 chmod 0644 "${symlink_target}/.beryl/scripts/user-local.sh"
 rm -f "${symlink_target}/.beryl/driver/README.md"
 ln -s "${external_readme}" "${symlink_target}/.beryl/driver/README.md"
-sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${symlink_target}" \
-  >"${TMP_DIR}/update-symlink.out" 2>&1 || fail 'update symlink: expected managed leaf replacement to succeed'
-[[ ! -L "${symlink_target}/.beryl/driver/README.md" ]] || \
-  fail 'update symlink: managed leaf remained a symlink'
+snapshot_tree "${symlink_target}" "${TMP_DIR}/update-symlink-before.tar"
+if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${symlink_target}" \
+  >"${TMP_DIR}/update-symlink.out" 2>&1; then
+  fail 'update symlink: managed leaf unexpectedly accepted'
+fi
+assert_file_contains "${TMP_DIR}/update-symlink.out" 'leaf-symlink' 'update leaf symlink diagnostic'
+[[ -L "${symlink_target}/.beryl/driver/README.md" ]] || \
+  fail 'update symlink: managed leaf symlink changed after rejection'
 assert_file_contains "${external_readme}" 'external content must survive' 'update symlink protection'
-assert_file_contains "${symlink_target}/.beryl/driver/README.md" \
-  'issue-28-updated-managed-feature' 'update symlink replacement'
-[[ ! -x "${symlink_target}/.beryl/scripts/user-local.sh" ]] || \
-  fail 'update permission preservation: user script became executable after successful update'
+assert_tree_unchanged "${symlink_target}" "${TMP_DIR}/update-symlink-before.tar"
 
 # Parent symlinks are rejected before mutation, so no update write can escape
 # the selected target directory.
@@ -317,7 +371,7 @@ chmod 0644 "${githooks_target}/.beryl/scripts/user-local.sh"
 githooks_output="${TMP_DIR}/update-githooks-rollback.out"
 if BERYL_UPDATE_FAIL_AT='verify:.beryl/driver/README.md' \
   sh "${REPO_ROOT}/install.sh" --update --enable-githooks --source-dir "${update_source}" \
-  --target "${githooks_target}" >"${githooks_output}" 2>&1; then
+  --hook-conflict replace --target "${githooks_target}" >"${githooks_output}" 2>&1; then
   fail 'update githooks rollback: forced verification failure unexpectedly succeeded'
 fi
 assert_file_contains "${githooks_output}" 'beryl: update failed phase=verify' \
@@ -333,8 +387,8 @@ assert_file_contains "${githooks_output}" 'beryl: update failed phase=verify' \
 
 setup_target="${TMP_DIR}/setup"
 mkdir -p "${setup_target}"
-printf 'n\nn\n1\n1\ny\nn\n' | \
-  bash "${REPO_ROOT}/.beryl/scripts/setup-project.sh" --profile standard "${setup_target}"
+bash "${REPO_ROOT}/.beryl/scripts/setup-project.sh" --non-interactive --profile standard \
+  --stack generic --test-runner none --skip-check "${setup_target}" </dev/null
 [[ -x "${setup_target}/.beryl/scripts/check.sh" ]] || fail 'setup: check.sh missing'
 [[ -f "${setup_target}/AGENTS.md" ]] || fail 'setup: generated shim missing'
 [[ -f "${setup_target}/LICENSE" ]] || fail 'setup: Apache license missing'
@@ -342,5 +396,6 @@ printf 'n\nn\n1\n1\ny\nn\n' | \
 [[ -f "${setup_target}/tests/.manifest.sha256" ]] || fail 'setup: test manifest missing'
 [[ -f "${setup_target}/.beryl/agent/skills/initial-build/SKILL.md" ]] || fail 'setup: initial-build skill missing'
 [[ ! -e "${setup_target}/.beryl/agent/hierarchy.md" ]] || fail 'setup: hierarchy.md must not be created during install'
+(cd "${setup_target}" && ./.beryl/scripts/check.sh)
 
 printf 'portability-smoke: PASS\n'

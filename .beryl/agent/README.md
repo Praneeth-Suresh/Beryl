@@ -43,7 +43,7 @@ Then run:
 ./.beryl/agent/scripts/seed-agent-context.sh
 ./.beryl/agent/scripts/sync-agent-env.sh
 ./.beryl/agent/scripts/agent-doctor.sh
-./.beryl/scripts/check.sh
+./.beryl/scripts/check.sh --development
 ```
 
 ## Test manifest scope

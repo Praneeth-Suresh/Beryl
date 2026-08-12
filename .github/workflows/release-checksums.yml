@@ -1,0 +1,59 @@
+name: Publish Release Checksum
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to checksum
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish-codeload-checksum:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Resolve the release target to a full commit SHA
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          target_commitish="$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json targetCommitish --jq '.targetCommitish')"
+          release_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${target_commitish}" --jq '.sha')"
+          [[ "${release_sha}" =~ ^[0-9a-fA-F]{40}$ ]]
+          printf 'sha=%s\n' "${release_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout the exact resolved release commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          fetch-depth: 1
+
+      - name: Download the exact GitHub codeload archive and calculate SHA-256
+        id: checksum
+        env:
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          set -euo pipefail
+          archive="beryl-${RELEASE_SHA}.tar.gz"
+          checksum="${archive}.sha256"
+          curl --fail --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            "https://codeload.github.com/${GITHUB_REPOSITORY}/tar.gz/${RELEASE_SHA}" \
+            -o "${archive}"
+          sha256sum "${archive}" > "${checksum}"
+          printf 'asset=%s\n' "${checksum}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload the immutable checksum asset to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "${RELEASE_TAG}" "${{ steps.checksum.outputs.asset }}" \
+            --repo "${GITHUB_REPOSITORY}" --clobber

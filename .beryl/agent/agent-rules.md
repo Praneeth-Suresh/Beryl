@@ -7,7 +7,7 @@ These defaults apply in every agent session even when the user does not restate 
 1. Route work through `.beryl/agent/task-routing.md` and the matching workflow skill before editing.
 2. Treat ratified feature implementation as `adding-features` work by default.
 3. Use `.beryl/agent/session-state.md` only as internal temporary state when needed.
-4. After edits, run the formatter command if configured, then narrow checks, then `./.beryl/scripts/check.sh`.
+4. After edits, run the formatter command if configured, then narrow checks, then `./.beryl/scripts/check.sh --development` in this source checkout (installed projects use `./.beryl/scripts/check.sh`).
 5. Clear temporary session state when the feature, repair, or debugging thread is complete.
 6. Never weaken tests to make implementation pass.
 7. If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
@@ -71,7 +71,7 @@ After a long product run, if the user asks for cleanup or extraction review:
 
 1. Run the formatter command if configured.
 2. Run narrow checks and any task-specific checks defined in `.beryl/agent/testing-policy.md`.
-3. Run `./.beryl/scripts/check.sh`.
+3. Run `./.beryl/scripts/check.sh --development` in this source checkout.
 4. Update glossary/design tree/architecture/ADRs if durable design changed.
 5. Clear `.beryl/agent/session-state.md` when temporary implementation state is no longer needed.
 6. Clear resolved session error history after debugging succeeds.

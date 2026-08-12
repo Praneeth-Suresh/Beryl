@@ -11,9 +11,39 @@ fail() {
 }
 
 # Deterministic, dependency-free Markdown sanity checks:
-# - no unclosed triple-backtick code fences
+# - no unclosed backtick or tilde code fences
 # - no TAB characters
 # Applies to all markdown files in the repository except .git.
+
+md_fence_marker=""
+md_fence_length=0
+md_fence_trailing=""
+
+# Extract a Markdown fence that begins after at most three spaces. The caller
+# receives the fence marker, length, and trailing text through the globals
+# above. Markdown permits closing fences that are longer than their opener,
+# but not a different marker or a shorter run.
+md_parse_fence() {
+  local line="$1"
+  local offset=0 marker length=0
+
+  while [[ "${offset}" -lt "${#line}" && "${line:${offset}:1}" == " " ]]; do
+    offset=$((offset + 1))
+  done
+  (( offset <= 3 )) || return 1
+
+  marker="${line:${offset}:1}"
+  [[ "${marker}" == '`' || "${marker}" == '~' ]] || return 1
+
+  while [[ "${line:$((offset + length)):1}" == "${marker}" ]]; do
+    length=$((length + 1))
+  done
+  (( length >= 3 )) || return 1
+
+  md_fence_marker="${marker}"
+  md_fence_length="${length}"
+  md_fence_trailing="${line:$((offset + length))}"
+}
 
 md_files="$(cd "${REPO_ROOT}" && find . -type f -name '*.md' -not -path './.git/*' | LC_ALL=C sort)"
 
@@ -28,11 +58,29 @@ while IFS= read -r f; do
   count=$((count + 1))
   path="${REPO_ROOT}/${f#./}"
 
-  # Unclosed code fences: count of ``` lines should be even.
-  # This is intentionally simple and deterministic.
-  fence_count="$(awk '/^```/{c++} END{print c+0}' "${path}")"
-  if (( fence_count % 2 != 0 )); then
-    fail "check-md: Unclosed code fence in ${f#./} (found ${fence_count} fences)."
+  open_marker=""
+  open_length=0
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    if ! md_parse_fence "${line}"; then
+      continue
+    fi
+
+    if [[ -z "${open_marker}" ]]; then
+      open_marker="${md_fence_marker}"
+      open_length="${md_fence_length}"
+      continue
+    fi
+
+    if [[ "${md_fence_marker}" == "${open_marker}" &&
+      "${md_fence_length}" -ge "${open_length}" &&
+      "${md_fence_trailing}" =~ ^[[:space:]]*$ ]]; then
+      open_marker=""
+      open_length=0
+    fi
+  done <"${path}"
+
+  if [[ -n "${open_marker}" ]]; then
+    fail "check-md: Unclosed ${open_marker} code fence in ${f#./} (opened with ${open_length} markers)."
   fi
 
   # Tabs in Markdown tend to render inconsistently across viewers.

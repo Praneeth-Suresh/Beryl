@@ -35,7 +35,12 @@ These operating defaults apply in every agent session even when the user does no
 - Route work through `.beryl/agent/task-routing.md` and the matching workflow skill before editing.
 - Treat ratified feature implementation as `adding-features` work by default.
 - Use `.beryl/agent/session-state.md` only as internal temporary state when needed, and clear it when the feature, repair, or debugging thread is complete.
-- After edits, run the formatter command if one is configured, then narrow checks, then the broader deterministic gate `./.beryl/scripts/check.sh`.
+- After edits in this Beryl source checkout, run the formatter command if one is configured, then narrow checks, then the broader deterministic gate `./.beryl/scripts/check.sh --development`. Installed projects run `./.beryl/scripts/check.sh`.
+- Treat installed readiness as lock-aware: report an explicitly preserved root
+  contract or hook as external ownership, never as silent Beryl enforcement.
+- Use `install.sh --bootstrap-agent` only as a standalone action after a locked
+  lifecycle operation. Its external-agent mutations are outside Beryl's file
+  transaction.
 - Never weaken tests to make implementation pass.
 - If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
 - Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.

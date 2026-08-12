@@ -24,8 +24,10 @@ Open your target repository in the coding agent. Do not clone Beryl first. Send:
 ```text
 Set up Beryl for this repository.
 
-First fetch and read this Beryl setup skill:
-https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/.beryl/agent/skills/using-beryl/SKILL.md
+First ask me for the trusted Beryl full 40-character commit SHA and matching
+archive SHA-256. Fetch and read the
+matching setup skill at:
+https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/<trusted-ref>/.beryl/agent/skills/using-beryl/SKILL.md
 
 Follow it exactly. Install Beryl into the current repository without cloning
 Beryl. Preserve existing code, tests, docs, and agent instruction files. Move
@@ -34,31 +36,38 @@ root instruction file with a Beryl-generated shim. Run the prescribed checks and
 report changed files, preserved files, conflicts, and results.
 ```
 
-For repeatable setup, replace `main` with a trusted tag or commit SHA.
+Remote lifecycle commands require a full 40-character commit SHA, never a tag
+or moving branch.
 
 ## Install Beryl Yourself
 
 Linux/macOS:
 
 ```bash
-BERYL_REF=main
-curl --proto '=https' --tlsv1.2 -fsSL \
-  https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh -o beryl-install.sh
-sh beryl-install.sh --ref "$BERYL_REF" --interactive
+BERYL_REF='0123456789abcdef0123456789abcdef01234567' # full 40-character commit SHA
+BERYL_ARCHIVE_SHA256='replace-with-trusted-release-digest'
+curl --fail --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+  "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/${BERYL_REF}/install.sh" \
+  -o beryl-install.sh
+less beryl-install.sh
+sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --interactive
 ```
 
 Windows: download in PowerShell, then run from Git Bash or WSL:
 
 ```powershell
-$env:BERYL_REF = "main"
+$env:BERYL_REF = "0123456789abcdef0123456789abcdef01234567" # full 40-character commit SHA
+$env:BERYL_ARCHIVE_SHA256 = "replace-with-trusted-release-digest"
 Invoke-WebRequest `
-  -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/main/install.sh" `
+  -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/$env:BERYL_REF/install.sh" `
+  -MaximumRedirection 0 `
   -OutFile "beryl-install.sh"
-bash -lc 'sh beryl-install.sh --ref "$BERYL_REF" --interactive'
+bash -lc 'less beryl-install.sh && sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --interactive'
 ```
 
-For repeatable installs, replace `main` with a trusted tag or commit SHA before
-running the command.
+The archive digest must come from the matching [GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases), named
+`beryl-<full-sha>.tar.gz.sha256`. Do not pipe a download directly into a shell.
+Native PowerShell only downloads; execute the installer from Git Bash or WSL.
 
 ## Beryl Is Already Installed
 
@@ -68,31 +77,57 @@ Run the main check from the repository root:
 ./.beryl/scripts/check.sh
 ```
 
-Optional local pre-commit guard:
-
-```bash
-git config core.hooksPath .beryl/githooks
-```
-
-Only run the hook command inside a Git repository where `.git/config` is
-writable.
+Enable hooks through setup or install with `--enable-githooks`. If Git already
+has a `core.hooksPath`, Beryl refuses by default; inspect it and choose
+`--hook-conflict preserve` or `replace` explicitly. Beryl restores the prior
+hook path during rollback or uninstall only when it owns that setting.
 
 To retrieve current Beryl features without replacing your repository-owned
 context, configuration, driver data, or other user files, download the
 installer for a trusted release and update the target:
 
 ```bash
-BERYL_REF=v1.2.3
-sh beryl-install.sh --ref "$BERYL_REF" --update --target /path/to/project
+BERYL_REF='0123456789abcdef0123456789abcdef01234567'
+BERYL_ARCHIVE_SHA256='replace-with-trusted-release-digest'
+sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" \
+  --update --target /path/to/project
 ```
 
 The target must already contain `.beryl/lock.json`. The update reuses the
-lockfile's requested components unless `--profile` or `--components` is passed
-explicitly, which replaces that selection. For remote updates, prefer a tag or
-commit SHA and pair it with `--expected-sha256` using a digest from a trusted
-release channel. A successful update reports its backup under
+lockfile's immutable source ref, `expectedSourceSha256`, and requested
+components unless `--ref`, `--expected-sha256`, `--profile`, or `--components`
+is passed explicitly. A remote replacement requires a full 40-character commit
+SHA and matching trusted archive digest. A digest-protected update refuses a
+missing or mismatched reused digest. Normal updates preserve deselected or
+ambiguous files and remove them from the ownership ledger; the ledger alone
+never authorizes deletion. A successful update reports its backup under
 `.beryl/.updates/<timestamp>/`; a failed update reports its phase, component,
 path, reason, and rollback result.
+
+Normal updates preserve deselected or ambiguous files and remove them from
+Beryl ownership; a selection change never authorizes cleanup. To restore a
+retained backup, provide the backup id,
+explicit historical `--profile`/`--components`, and, before removing current-only
+paths, explicit `--current-profile`/`--current-components`:
+
+```bash
+BERYL_REF='0123456789abcdef0123456789abcdef01234567'
+BERYL_ARCHIVE_SHA256='replace-with-trusted-release-digest'
+sh beryl-install.sh --restore <backup-id> --ref "$BERYL_REF" \
+  --expected-sha256 "$BERYL_ARCHIVE_SHA256" --target /path/to/project \
+  --profile standard --current-profile full \
+  --current-source-dir /path/to/current-beryl-git-checkout
+```
+
+For remote recovery, Beryl validates the locked full SHA and trusted archive
+digest before fetching the recovery surface.
+
+`--uninstall` requires explicit `--profile` or `--components`, then removes
+only unchanged, digest-proven selected Beryl files and restores Beryl-owned
+hook settings. With no profile/components, `--adopt-existing`
+infers only minimal, standard, or full from distinctive installed files;
+ambiguous or partial surfaces are refused. Adoption records only an identical
+unlocked Beryl surface; it never deletes unknown content.
 
 ## Run Your First Agent Task
 
@@ -153,21 +188,26 @@ If Beryl is already installed without the driver component, rerun setup with
 
 - Check output is authoritative. Fix the reported failure and rerun
   `./.beryl/scripts/check.sh`.
-- If bootstrap fails, inspect `.beryl/agent/bootstrap-status.json`.
-- If hook setup fails, confirm you are inside a Git repo and `.git/config` is
-  writable.
+- Bootstrap is standalone: after install/update, run
+  `sh beryl-install.sh --bootstrap-agent --target /path/to/project`. Its
+  external-agent changes are not transactional; inspect
+  `.beryl/agent/bootstrap-status.json` if it fails.
+- If hook setup is refused, inspect the existing `core.hooksPath` and choose a
+  documented `--hook-conflict` policy rather than overwriting it manually.
 - Do not weaken tests to make setup or implementation pass.
 
 ## Common Commands
 
 | Need | Command or File |
 | --- | --- |
-| Install into another repo from a local checkout | `./.beryl/scripts/setup-project.sh /path/to/project` |
+| Install from a local Beryl Git checkout | `./.beryl/scripts/setup-project.sh /path/to/project` |
+| Noninteractive local setup | `./.beryl/scripts/setup-project.sh --non-interactive --profile standard /path/to/project` |
 | Install full driver workflow | `./.beryl/scripts/setup-project.sh --profile full /path/to/project` |
 | Update an existing installation | `sh beryl-install.sh --update --target /path/to/project` |
-| Bootstrap repo-specific context | `./.beryl/scripts/setup-project.sh --bootstrap /path/to/project` |
+| Bootstrap repo-specific context | `sh beryl-install.sh --bootstrap-agent --target /path/to/project` |
 | Run deterministic checks | `./.beryl/scripts/check.sh` |
-| Enable local pre-commit checks | `git config core.hooksPath .beryl/githooks` |
+| Restore an update backup | `sh beryl-install.sh --restore <backup-id> --profile standard --current-profile full --target /path/to/project` |
+| Conservative uninstall | `sh beryl-install.sh --uninstall --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --profile full --target /path/to/project` |
 | Route an agent task | `.beryl/agent/task-routing.md` |
 | Check testing rules | `.beryl/agent/testing-policy.md` |
 | Check repo operating rules | `.beryl/agent/agent-rules.md` |
@@ -181,6 +221,12 @@ If Beryl is already installed without the driver component, rerun setup with
 - [.beryl/agent/task-routing.md](./.beryl/agent/task-routing.md): workflow selection
 - [.beryl/agent/skills/planning/SKILL.md](./.beryl/agent/skills/planning/SKILL.md): planning workflow
 - [.beryl/agent/skills/adding-features/SKILL.md](./.beryl/agent/skills/adding-features/SKILL.md): feature workflow
-# Update bootstrap safety
+## Readiness States
 
-Do not combine `--update` with `--bootstrap-agent`. Update first, then run bootstrap separately because agent actions are outside the file transaction.
+An installed target runs `./.beryl/scripts/check.sh`; it uses the lockfile and
+installed readiness contract. Beryl's source checkout alone uses
+`./.beryl/scripts/check.sh --development`, which additionally validates
+source-release surfaces. A successful doctor reports either `ready` or
+`ready-with-preserved-external-contracts`. The latter names each preserved root
+contract or hook warning and states that Beryl does not enforce it; incomplete
+or ambiguous installations do not report green.

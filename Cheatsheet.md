@@ -4,59 +4,73 @@ Use this when starting a new software project from this boilerplate. The goal is
 
 ## 0. Run The Setup Script
 
-For the lowest-friction setup, run:
+For a local Beryl **Git checkout**, run:
 
 ```bash
 ./.beryl/scripts/setup-project.sh /path/to/new-project
 ```
 
-The script asks for the target directory, stack, test runner, and whether to enable the Git hook. If the listed choices are not enough, choose `Use AI agent fallback`; the script will ask for a setup prompt and run Codex, Claude, or a custom headless command from inside the target project.
+The script delegates one install/update transaction, then asks for stack, test
+runner, root-contract policy, and opt-in hook/bootstrap choices. For automation,
+use `--non-interactive` and give a target directory; defaults are standard
+profile, generic stack, no test runner, no bootstrap, and no automatic check.
+It never copies components or changes Git hook configuration independently.
 
 After this succeeds, skip to "Fill The Minimum Project Facts".
 
-## 0.1 Manual Boilerplate Copy
+## 0.1 Do Not Copy The Control Plane Manually
 
-From this repository, copy these paths into the new project root:
+Do not copy Beryl directories by hand. `install.sh` owns the install surface,
+lockfile, generated contracts, `.gitignore` entry, modes, and optional Git hook
+configuration in one no-follow transaction. It refuses existing unlocked
+`.beryl` content, symlinks, root-contract collisions, or pre-existing hook
+ownership unless the caller selects a documented policy.
 
-```bash
-cp -R agent /path/to/new-project/
-cp -R scripts /path/to/new-project/
-cp -R githooks /path/to/new-project/
-cp -R .github /path/to/new-project/
-cp CLAUDE.md /path/to/new-project/ 2>/dev/null || true
-```
+For a release install, use the immutable-ref download procedure in
+[Quickstart.md](./Quickstart.md): download to a file over HTTPS with redirect
+restrictions, inspect it, pass both a full 40-character commit SHA and that
+commit's trusted archive SHA-256 from the matching [GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases), and never pipe remote content to a shell.
+`--source-dir` accepts a Beryl Git checkout only, so ignored/untracked local
+artifacts cannot cross into the target.
 
-Then enter the new project:
-
-```bash
-cd /path/to/new-project
-```
-
-Make scripts executable if needed:
+Use these **local-checkout** lifecycle commands from the inspected installer:
 
 ```bash
-chmod +x .beryl/scripts/*.sh .beryl/agent/scripts/*.sh .beryl/githooks/pre-commit
+sh beryl-install.sh --source-dir /path/to/current-beryl-git-checkout \
+  --update --target /path/to/project
+sh beryl-install.sh --source-dir /path/to/restored-beryl-git-checkout \
+  --restore <backup-id> --profile standard --current-profile full \
+  --target /path/to/project \
+  --current-source-dir /path/to/current-beryl-git-checkout
+sh beryl-install.sh --source-dir /path/to/current-beryl-git-checkout \
+  --uninstall --profile full --target /path/to/project
+sh beryl-install.sh --adopt-existing --source-dir /path/to/beryl-git-checkout \
+  --target /path/to/project
 ```
 
-Ignore temporary agent session state:
+Remote lifecycle commands require `--ref` to be a full 40-character commit SHA
+and `--expected-sha256`; a locked remote update reuses its persisted
+`expectedSourceSha256` only when no replacement source is requested, and
+refuses a missing or mismatched digest. Update defaults to the lockfile's
+immutable source ref and component selection. A local downgrade/removal update
+preserve deselected ambiguous files and remove them from Beryl ownership; a
+selection change does not authorize deletion.
+Restore requires explicit historical `--profile`/`--components`, and explicit
+`--current-profile`/`--current-components` before it removes current-only paths;
+it may also require `--current-source-dir` and the backed-up remote SHA/digest.
+Uninstall requires explicit `--profile`/`--components` and removes only the
+selected unchanged Beryl-owned files, restoring Beryl-owned hooks. No-argument
+adoption infers only minimal, standard, or full from distinctive files and
+refuses ambiguous or partial surfaces.
 
-```bash
-grep -qxF '.beryl/agent/session-state.md' .gitignore 2>/dev/null || printf '\nagent/session-state.md\n' >> .gitignore
-```
+An installed target runs `./.beryl/scripts/check.sh`; Beryl's source checkout
+uses `./.beryl/scripts/check.sh --development`. Doctor output is either `ready`
+or `ready-with-preserved-external-contracts`; the latter names warnings and
+states `Beryl does not enforce` the preserved external root/hook contract.
 
-Generate tool-specific instruction shims:
-
-```bash
-./.beryl/agent/scripts/sync-agent-env.sh
-```
-
-Create the first manifest:
-
-```bash
-./.beryl/scripts/update-test-manifest.sh
-```
-
-If your repo ignores a generated tool directory such as `.codex/`, either track the needed shim explicitly or adjust `.beryl/agent/scripts/agent-doctor.sh` so CI does not require ignored local files.
+The CI `lifecycle-regressions` job runs
+`./.beryl/scripts/run-lifecycle-tests.sh`, which is also the local release
+regression command.
 
 ## 0.2 Configure Browser MCP (Web/HTML Work)
 
