@@ -24,9 +24,14 @@ Open your target repository in the coding agent. Do not clone Beryl first. Send:
 ```text
 Set up Beryl for this repository.
 
-First ask me for the trusted Beryl full 40-character commit SHA and matching
-archive SHA-256. Fetch and read the
-matching setup skill at:
+First obtain Beryl's versioned `beryl-bootstrap.sh` through the approved,
+independently trusted bootstrap channel. Run it with `--release latest`; it
+cryptographically verifies Beryl's signed release metadata and archive before
+running the selected installer. Report the selected release tag, full commit
+SHA, signing key ID, and archive SHA-256.
+
+Then fetch and read the setup skill from the verified selected release archive
+(or use its full commit SHA only after the bootstrap reports it):
 https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/<trusted-ref>/.beryl/agent/skills/using-beryl/SKILL.md
 
 Follow it exactly. Install Beryl into the current repository without cloning
@@ -40,6 +45,34 @@ Remote lifecycle commands require a full 40-character commit SHA, never a tag
 or moving branch.
 
 ## Install Beryl Yourself
+
+**Recommended:** use Beryl's versioned `beryl-bootstrap.sh`, obtained from the
+[GitHub Releases page](https://github.com/Praneeth-Suresh/Beryl/releases) or
+your organization's approved bootstrap distribution. Inspect it, then run:
+
+```bash
+less beryl-bootstrap.sh
+sh beryl-bootstrap.sh --release latest --interactive
+```
+
+The bootstrap embeds the release public key, verifies signed metadata and
+expiry, verifies the codeload archive SHA-256, and executes `install.sh` only
+from that verified archive. It reports the release tag, full commit SHA, signing
+key ID, and archive digest. It requires `curl`, `tar`, a SHA-256 utility, and
+`openssl`. On Windows, run the bootstrap from Git Bash or WSL (native
+PowerShell execution is not supported).
+
+A signed release selection does not eliminate the initial trust decision: obtain
+the bootstrap itself from an independently trusted, versioned source. A mutable
+GitHub `latest` redirect alone is not a trust root.
+
+### Pinned Manual Fallback
+
+For recovery, audit-sensitive automation, or when a bootstrap channel has not
+yet been established, the explicit SHA-and-digest flow remains available. Find
+the pair in the matching [GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases):
+each release includes `beryl-<full-sha>.tar.gz.sha256`, whose filename carries
+the full commit SHA and whose content is the archive digest.
 
 Linux/macOS:
 

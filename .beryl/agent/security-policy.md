@@ -36,6 +36,7 @@
   targets.
 - `run.sh` and project scripts use strict argument tokenization for external command
   invocations.
+- `beryl-bootstrap.sh` is Beryl's signed-release selector. Its embedded public key verifies detached metadata before parsing, requires valid expiry and immutable SHA/digest fields, derives rather than trusts the codeload URL, verifies the archive, and executes only its verified `install.sh`. The matching private key is an offline/protected maintainer credential, never a repository or CI secret.
 - `.beryl/scripts/check-install-surface.sh` verifies dry-run copy scope against the
   selected component graph, preventing silent broadening of copied artifacts.
 - Bootstrap command templates are validated for required placeholders before execution.

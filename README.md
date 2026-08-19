@@ -74,13 +74,19 @@ Give the agent this prompt:
 ```text
 Set up Beryl for this repository.
 
-First ask me for the trusted Beryl full 40-character commit SHA and matching
-archive SHA-256. Fetch and read the
-matching setup skill at:
+First obtain Beryl's versioned `beryl-bootstrap.sh` through the approved,
+independently trusted bootstrap channel (ask the user to provide it, or
+download it from the GitHub Releases page at
+https://github.com/Praneeth-Suresh/Beryl/releases). Run it with
+`--release latest`; it cryptographically verifies Beryl's signed release
+metadata and archive before running the selected installer. Report the selected
+release tag, full commit SHA, signing key ID, and archive SHA-256.
+
+Then fetch and read the setup skill from the verified selected release archive
+(or use its full commit SHA only after the bootstrap reports it):
 https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/<trusted-ref>/.beryl/agent/skills/using-beryl/SKILL.md
 
-Follow it exactly. Install Beryl into the current repository without cloning
-Beryl. If this repo already has code, tests, docs, or agent instruction files,
+Follow it exactly. Install Beryl into the current repository without cloning Beryl. If this repo already has code, tests, docs, or agent instruction files,
 preserve them, then consolidate durable agent guidance into Beryl's
 .beryl/agent/ files. Ask before replacing existing root instruction files with
 Beryl-managed shims. Run the prescribed checks and report changed files,
@@ -92,19 +98,47 @@ or moving branch.
 
 ### Install Directly
 
-Download the installer for a trusted, immutable release commit, inspect it,
-then run it. Remote lifecycle commands require both a full 40-character commit
-SHA and that commit's archive SHA-256 from Beryl's trusted release channel. Do
-not pipe a download into a shell.
-
-Find the pair in the matching [GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases): each published release includes
-`beryl-<full-sha>.tar.gz.sha256`, whose filename carries the full commit SHA and
-whose content is the archive digest.
+Download a **versioned `beryl-bootstrap.sh` through Beryl's independently
+trusted bootstrap channel**, inspect it, then let it select and verify the
+current signed release. Do not treat a raw `latest` URL alone as the trust root
+and do not pipe a download into a shell.
 
 Linux/macOS:
 
 ```bash
-BERYL_REF='0123456789abcdef0123456789abcdef01234567' # full 40-character commit SHA
+less beryl-bootstrap.sh
+sh beryl-bootstrap.sh --release latest --interactive
+```
+
+Windows: download the approved bootstrap in PowerShell if needed, then run it
+from Git Bash or WSL (native PowerShell execution is not supported):
+
+```powershell
+Get-Content beryl-bootstrap.sh
+bash -lc 'sh beryl-bootstrap.sh --release latest --interactive'
+```
+
+The bootstrap requires `curl`, `tar`, a SHA-256 utility, and `openssl`. It
+prints the selected release tag, full SHA, signing key ID, and archive digest.
+A signed metadata failure, expired metadata, archive mismatch, or unavailable
+verifier aborts before Beryl touches the target.
+
+**How to obtain the bootstrap:** download `beryl-bootstrap.sh` from the
+[GitHub Releases page](https://github.com/Praneeth-Suresh/Beryl/releases) or
+from your organization's independently trusted distribution. Inspect the file
+before execution. The bootstrap is the initial trust boundary — a mutable raw
+GitHub URL alone is not a trust root.
+
+### Pinned Manual Fallback
+
+For recovery, audit-sensitive automation, or an initial bootstrap channel that
+has not yet been established, the existing pinned flow remains available. Find
+the pair in the matching [GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases): each release includes
+`beryl-<full-sha>.tar.gz.sha256`, whose filename carries the full commit SHA and
+whose content is the archive digest.
+
+```bash
+BERYL_REF='0123456789abcdef0123456789abcdef01234567'
 BERYL_ARCHIVE_SHA256='replace-with-trusted-release-digest'
 curl --fail --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
   "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/${BERYL_REF}/install.sh" \
@@ -112,23 +146,6 @@ curl --fail --show-error --location --proto '=https' --proto-redir '=https' --tl
 less beryl-install.sh
 sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --interactive
 ```
-
-Windows: download in PowerShell, then run the installer from Git Bash or WSL
-(native PowerShell execution is not supported):
-
-```powershell
-$env:BERYL_REF = "0123456789abcdef0123456789abcdef01234567" # full 40-character commit SHA
-$env:BERYL_ARCHIVE_SHA256 = "replace-with-trusted-release-digest"
-Invoke-WebRequest `
-  -Uri "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/$env:BERYL_REF/install.sh" `
-  -MaximumRedirection 0 `
-  -OutFile "beryl-install.sh"
-bash -lc 'less beryl-install.sh && sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --interactive'
-```
-
-`Invoke-WebRequest -MaximumRedirection 0` refuses redirects; the URL itself is
-HTTPS. Native PowerShell only downloads the POSIX installer—run it from Git
-Bash or WSL.
 
 ### Use A Local Beryl Checkout
 

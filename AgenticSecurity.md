@@ -9,7 +9,9 @@ This document records the current security feature set and immediate backlog for
 - **Canonical source identity guard**: install and component checks enforce the configured repo owner slug to prevent stale or claimable remotes.
 - **Install scope validation**: every selected component must declare only repository-relative paths and allowed root files.
 - **Dependency expansion**: component dependencies are resolved before copy.
-- **Checksum option for immutable tarball installs**: `--expected-sha256` allows stronger integrity checks for remote archive installs.
+- **Signed release metadata and verified bootstrap**: a versioned bootstrap with
+  an embedded public key verifies detached metadata, expiry, immutable source
+  identity, and archive digest before it extracts and executes `install.sh`.
 - **Command-arg hardening for headless runners**: custom bootstrap command templates are validated for required placeholders before execution.
 - **Deterministic install-surface verification**: `./.beryl/scripts/check-install-surface.sh` compares `install.sh --dry-run` output to manifest-derived expected paths.
 
@@ -23,9 +25,9 @@ This document records the current security feature set and immediate backlog for
    - Require `.beryl/agent/bootstrap-status.json` diff summary for each bootstrap run.
    - Fail CI when bootstrap modifies unexpected files outside `.beryl/agent/*` and allowed status artifacts.
 
-3. **Signed installer manifest**
-   - Validate manifest signatures in addition to optional SHA-256 tarball checks.
-   - Keep key material in trust root outside the project write path.
+3. **Release key rotation exercise**
+   - Rehearse replacement bootstrap distribution and revocation after signer compromise.
+   - Keep signing-key recovery outside repository and CI custody.
 
 4. **Structured prompt policy for agent runners**
    - Enforce tokenized prompt templates and disallow freeform shell fragments in fallback prompts.
