@@ -70,8 +70,12 @@ for file in README.md Quickstart.md .beryl/scripts/README.md .beryl/agent/skills
   assert_contains "$file" '--tlsv1.2'
 done
 
+# The recommended path must name the signed bootstrap and make the independent
+# first-trust boundary explicit. Manual fallback content may retain PowerShell
+# redirect hardening where it documents the pinned installer.
 for file in README.md Quickstart.md .beryl/scripts/README.md .beryl/agent/skills/using-beryl/SKILL.md; do
-  assert_contains "$file" '-MaximumRedirection 0'
+  assert_contains "$file" 'beryl-bootstrap.sh'
+  assert_contains "$file" 'independently trusted'
 done
 
 assert_contains README.md '--source-dir'
@@ -113,10 +117,10 @@ assert_contains .beryl/agent/architecture.md 'standalone `--bootstrap-agent`'
 assert_contains .beryl/agent/ubiquitous-language.md 'Recovery Lifecycle'
 assert_contains .beryl/agent/ubiquitous-language.md 'Readiness State'
 assert_contains .beryl/agent/ubiquitous-language.md 'Not destructive authority'
-assert_contains RELEASING.md 'beryl-<full-sha>.tar.gz.sha256'
-assert_contains RELEASING.md 'GitHub Releases API'
-assert_contains RELEASING.md 'gh release view <release-tag>'
-assert_contains RELEASING.md 'discovery metadata only'
+assert_contains RELEASING.md 'beryl-release-metadata-v1'
+assert_contains RELEASING.md 'sign-release-metadata.sh'
+assert_contains RELEASING.md 'private key'
+assert_contains RELEASING.md 'independently trusted bootstrap channel'
 assert_contains .github/workflows/release-checksums.yml 'contents: write'
 assert_contains .github/workflows/release-checksums.yml 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0'
 assert_contains .github/workflows/release-checksums.yml 'ref: ${{ steps.release.outputs.sha }}'

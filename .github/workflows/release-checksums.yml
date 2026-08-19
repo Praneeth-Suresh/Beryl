@@ -1,4 +1,4 @@
-name: Publish Release Checksum
+name: Publish Release Checksum (Offline Metadata Signing Required)
 
 on:
   release:

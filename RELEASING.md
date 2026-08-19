@@ -1,44 +1,79 @@
 # Releasing Beryl
 
-## Publish A Trusted Remote-Install Checksum
+## Release Trust Model
 
-1. Create and publish a GitHub Release whose target is the commit being
-   released. The target may be selected through a tag, but the release workflow
-   resolves it to a full 40-character commit SHA before publishing trust data.
-2. The `Publish Release Checksum` workflow runs on `release.published`. It
-   checks out that exact SHA, downloads GitHub's codeload archive for the exact
-   SHA, computes SHA-256, and uploads:
+Beryl automatic release selection has two trust layers:
+
+1. A **versioned, independently trusted** `beryl-bootstrap.sh` embeds Beryl's
+   release-signing public key and verifies signed release metadata.
+2. A designated maintainer signs that metadata with the corresponding private
+   key, which remains outside this repository and GitHub Actions.
+
+Do not describe a mutable raw installer URL or a GitHub `latest` redirect by
+itself as a trust root. GitHub distributes the metadata assets, but the
+bootstrap accepts them only after cryptographic signature verification.
+
+## Publish A Signed Release
+
+1. Create and publish a GitHub Release whose target is the intended commit.
+   The `Publish Release Checksum` workflow resolves that target to a full
+   40-character SHA, downloads its codeload archive, and uploads
+   `beryl-<full-sha>.tar.gz.sha256`.
+2. Obtain the digest from that uploaded checksum asset and sign canonical
+   metadata from a secured maintainer workstation. The private key must be the
+   externally stored key whose public SHA-256 fingerprint is:
 
    ```text
-   beryl-<full-sha>.tar.gz.sha256
+   d405d4eb71087593e79dc8659e9d3a770b3a8dc5eda41d73e9840829aa640475
    ```
 
-   The asset content is the standard `sha256sum` line for
-   `beryl-<full-sha>.tar.gz`. The filename and checksum therefore identify the
-   same immutable codeload archive that `install.sh` downloads.
-3. Verify the asset is attached to the published release before recommending a
-   remote install. If the automatic job must be rerun, use `workflow_dispatch`
-   with the existing release tag; it resolves the release target again and
-   overwrites only that checksum asset.
+   For example, issue metadata for 30 days:
 
-## Tell Users How To Discover Trust Data
+   ```bash
+   RELEASE_SHA='<full-40-character-release-sha>'
+   ARCHIVE_SHA256='<digest-from-beryl-<sha>.tar.gz.sha256>'
+   ./\.beryl/scripts/sign-release-metadata.sh \
+     --release-tag vX.Y.Z \
+     --source-ref "$RELEASE_SHA" \
+     --archive-sha256 "$ARCHIVE_SHA256" \
+     --expires-at 2026-09-18T00:00:00Z \
+     --private-key "$HOME/.config/beryl/release-signing-key.pem" \
+     --output-dir /tmp/beryl-release-assets
+   ```
 
-Direct users to [GitHub Releases](https://github.com/Praneeth-Suresh/Beryl/releases),
-or to the matching GitHub Releases API response. They must choose the asset
-named `beryl-<full-sha>.tar.gz.sha256`, set `BERYL_REF` to that full SHA, and
-set `BERYL_ARCHIVE_SHA256` to the digest in the asset. Do not publish a remote
-installer command for a tag, branch, release page URL, or checksum whose full
-SHA does not match the selected archive.
+   The helper refuses a private key stored in the repository or one that does
+   not match Beryl's embedded public key. Do not pass a private-key path to CI,
+   put the key in a GitHub secret, commit it, or paste it into issue/PR text.
+3. Inspect and upload both generated assets to the same GitHub Release:
 
-For the API route, maintainers and automation can inspect a release with:
+   ```bash
+   gh release upload vX.Y.Z \
+     /tmp/beryl-release-assets/beryl-release-metadata-v1 \
+     /tmp/beryl-release-assets/beryl-release-metadata-v1.sig \
+     --repo Praneeth-Suresh/Beryl
+   ```
 
-```bash
-gh release view <release-tag> --repo Praneeth-Suresh/Beryl --json assets,targetCommitish
-```
+   The release is not eligible for automatic installation until the checksum,
+   metadata, and signature assets are all present.
+4. Verify from a clean directory using the versioned bootstrap obtained from
+   Beryl's independently trusted bootstrap channel:
 
-Resolve `targetCommitish` to its full SHA, then select the asset whose filename
-uses exactly that SHA. The release tag is discovery metadata only; it is never
-an installer `--ref`.
+   ```bash
+   sh beryl-bootstrap.sh --release latest --dry-run
+   ```
+
+## Key Custody, Rotation, And Incidents
+
+- The private key is an offline/protected maintainer credential. Keep it at
+  owner-only permissions, back it up through the organization's approved secret
+  recovery process, and never store it in this repository.
+- Key rotation requires a new bootstrap version containing the new public key,
+  distributed through the independently trusted bootstrap channel. Metadata
+  cannot authorize a new root key by itself.
+- If the private key may be compromised, stop publishing signed metadata,
+  revoke the bootstrap channel, generate a replacement key, publish a newly
+  authenticated bootstrap, and publish only replacement metadata signed by the
+  new key. Treat previously signed `latest` metadata as untrusted.
 
 ## Release Verification
 
@@ -49,6 +84,5 @@ Before publishing, run:
 ./.beryl/scripts/check.sh --development
 ```
 
-The release workflow intentionally has `contents: write` only because it must
-upload the checksum asset; the normal deterministic-check workflow remains
-read-only.
+The checksum workflow intentionally has `contents: write` only because it must
+upload a release asset. It never receives the release-signing private key.

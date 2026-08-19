@@ -16,11 +16,14 @@ Skill URL shape (substitute the user-approved immutable ref):
 https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/<trusted-ref>/.beryl/agent/skills/using-beryl/SKILL.md
 ```
 
-Ask for a full 40-character commit SHA and matching archive SHA-256 from
-Beryl's trusted release channel before remote setup. Tags and moving branches
-are refused for remote lifecycle commands. The trusted channel is the matching
-[GitHub Release checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases), named
-`beryl-<full-sha>.tar.gz.sha256`.
+Obtain Beryl's versioned `beryl-bootstrap.sh` through the approved,
+independently trusted bootstrap channel and run `--release latest`. It verifies
+signed metadata and the selected archive before executing the release
+installer. Record the reported release tag, full SHA, signing key ID, and
+archive digest. The pinned SHA-and-digest flow remains a recovery fallback.
+
+For the explicit pinned recovery fallback, obtain the SHA/digest pair from the
+[GitHub Releases checksum asset](https://github.com/Praneeth-Suresh/Beryl/releases).
 
 ## Setup
 
@@ -35,7 +38,22 @@ are refused for remote lifecycle commands. The trusted channel is the matching
      `.github/copilot-instructions.md`, `.cursorrules`, `.windsurfrules`, and
      similar tool-specific files
    - existing workflow files under `.github/workflows/`
-3. Download the installer for the selected ref without executing it directly:
+3. Install Beryl. Prefer the approved versioned bootstrap for automatic release
+   selection. If the user has provided `beryl-bootstrap.sh` or you can download
+   it from the [GitHub Releases page](https://github.com/Praneeth-Suresh/Beryl/releases),
+   use it directly:
+
+   ```bash
+   sh beryl-bootstrap.sh --release latest --interactive --root-conflict skip
+   ```
+
+   The bootstrap validates signed metadata and the archive, then runs the
+   verified selected installer. Do not accept a raw `latest` URL alone as its
+   trust root. If the bootstrap is unavailable, ask the user to provide it or
+   fall back to the pinned manual procedure below.
+
+   **Pinned manual fallback** (when a bootstrap is unavailable or audit policy
+   requires an explicit SHA/digest pair):
 
    ```bash
    BERYL_REF='0123456789abcdef0123456789abcdef01234567' # full 40-character SHA
@@ -44,6 +62,9 @@ are refused for remote lifecycle commands. The trusted channel is the matching
      "https://raw.githubusercontent.com/Praneeth-Suresh/Beryl/$BERYL_REF/install.sh" \
      -o beryl-install.sh
    less beryl-install.sh
+   sh beryl-install.sh --ref "$BERYL_REF" \
+     --expected-sha256 "$BERYL_ARCHIVE_SHA256" \
+     --interactive --root-conflict skip
    ```
 
    On Windows, use PowerShell only to download the file, with a ref-variable
@@ -57,20 +78,12 @@ are refused for remote lifecycle commands. The trusted channel is the matching
      -MaximumRedirection 0 `
      -OutFile "beryl-install.sh"
    ```
-4. Install Beryl into the current repository. Start with conflict-preserving
-   root behavior in existing repositories:
-
-   ```bash
-   sh beryl-install.sh --ref "$BERYL_REF" \
-     --expected-sha256 "$BERYL_ARCHIVE_SHA256" \
-     --interactive --root-conflict skip
-   ```
 
    Use `--bootstrap-agent` only after a successful locked lifecycle operation,
    when the user wants a supported coding agent to fill project-specific Beryl
    context. It is a standalone action and external-agent edits are outside the
    file transaction.
-5. Consolidate existing agent guidance into Beryl:
+4. Consolidate existing agent guidance into Beryl:
    - Treat `.beryl/agent/` as the canonical home for durable agent rules,
      project brief, architecture, testing policy, vocabulary, and workflow
      routing.
@@ -82,7 +95,7 @@ are refused for remote lifecycle commands. The trusted channel is the matching
    - Do not delete or overwrite existing non-Beryl files without explicit user
      approval. If a root agent file conflicts, preserve its content first, then
      ask before replacing it with a generated Beryl shim.
-6. Regenerate Beryl-managed agent shims after consolidation:
+5. Regenerate Beryl-managed agent shims after consolidation:
 
    ```bash
    BERYL_SHIM_CONFLICT=skip ./.beryl/agent/scripts/sync-agent-env.sh
@@ -94,9 +107,9 @@ are refused for remote lifecycle commands. The trusted channel is the matching
    ```bash
    BERYL_SHIM_CONFLICT=overwrite ./.beryl/agent/scripts/sync-agent-env.sh
    ```
-7. Configure tests only from discovered project commands. Do not invent host
+6. Configure tests only from discovered project commands. Do not invent host
    project test commands or configuration.
-8. Run checks from the target repository:
+7. Run checks from the target repository:
 
    ```bash
    ./.beryl/scripts/check.sh

@@ -3,6 +3,29 @@
 This file is the detailed reference for install, setup, checks, component
 profiles, bootstrap controls, and optional hook setup.
 
+## Recommended: Signed Release Bootstrap
+
+For a remote installation, obtain a **versioned** `beryl-bootstrap.sh` through
+Beryl's independently trusted bootstrap channel, inspect it, then run:
+
+```bash
+sh beryl-bootstrap.sh --release latest --interactive
+```
+
+The bootstrap embeds Beryl's release public key. It downloads fixed HTTPS
+metadata assets, verifies their detached signature and expiry, derives the
+codeload URL only from the signed full commit SHA, verifies the archive digest,
+and executes `install.sh` extracted from that verified archive. It reports the
+release tag, SHA, signing key ID, and archive SHA-256. It requires `curl`,
+`tar`, `openssl`, and `sha256sum` or `shasum`; on Windows execute it from Git
+Bash or WSL.
+
+The bootstrap distribution is the initial trust boundary. A GitHub `latest`
+redirect, raw URL, or release asset alone is not a trust root. Keep the pinned
+`--ref` / `--expected-sha256` commands below as a manual recovery and
+audit fallback. Existing locked updates remain pinned by default; automatic
+selection is explicit through the bootstrap.
+
 ## Install Beryl
 
 `install.sh` is a POSIX shell installer. The installed control-plane scripts

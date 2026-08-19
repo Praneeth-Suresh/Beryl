@@ -1679,6 +1679,15 @@ write_lockfile() {
     printf "  \"sourceRef\": \"%s\",\n" "$SOURCE_REF"
     printf "  \"expectedSourceSha256\": \"%s\",\n" "$EXPECTED_SHA256"
     printf "  \"source\": \"%s\",\n" "$SOURCE_LABEL"
+    if [ -n "${BERYL_SIGNED_RELEASE_KEY_ID:-}" ]; then
+      printf "  \"releaseTrust\": \"signed-bootstrap\",\n"
+      printf "  \"signedReleaseTag\": \"%s\",\n" "$(json_string "$BERYL_SIGNED_RELEASE_TAG")"
+      printf "  \"signedReleaseKeyId\": \"%s\",\n" "$(json_string "$BERYL_SIGNED_RELEASE_KEY_ID")"
+      printf "  \"signedReleaseIssuedAt\": \"%s\",\n" "$(json_string "$BERYL_SIGNED_RELEASE_ISSUED_AT")"
+      printf "  \"signedReleaseExpiresAt\": \"%s\",\n" "$(json_string "$BERYL_SIGNED_RELEASE_EXPIRES_AT")"
+    else
+      printf "  \"releaseTrust\": \"explicit-digest\",\n"
+    fi
     printf "  \"rootConflictPolicy\": \"%s\",\n" "$(json_string "$ROOT_CONFLICT")"
     printf "  \"rootConflictDecisions\": "
     printf "%s\n" "$ROOT_CONFLICT_DECISIONS" | json_array_from_lines
