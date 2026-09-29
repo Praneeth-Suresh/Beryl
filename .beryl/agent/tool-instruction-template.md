@@ -57,7 +57,7 @@ Task workflows:
 - `initial-build`: clarifies, plans, ratifies, and implements large or greenfield applications through a tracked transient hierarchy.
 - `adding-features`: feature implementation after a user-ratified plan.
 - `debugging`: bugs, failures, regressions, exceptions, and failing checks.
-- `explaining-codebase`: codebase walkthroughs and explanations without edits.
+- `understand-codebase`: read-only codebase teaching, including safe offline understanding artifacts; `explaining-codebase` remains a compatibility alias.
 
 Supporting skills:
 
