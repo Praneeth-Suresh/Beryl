@@ -58,6 +58,7 @@ Task workflows:
 - `adding-features`: feature implementation after a user-ratified plan.
 - `debugging`: bugs, failures, regressions, exceptions, and failing checks.
 - `understand-codebase`: read-only codebase teaching, including safe offline understanding artifacts; `explaining-codebase` remains a compatibility alias.
+- `composing-modules`: evidence-led, approval-gated dependency and module selection.
 
 Supporting skills:
 
