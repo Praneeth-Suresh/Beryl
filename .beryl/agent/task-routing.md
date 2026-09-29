@@ -21,6 +21,7 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 | Module composition | add a dependency, reuse a library, choose a package, compose from modules | `.beryl/agent/skills/composing-modules/SKILL.md` |
 | Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/debugging/SKILL.md` |
 | Codebase understanding | explain, teach, walk me through, understand, map the codebase, explain a change/PR/commit/branch, show execution flow, or quiz me | `.beryl/agent/skills/understand-codebase/SKILL.md` |
+| Codebase maintenance | periodically refactor, reduce technical debt, improve code quality, manage complexity, maintain the codebase | `.beryl/agent/skills/maintaining-codebase/SKILL.md` |
 | Post-run maintainability review | long product run, safe extraction slice, dead selectors, repeated CSS, rendering functions to split, generated artifacts, missing regression tests | `.beryl/agent/skills/tracking-entropy/SKILL.md` |
 
 ## Feature Implementation Gate
