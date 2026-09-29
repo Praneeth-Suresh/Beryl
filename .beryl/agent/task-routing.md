@@ -19,7 +19,7 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 | Initial build | explicit request for a large application, greenfield application, or first coordinated build | `.beryl/agent/skills/initial-build/SKILL.md` |
 | Feature addition | add, implement, build, create feature, new workflow, support behavior | `.beryl/agent/skills/adding-features/SKILL.md` |
 | Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/debugging/SKILL.md` |
-| Codebase explanation | explain, walk me through, understand, map the codebase, where is this handled | `.beryl/agent/skills/explaining-codebase/SKILL.md` |
+| Codebase understanding | explain, teach, walk me through, understand, map the codebase, explain a change/PR/commit/branch, show execution flow, or quiz me | `.beryl/agent/skills/understand-codebase/SKILL.md` |
 | Post-run maintainability review | long product run, safe extraction slice, dead selectors, repeated CSS, rendering functions to split, generated artifacts, missing regression tests | `.beryl/agent/skills/tracking-entropy/SKILL.md` |
 
 ## Feature Implementation Gate
