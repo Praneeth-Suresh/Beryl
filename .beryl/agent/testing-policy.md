@@ -5,7 +5,6 @@
 | Check | Command | Status | Notes |
 | --- | --- | --- | --- |
 | Markdown sanity | `./.beryl/scripts/check-md.sh` | available | Unclosed fences and tabs |
-| Test manifest immutability check | `./.beryl/scripts/check-tests-unchanged.sh` | available | Detects changes in configured test scope from `.beryl/agent/test-manifest.conf` |
 | Affected test gate | `./.beryl/scripts/check-affected.sh --worktree` | available | Selects related tests from changed files and uses full-test fallback for broad changes |
 | Aggregate deterministic gate | `./.beryl/scripts/check.sh --development` | available | Source-checkout command; installed projects run `./.beryl/scripts/check.sh` |
 | Format | `not available yet` | unavailable | No formatter configured yet |
@@ -68,15 +67,12 @@ Existing tests may not be weakened to make implementation pass.
 Intentional test changes are allowed only when all conditions are met:
 
 1. The behavior change is explicit in the task or design artifact.
-2. `./.beryl/scripts/update-test-manifest.sh` is run after the intentional change.
-3. The manifest update is committed with the test change.
-4. The final response explains why tests changed.
-5. `.beryl/agent/test-manifest.conf` is updated if new test locations/patterns are introduced.
+2. The test change is committed with the behavior change it covers.
+3. The final response explains why tests changed.
 
-## Immutability Enforcement Scope
+## Test Change Review
 
-- The SHA manifest mechanism provides deterministic **change detection**, not cryptographic immutability guarantees against privileged users.
-- Enforce stronger controls in CI/review policy (branch protection, required status checks, code review).
+- Test changes are reviewed in the diff like any other change. Enforce stronger controls through CI and review policy, such as branch protection, required status checks, and code review.
 
 ## Mocking Rules
 

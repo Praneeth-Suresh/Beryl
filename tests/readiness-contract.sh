@@ -41,18 +41,19 @@ install_profile() {
 cp -pR "${REPO_ROOT}/." "${INSTALL_SOURCE}/"
 cp "${INSTALL_SOURCE}/.beryl/agent/tool-instruction-template.md" "${INSTALL_SOURCE}/.codex/AGENTS.md"
 
-# Every profile gets the same seeded project context, including the generic
-# ADR. A minimal install has no aggregate check component, so its direct
-# readiness proof is the profile-aware doctor.
+# Every profile gets the same seeded project context, including the decision
+# record section in architecture.md. A minimal install has no aggregate check
+# component, so its direct readiness proof is the profile-aware doctor.
 minimal_target="${TMP_DIR}/minimal"
 install_profile "${minimal_target}" minimal
 "${minimal_target}/.beryl/agent/scripts/agent-doctor.sh"
-[[ -f "${minimal_target}/.beryl/agent/adr/0001-record-architecture-decisions.md" ]] || \
-  fail 'minimal install did not seed the generic ADR'
-assert_contains "${minimal_target}/.gitignore" 'host-owned-ignore-rule'
-assert_contains "${minimal_target}/.gitignore" '.beryl/agent/session-state.md'
-git -C "${minimal_target}" check-ignore -q .beryl/agent/session-state.md || \
-  fail 'direct minimal install did not ignore session state'
+assert_contains "${minimal_target}/.beryl/agent/architecture.md" '## Decision Record'
+[[ ! -e "${minimal_target}/.beryl/agent/design-tree.md" ]] || \
+  fail 'minimal install seeded the removed design tree'
+[[ ! -e "${minimal_target}/.beryl/agent/adr" ]] || \
+  fail 'minimal install seeded the removed ADR directory'
+[[ "$(<"${minimal_target}/.gitignore")" == 'host-owned-ignore-rule' ]] || \
+  fail 'install changed the host-owned .gitignore'
 [[ ! -e "${minimal_target}/.beryl/scripts/check.sh" ]] || \
   fail 'minimal install unexpectedly included the checks component'
 
@@ -177,11 +178,11 @@ grep -Fq 'managed path must not be a symlink: .beryl/scripts/safe-conf.sh' "${TM
 # A missing seeded artifact is a readiness failure even though the lock still
 # names agent-core. A stale generated root contract must also make the
 # aggregate gate nonzero rather than reporting a false green result.
-rm "${standard_target}/.beryl/agent/adr/0001-record-architecture-decisions.md"
-expect_failure "${TMP_DIR}/missing-adr.out" \
+rm "${standard_target}/.beryl/agent/architecture.md"
+expect_failure "${TMP_DIR}/missing-architecture.out" \
   "${standard_target}/.beryl/agent/scripts/agent-doctor.sh"
-grep -Fq 'missing file: .beryl/agent/adr/0001-record-architecture-decisions.md' "${TMP_DIR}/missing-adr.out" || \
-  fail 'doctor did not identify the missing generic ADR'
+grep -Fq 'missing file: .beryl/agent/architecture.md' "${TMP_DIR}/missing-architecture.out" || \
+  fail 'doctor did not identify the missing seeded architecture'
 
 # Deleting the lock must make both doctor and the aggregate gate fail, even
 # when an unrelated host install.sh is present. Neither command may execute

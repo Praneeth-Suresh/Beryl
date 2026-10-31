@@ -25,11 +25,9 @@ repo-root/
       agent/                             ← module-level (billing-specific decisions)
         module-context.md
         project-brief.md
-        design-tree.md
         architecture.md
         ubiquitous-language.md
         testing-policy.md
-        adr/
       src/
     identity/
       agent/                             ← module-level (identity-specific decisions)
@@ -46,11 +44,9 @@ repo-root/
 | Skills | ✓ (shared) | inherits |
 | Scripts | ✓ (shared) | inherits |
 | Project brief | whole-system goal | module goal |
-| Design tree | cross-module decisions | module-internal decisions |
-| Architecture | module map + cross-module boundaries | internal module structure |
+| Architecture and decisions | module map, cross-module boundaries, and cross-module decisions | internal module structure and module-internal decisions |
 | Ubiquitous language | shared terms | module-local terms |
 | Testing policy | root gate commands | module-specific commands |
-| ADRs | cross-module decisions | module-internal decisions |
 
 ## Create A Sub-Module Agent
 
@@ -111,7 +107,7 @@ Read each module's agent/module-context.md.
 Changes to module internals follow that module's agent/ files.
 Interface changes between modules follow root .beryl/agent/architecture.md.
 New shared terms go in root .beryl/agent/ubiquitous-language.md.
-If a boundary changes, create a root-level ADR.
+If a boundary changes, add a decision line to root .beryl/agent/architecture.md.
 ```
 
 ## Managing Sub-Module Agents Over Time
@@ -127,18 +123,18 @@ mkdir -p modules/new-module
 ### Splitting a module
 
 1. Create the new module agent structure.
-2. Move relevant ADRs from the old module.
+2. Move the relevant decision lines from the old module's `architecture.md`.
 3. Update both modules' `architecture.md` and `ubiquitous-language.md`.
 4. Update root `architecture.md` with the new boundary.
-5. Create a root ADR explaining the split.
+5. Add a root decision line explaining the split.
 
 ### Merging modules
 
 1. Choose which module's agent structure survives.
-2. Merge the other module's design-tree decisions and language into the survivor.
+2. Merge the other module's decision lines and language into the survivor.
 3. Remove the defunct module's `agent/` directory.
 4. Update root `architecture.md`.
-5. Create a root ADR explaining the merge.
+5. Add a root decision line explaining the merge.
 
 ### Weekly maintenance
 
@@ -157,4 +153,4 @@ cd modules/billing && ../../.beryl/agent/scripts/entropy-hotspots.sh
 3. Root `.beryl/agent/` files (for shared rules, skills, scripts, security).
 4. Existing code and conventions.
 
-Module files override root files only for: project-brief, design-tree, architecture, ubiquitous-language, and testing-policy. Everything else is inherited from root.
+Module files override root files only for: project-brief, architecture, ubiquitous-language, and testing-policy. Everything else is inherited from root.

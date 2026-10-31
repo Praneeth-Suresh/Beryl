@@ -244,7 +244,7 @@ memory or one-off prompts.
 | Tell agents how to work | `.beryl/agent/task-routing.md` routes each request to planning, feature work, debugging, or explanation. |
 | Require plans before edits | The planning and feature skills make agents present a plan, success checks, and commit boundaries before implementation. |
 | Preserve project knowledge | `.beryl/agent/` stores the project brief, architecture, testing policy, vocabulary, and durable agent rules. |
-| Verify agent changes | `./.beryl/scripts/check.sh` runs Markdown, component, secret, test-manifest, and project checks. |
+| Verify agent changes | `./.beryl/scripts/check.sh` runs Markdown, component, secret, and project checks. |
 | Keep local guardrails | Optional githooks run the deterministic gate before commits. |
 | Run larger task workflows | The full profile installs `.beryl/driver/` for driver-managed task loops. |
 
@@ -258,7 +258,7 @@ review the diff.
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `install.sh`                      | Lifecycle entry point: install, locked update, restore, conservative uninstall, explicit adoption, and standalone bootstrap. |
 | `.beryl/scripts/setup-project.sh` | Interactive or `--non-interactive` local frontend that delegates one normalized install/update transaction. |
-| `.beryl/scripts/check.sh`         | Deterministic safety gate for Markdown, test-manifest integrity, and configured project checks.                                                                                                             |
+| `.beryl/scripts/check.sh`         | Deterministic safety gate for Markdown, component, secret, and configured project checks.                                                                                                                   |
 
 Detailed install flags, profiles, component examples, bootstrap controls, and
 hook troubleshooting live in [.beryl/scripts/README.md](./.beryl/scripts/README.md).

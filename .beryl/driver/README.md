@@ -36,7 +36,7 @@ sessions:
 ```
 
 - **PLAN** — reads the task brief + `.beryl/agent/task-routing.md` planning workflow,
-  writes a plan into the task's session-state file. No code edits.
+  writes a plan into the task's `plan.md` state file. No code edits.
 - **IMPLEMENT** — implements strictly against the ratified plan.
 - **VERIFY** — independently checks the result **against the original task
   brief** (not against the implementer's own claims). For docs, scripts,
@@ -70,7 +70,6 @@ scratch from those files:
 | --------------------------------------- | ------------------------------------------------------------------- | ---------- |
 | `tasks/NN-*.md`                       | Immutable task brief (the source of truth a phase verifies against) | committed  |
 | `prompts/*.md`                        | Phase prompt templates with`{{PLACEHOLDERS}}`                     | committed  |
-| `state/NN/session-state.md`           | Per-task working state: plan, slices, failures, attempt no.         | gitignored |
 | `state/NN/plan.md`                    | Latest ratified plan                                                | gitignored |
 | `state/NN/verify.txt`                 | Latest verify sentinel + reason                                     | gitignored |
 | `state/NN/issue-comment.md`           | GitHub issue completion comment body, when a task is linked         | gitignored |

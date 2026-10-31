@@ -33,7 +33,6 @@ while IFS= read -r -d '' module_agent; do
   required=(
     "module-context.md"
     "project-brief.md"
-    "design-tree.md"
     "architecture.md"
     "ubiquitous-language.md"
     "testing-policy.md"

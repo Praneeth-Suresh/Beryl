@@ -3,7 +3,7 @@
 | Business Term | Technical Symbol | Definition | Constraints | Avoid |
 | --- | --- | --- | --- | --- |
 | Design Concept | `DesignConcept` | The shared organizing model guiding architecture and implementation choices. | Must be coherent across contexts. | `Idea`, `GeneralModel` |
-| Design Tree | `DesignTree` | Living map of open and settled decisions. | Updated when design moves. | `PlanDump` |
+| Decision Record | `DecisionRecord` | One-line entries in `architecture.md` for settled durable decisions: date, choice, and reason. | One line per decision; update when a boundary, contract, or test strategy changes. | `PlanDump`, long design essays |
 | Bounded Context | `BoundedContext` | A domain boundary with explicit ownership and language. | Owns its internal model and API. | `Module` (too generic) |
 | Ubiquitous Language | `UbiquitousLanguage` | Shared domain vocabulary in docs and code. | Terms must be stable and explicit. | Ambiguous nouns like `Data` |
 | Feedback Loop | `FeedbackLoop` | Generate-check-fix cycle using deterministic tools. | Must include real tool output. | `TryAgainLoop` |
@@ -18,4 +18,3 @@
 | Extraction Slice | `ExtractionSlice` | One safe, non-feature refactor step identified after reading changed files from a product run. | Must preserve behavior, avoid new features, name the files involved, and identify the protecting check or missing regression test. | Broad cleanup, opportunistic redesign |
 | Vertical Slice | `VerticalSlice` | Smallest end-to-end behavior change through one boundary. | Must be testable in isolation. | `BigRefactor` |
 | Adapter | `Adapter` | Boundary object that isolates external systems from domain logic. | Domain must not depend on vendor details. | `ServiceHelper` |
-| ADR | `ADR` | Architecture Decision Record for durable decisions. | Required for lasting boundary changes. | `RandomNote` |

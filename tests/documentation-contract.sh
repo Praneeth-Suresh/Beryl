@@ -110,9 +110,9 @@ assert_contains .beryl/scripts/README.md 'sh beryl-install.sh --ref "$BERYL_REF"
 assert_contains .beryl/scripts/README.md 'sh beryl-install.sh --ref "$BERYL_REF" --expected-sha256 "$BERYL_ARCHIVE_SHA256" --components driver'
 assert_contains .beryl/scripts/README.md 'sh beryl-install.sh --uninstall --ref "$BERYL_REF"'
 assert_contains .beryl/scripts/README.md '--expected-sha256 "$BERYL_ARCHIVE_SHA256" --profile full'
-assert_contains .beryl/agent/adr/0010-unified-transactional-install-lifecycle.md 'implemented lifecycle architecture'
-assert_contains .beryl/agent/adr/0010-unified-transactional-install-lifecycle.md 'candidate lock'
-assert_contains .beryl/agent/adr/0010-unified-transactional-install-lifecycle.md 'expectedSourceSha256'
+assert_contains .beryl/agent/architecture.md 'single lifecycle engine'
+assert_contains .beryl/agent/architecture.md 'candidate-lock readiness'
+assert_contains .beryl/agent/architecture.md 'expectedSourceSha256'
 assert_contains .beryl/agent/architecture.md 'standalone `--bootstrap-agent`'
 assert_contains .beryl/agent/ubiquitous-language.md 'Recovery Lifecycle'
 assert_contains .beryl/agent/ubiquitous-language.md 'Readiness State'
@@ -141,10 +141,8 @@ if rg -n -- '--previous-source-dir' \
   "${REPO_ROOT}/.beryl/scripts/README.md" \
   "${REPO_ROOT}/.beryl/agent/skills/using-beryl/SKILL.md" \
   "${REPO_ROOT}/.beryl/agent/architecture.md" \
-  "${REPO_ROOT}/.beryl/agent/design-tree.md" \
   "${REPO_ROOT}/.beryl/agent/ubiquitous-language.md" \
-  "${REPO_ROOT}/.beryl/agent/security-policy.md" \
-  "${REPO_ROOT}/.beryl/agent/adr/0010-unified-transactional-install-lifecycle.md"; then
+  "${REPO_ROOT}/.beryl/agent/security-policy.md"; then
   fail 'documentation or canonical lifecycle contract retains removed previous-source option'
 fi
 

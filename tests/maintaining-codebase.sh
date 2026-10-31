@@ -10,7 +10,7 @@ require() {
 
 require "$skill" 'evidence-led'
 require "$skill" 'repository-wide improvement program'
-require "$skill" '`tracking-entropy` remains the focused hotspot-analysis skill'
+require "$skill" 'entropy-hotspots.sh'
 require "$skill" 'State unavailable evidence and do not invent it.'
 require "$skill" 'owning bounded context'
 require "$skill" 'dependency-ordered, behavior-preserving'

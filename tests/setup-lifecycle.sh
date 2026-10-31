@@ -51,21 +51,19 @@ make_git_target_with_existing_hooks() {
   git -C "${target}" config core.hooksPath custom-hooks
 }
 
-# CI must run the same manifest-protected shell regression surface that contains these
-# lifecycle tests. Keep this source-level assertion local to the setup slice
-# so a workflow edit cannot silently remove the Ubuntu regression job.
+# CI must run every tracked shell regression test, including these lifecycle
+# tests. Keep this source-level assertion local to the setup slice so a
+# workflow edit cannot silently remove the Ubuntu regression job.
 assert_contains "${REPO_ROOT}/.github/workflows/deterministic-checks.yml" \
   './.beryl/scripts/run-lifecycle-tests.sh'
 assert_contains "${REPO_ROOT}/.beryl/scripts/run-lifecycle-tests.sh" \
-  'check-tests-unchanged.sh'
-assert_contains "${REPO_ROOT}/.beryl/scripts/run-lifecycle-tests.sh" \
-  'tests/.manifest.sha256'
+  "ls-files -- ':(glob)tests/*.sh'"
 assert_contains "${REPO_ROOT}/.beryl/scripts/run-lifecycle-tests.sh" \
   'bash "${REPO_ROOT}/${test_file}"'
 assert_contains "${REPO_ROOT}/.beryl/scripts/run-lifecycle-tests.sh" \
-  'manifest shell test must be a regular non-symlink file'
+  'shell test must be a regular non-symlink file'
 assert_contains "${REPO_ROOT}/.beryl/scripts/run-lifecycle-tests.sh" \
-  'manifest shell test must be readable'
+  'shell test must be readable'
 
 # A non-interactive standard setup must create the same lifecycle lock as a
 # direct install, and that lock must immediately support a normal update.

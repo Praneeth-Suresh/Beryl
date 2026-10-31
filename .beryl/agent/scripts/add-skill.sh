@@ -47,6 +47,7 @@ list_skills() {
     [[ -f "${dir}SKILL.md" ]] || continue
     name="$(basename "${dir}")"
     title="$(sed -n 's/^# *//p' "${dir}SKILL.md" | head -n1)"
+    [[ -n "${title}" ]] || title="$(sed -n 's/^name:[[:space:]]*//p' "${dir}SKILL.md" | head -n1)"
     printf "%-28s %s\n" "${name}" "${title:-<no title>}"
   done
 }
@@ -59,8 +60,16 @@ validate_name() {
 validate_skill_md() {
   local file="$1"
   [[ -s "${file}" ]] || fail "skill file is empty: ${file}"
-  head -n1 "${file}" | grep -qE '^# ' \
-    || fail "SKILL.md must start with a '# <Title>' heading: ${file}"
+  # Accept either a '# <Title>' first line or the common YAML frontmatter
+  # format whose block declares a name.
+  if head -n1 "${file}" | grep -qE '^# '; then
+    return 0
+  fi
+  if head -n1 "${file}" | grep -qxF -- '---' && \
+    sed -n '2,/^---$/p' "${file}" | grep -qE '^name:[[:space:]]*[^[:space:]]'; then
+    return 0
+  fi
+  fail "SKILL.md must start with a '# <Title>' heading or YAML frontmatter with a name: ${file}"
 }
 
 fetch_https() {

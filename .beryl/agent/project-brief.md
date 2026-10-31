@@ -27,7 +27,7 @@ Build **Beryl** for **engineers, maintainers, and teams adopting AI coding agent
 
 A feature is complete only when it has all of the following:
 
-1. A small design artifact update (`design-tree.md` and/or ADR) when design changes.
+1. A one-line decision record in `architecture.md` when a durable design decision changes.
 2. Clear boundary types/interfaces (where language supports this).
 3. Behavior tests plus at least one edge case test.
 4. Deterministic checks run (`./.beryl/scripts/check.sh` and relevant project checks).

@@ -6,9 +6,7 @@ Teach a reader how a repository, target, change, execution path, or migration
 works. This is read-only understanding work: it never changes application
 source, tests, policy, dependencies, configuration, or the analysed repository.
 
-`/understand-codebase [target] [mode]` is the canonical invocation. The legacy
-`explaining-codebase` name is a compatibility alias; do not create a second
-routing path for it.
+`/understand-codebase [target] [mode]` is the canonical invocation.
 
 ## Targets and modes
 

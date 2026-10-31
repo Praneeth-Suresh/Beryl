@@ -43,8 +43,9 @@
 
 ## Target Lifecycle Filesystem Boundary
 
-ADR 0010 defines the filesystem contract for initial install, locked update,
-restore, conservative uninstall, and explicit adoption.
+The unified lifecycle decision in `architecture.md` defines the filesystem
+contract for initial install, locked update, restore, conservative uninstall,
+and explicit adoption.
 
 - The lifecycle engine validates the target lexically and inspects every
   existing ancestor and planned destination leaf without following symbolic

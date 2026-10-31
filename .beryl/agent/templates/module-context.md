@@ -30,8 +30,7 @@ These root files apply unless this module overrides them:
 These files are authoritative for this module:
 
 - `agent/project-brief.md` (module goal, not whole-project goal)
-- `agent/design-tree.md` (module-level decisions)
-- `agent/architecture.md` (internal boundaries within this module)
+- `agent/architecture.md` (internal boundaries and module-level decisions)
 - `agent/ubiquitous-language.md` (module-local terms, supplements root)
 - `agent/testing-policy.md` (module-specific commands)
 
@@ -40,4 +39,4 @@ These files are authoritative for this module:
 - Do not import internals from sibling modules.
 - Use only the sibling's declared public entry point.
 - New shared terms go in root `.beryl/agent/ubiquitous-language.md`.
-- Boundary changes between modules require a root-level ADR.
+- Boundary changes between modules require a decision line in root `.beryl/agent/architecture.md`.
