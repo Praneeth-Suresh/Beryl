@@ -48,6 +48,7 @@ Weekly or monthly maintenance:
 
 - Run `.beryl/agent/scripts/entropy-hotspots.sh` to find high-churn material.
 - Use `.beryl/agent/skills/maintaining-codebase/SKILL.md` when upkeep work needs a prioritised plan.
+- Use `.beryl/agent/skills/refreshing-context/SKILL.md` to check the `.beryl/agent/` context files against the code and remove stale or redundant lines. Also run it after any large restructure or migration.
 - Review stale scratch references, broken documentation links, and duplicated command guidance.
 
 ## Verification

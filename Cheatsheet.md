@@ -386,6 +386,7 @@ specific one.
 | `composing-modules` | You are choosing a dependency or reusing a library. | `Research options for [need] before adding a dependency.` |
 | `maintaining-codebase` | You want a maintenance or technical-debt program. | `Assess this repository and propose a maintenance program.` |
 | `simplifying-code` | A module or area is hard to understand or change. | `Simplify [module]. Propose changes before editing.` |
+| `refreshing-context` | Monthly, or after a large change, to keep `.beryl/agent/` true and short. | `Refresh the context files and quiz me.` |
 | `grill-me` | A plan is risky or ambiguous and you want it stress-tested. | `Grill me on this plan: [plan].` |
 | `test-driven-development` | New behavior or a bug fix needs a failing test first. | Loaded by `planning` and `systematic-debugging`. |
 | `verification-before-completion` | Before the agent claims work is done. | Loaded by `planning`. |

@@ -51,6 +51,7 @@ Task workflows:
 - `composing-modules`: evidence-led, approval-gated dependency and module selection.
 - `maintaining-codebase`: evidence-led, approval-gated whole-repository maintenance program.
 - `simplifying-code`: evidence-led, behavior-preserving simplification of a module or area.
+- `refreshing-context`: periodic or post-change check of the context files against the code, with a developer quiz.
 
 Supporting skills:
 

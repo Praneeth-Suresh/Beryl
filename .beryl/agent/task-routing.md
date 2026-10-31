@@ -21,6 +21,7 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 | Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/systematic-debugging/SKILL.md` |
 | Codebase understanding | explain, teach, walk me through, understand, map the codebase, explain a change/PR/commit/branch, show execution flow, or quiz me | `.beryl/agent/skills/understand-codebase/SKILL.md` |
 | Codebase maintenance | whole repository: periodically refactor, reduce technical debt, maintain the codebase | `.beryl/agent/skills/maintaining-codebase/SKILL.md` |
+| Context refresh | refresh, review, audit, or clean up the agent context or .beryl/agent docs; periodic context check; after a large restructure or migration | `.beryl/agent/skills/refreshing-context/SKILL.md` |
 | Code simplification | a specific module or area: simplify, refactor, clean up, reduce complexity, improve code quality, design, or architecture | `.beryl/agent/skills/simplifying-code/SKILL.md` |
 
 ## Feature Implementation Gate

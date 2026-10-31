@@ -21,7 +21,7 @@ These defaults apply in every session. Users only need to mention one to overrid
 1. Record durable decisions, boundaries, open questions, and pressure points in `.beryl/agent/architecture.md`, and terms in `.beryl/agent/ubiquitous-language.md`.
 2. Keep progress notes and temporary state out of canonical files.
 3. Do not create sub-module agent structures unless the project has 3+ independently complex bounded contexts declared in root `.beryl/agent/architecture.md` (in which case, read through `.beryl/agent/guides/sub-module-agents.md` for more details). For smaller projects, the root `.beryl/agent/` is sufficient and sub-modules waste context.
-4. When the context files may no longer match the code, refresh them with the user rather than guessing.
+4. When the context files may no longer match the code, use `refreshing-context` with the user rather than guessing.
 5. Do not edit skills listed in `.beryl/agent/skills/VENDORED.md`; they are unmodified upstream copies.
 
 ## Deletion And Consolidation Safeguard

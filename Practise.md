@@ -398,6 +398,7 @@ Beryl ships these:
 | `understand-codebase` | Beryl | Read-only teaching, with optional offline artifacts. |
 | `composing-modules` | Beryl | Evidence-led dependency selection. |
 | `maintaining-codebase` | Beryl | Evidence-led maintenance program. |
+| `refreshing-context` | Beryl | Check the context files against the code, quiz the developer, and remove stale or redundant lines. |
 | `simplifying-code` | Beryl | Behavior-preserving simplification of a module, using design principles that fit its paradigm. |
 | `communicating-with-users` | Beryl | Plans, questions, updates, and reports that are short and specific. |
 | `creating-illustrations` | Beryl | Accurate, readable Mermaid or SVG diagrams. |
