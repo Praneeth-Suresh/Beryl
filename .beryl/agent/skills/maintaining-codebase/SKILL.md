@@ -41,7 +41,8 @@ Produce a compact reviewable program containing:
 
 Do not modify code during the assessment. Present the program and wait for
 approval before any implementation. After approval, route each behavior change
-through the normal `planning` or `systematic-debugging` workflow. Use
+through the normal `planning` or `systematic-debugging` workflow, and hand
+each behavior-preserving refactor slice to `simplifying-code`. Use
 `./.beryl/agent/scripts/entropy-hotspots.sh` for churn and hotspot evidence.
 Never bundle unrelated cleanup, weaken tests, claim all debt is removed, or
 convert a finding into a feature without separate product approval.

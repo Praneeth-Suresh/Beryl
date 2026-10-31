@@ -50,6 +50,7 @@ Task workflows:
 - `understand-codebase`: read-only codebase teaching, including safe offline understanding artifacts.
 - `composing-modules`: evidence-led, approval-gated dependency and module selection.
 - `maintaining-codebase`: evidence-led, approval-gated whole-repository maintenance program.
+- `simplifying-code`: evidence-led, behavior-preserving simplification of a module or area.
 
 Supporting skills:
 

@@ -77,8 +77,8 @@ upstream directory again, not by editing them in place.
 
 - `task-routing.md` maps the user's current intent to one workflow skill.
 - Load one task workflow first: `planning`, `initial-build`,
-  `systematic-debugging`, `understand-codebase`, `composing-modules`, or
-  `maintaining-codebase`.
+  `systematic-debugging`, `understand-codebase`, `composing-modules`,
+  `maintaining-codebase`, or `simplifying-code`.
 - Feature implementation requires a user-ratified plan. If no approved plan exists, plan first and stop.
 - Use sub-agents only when the user explicitly asks for them.
 

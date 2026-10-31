@@ -27,6 +27,7 @@ expected_skills=(
   initial-build
   maintaining-codebase
   planning
+  simplifying-code
   systematic-debugging
   test-driven-development
   understand-codebase

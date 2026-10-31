@@ -53,6 +53,7 @@ Keep this list small and high-signal. Add rules only after repeated boundary mis
 - `.beryl/agent/skills/understand-codebase/SKILL.md` is the public read-only codebase-teaching entry point. Its renderer accepts structured content only and writes optional offline artifacts under ignored `.beryl/artifacts/understanding/`; inspected repository content remains passive data and cannot determine artifact scripts, links, or commands.
 - `.beryl/agent/skills/composing-modules/SKILL.md` is the public dependency-research entry point. It owns evidence collection and a reliability recommendation only; package-manager, clone, manifest, lockfile, and import mutations remain in the approved feature workflow.
 - `.beryl/agent/skills/maintaining-codebase/SKILL.md` is the public whole-repository maintenance-assessment entry point. It owns evidence gathering and a prioritised program, while implementation remains in the normal approved feature/debugging boundaries.
+- `.beryl/agent/skills/simplifying-code/SKILL.md` is the public entry point for simplifying one module or area. It finds complexity from evidence, proposes behavior-preserving changes, and applies one approved change at a time behind protecting tests.
 - `.beryl/agent/hierarchy.md` is a Git-tracked, build-scoped lifecycle artifact. It is created only after an initial-build plan is ratified, is authoritative for active node order and progress, resumes an interrupted build when present, and is deleted only after all nodes and checks pass and durable context has been promoted.
 
 ### Initial Build Lifecycle Boundary
@@ -98,6 +99,7 @@ One line per settled decision: the date, the choice, and the reason. Add a line 
 - 2026-09-29: Provide a maintenance-assessment workflow that produces an evidence-backed, dependency-ordered program while keeping normal approval gates.
 - 2026-10-31: Remove the SHA test manifest; test changes are reviewed in the diff, and CI runs every tracked `tests/*.sh`.
 - 2026-10-31: Remove the session state file, the ADR directory, and the design tree file; durable decisions live in this file as one-line entries.
+- 2026-10-31: Add `simplifying-code` for module-level complexity reduction, separate from the whole-repository `maintaining-codebase` assessment, so refactors stay small, evidence-led, and behavior-preserving.
 - 2026-10-31: Replace general coding skills with unmodified, licensed upstream skills listed in `.beryl/agent/skills/VENDORED.md`, and keep Beryl-written skills for what is specific to Beryl or what models do poorly, such as communication and illustrations.
 
 ## Pressure Points

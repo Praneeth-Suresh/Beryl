@@ -415,6 +415,7 @@ check_agent_core() {
     "${BERYL_ROOT}/agent/skills/grilling/SKILL.md"
     "${BERYL_ROOT}/agent/skills/communicating-with-users/SKILL.md"
     "${BERYL_ROOT}/agent/skills/creating-illustrations/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/simplifying-code/SKILL.md"
   )
   local file
   for file in "${required_canonical[@]}"; do
