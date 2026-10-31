@@ -46,7 +46,7 @@ if [[ $CONTEXT_COUNT -lt 3 ]]; then
   fail "Sub-module agents require 3+ bounded contexts declared in .beryl/agent/architecture.md (found ${CONTEXT_COUNT}). For smaller projects, use the root .beryl/agent/ only."
 fi
 
-mkdir -p "$AGENT_DIR/adr"
+mkdir -p "$AGENT_DIR"
 
 # module-context.md
 sed \
@@ -84,29 +84,6 @@ ${BOUNDED_CONTEXT}
 - No imports from sibling module internals.
 EOF
 
-# design-tree.md
-cat > "$AGENT_DIR/design-tree.md" << EOF
-# Design Tree: ${MODULE_NAME}
-
-## Current Design Concept
-
-[One paragraph describing the organizing idea of this module.]
-
-## Open Decisions
-
-| Decision | Options | Current Lean | Why |
-| --- | --- | --- | --- |
-
-## Settled Decisions
-
-| Decision | Choice | Date | ADR |
-| --- | --- | --- | --- |
-
-## Pressure Points
-
-- [None yet]
-EOF
-
 # architecture.md
 cat > "$AGENT_DIR/architecture.md" << EOF
 # Architecture: ${MODULE_NAME}
@@ -129,6 +106,19 @@ Sibling modules import only from: [public entry point path]
 
 | External System | Adapter Location | Notes |
 | --- | --- | --- |
+
+## Open Decisions
+
+| Decision | Options | Current Lean | Why |
+| --- | --- | --- | --- |
+
+## Decision Record
+
+- [YYYY-MM-DD]: [Choice], because [reason].
+
+## Pressure Points
+
+- [None yet]
 EOF
 
 # ubiquitous-language.md

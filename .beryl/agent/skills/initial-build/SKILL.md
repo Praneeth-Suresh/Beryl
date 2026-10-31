@@ -25,7 +25,6 @@ whether they want to pause or abandon that build.
 Read these files before making a plan or changing code:
 
 - `.beryl/agent/project-brief.md`
-- `.beryl/agent/design-tree.md`
 - `.beryl/agent/architecture.md`
 - `.beryl/agent/ubiquitous-language.md`
 - `.beryl/agent/testing-policy.md`
@@ -155,7 +154,7 @@ the relevant host-project commands. After each slice:
 3. Update canonical Markdown when a durable scope decision, boundary,
    vocabulary term, architecture decision, or verification rule changes.
 4. Keep progress notes, temporary rationale, and unresolved scratch details in
-   `hierarchy.md` or the ignored `session-state.md`, not in canonical docs.
+   `hierarchy.md`, not in canonical docs.
 
 If a node is blocked, mark it blocked with the concrete reason and do not
 implement dependent nodes. Re-plan affected nodes and seek user ratification if

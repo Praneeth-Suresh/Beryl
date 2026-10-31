@@ -18,7 +18,6 @@ cleanup_prompt_file() {
 REQUIRED_FILES=(
   "project-brief.md"
   "architecture.md"
-  "design-tree.md"
   "testing-policy.md"
   "ubiquitous-language.md"
   "agent-rules.md"

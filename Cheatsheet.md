@@ -131,7 +131,6 @@ Edit:
 
 ```text
 .beryl/agent/project-brief.md
-.beryl/agent/design-tree.md
 .beryl/agent/ubiquitous-language.md
 .beryl/agent/architecture.md
 .beryl/agent/testing-policy.md
@@ -141,11 +140,10 @@ Edit:
 Minimum required content:
 
 1. `project-brief.md`: product goal, users, 3 to 5 core workflows, non-goals, external systems, definition of done.
-2. `design-tree.md`: current design concept, open decisions, settled decisions, pressure points.
-3. `ubiquitous-language.md`: domain terms agents must use in prompts, code, and tests.
-4. `architecture.md`: bounded contexts, ownership, public entry points, forbidden imports.
-5. `testing-policy.md`: exact commands for format, lint, typecheck, unit tests, integration tests, E2E smoke, and `check`.
-6. `security-policy.md`: secrets rules, approval-required operations, external access limits.
+2. `ubiquitous-language.md`: domain terms agents must use in prompts, code, and tests.
+3. `architecture.md`: bounded contexts, ownership, public entry points, forbidden imports, design concept, open decisions, one-line decision record, and pressure points.
+4. `testing-policy.md`: exact commands for format, lint, typecheck, unit tests, integration tests, E2E smoke, and `check`.
+5. `security-policy.md`: secrets rules, approval-required operations, external access limits.
 
 Run:
 
@@ -282,14 +280,14 @@ First bounded context: [context]
 Candidate public interface: [API/component/route/module boundary]
 Constraints: [security/reliability/scalability/delivery]
 
-Update .beryl/agent/design-tree.md and .beryl/agent/ubiquitous-language.md if needed.
+Update .beryl/agent/architecture.md and .beryl/agent/ubiquitous-language.md if needed.
 Present the plan for approval. Do not implement yet. 
 If the plan contains more than 10 deliverables, create a plan.md file in the root directory, outlining the list of tasks to be done.
 ```
 
-After the agent responds, review the design. If it is coherent, proceed. If not, ask it to revise the design tree first.
+After the agent responds, review the design. If it is coherent, proceed. If not, ask it to revise the design first.
 
-Operating contract note: the implementation, continue, resume, and debugging prompts below automatically use the standing routing, session-state, verification, test-discipline, and no-sub-agents defaults from `.beryl/agent/`. Only mention a default when overriding it for one prompt, for example: `Use sub-agents for this prompt.`
+Operating contract note: the implementation, continue, resume, and debugging prompts below automatically use the standing routing, verification, test-discipline, and no-sub-agents defaults from `.beryl/agent/`. Only mention a default when overriding it for one prompt, for example: `Use sub-agents for this prompt.`
 
 Use this after the initial design specification is reviewed and accepted:
 
@@ -308,17 +306,9 @@ For every feature, do this:
 1. Ask the agent to plan the feature first.
 2. Review and ratify the plan.
 3. Ask the agent to implement the approved plan.
-4. The agent manages any step-by-step bookkeeping internally, runs the formatter, narrow checks, and `./.beryl/scripts/check.sh`, then clears temporary state when done.
+4. The agent runs the formatter, narrow checks, and `./.beryl/scripts/check.sh`.
 5. If tests changed intentionally, check the agent explained why.
-6. The agent updates `.beryl/agent/` docs or ADRs only when durable knowledge changed.
-
-Internal session state:
-
-Feature-step bookkeeping is an internal agent mechanism. Developers should not have to create, review, or maintain feature-slice ledgers.
-
-Agents may use gitignored `.beryl/agent/session-state.md` when a feature has multiple steps or may be interrupted. The file must contain only the smallest resume state needed for the current session.
-
-When the feature is complete, the agent must clear `.beryl/agent/session-state.md`. Only durable decisions move into `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, `.beryl/agent/ubiquitous-language.md`, or an ADR.
+6. The agent updates `.beryl/agent/architecture.md` or `.beryl/agent/ubiquitous-language.md` only when durable knowledge changed.
 
 Feature planning prompt:
 
@@ -378,126 +368,33 @@ Code explanation prompt:
 Explain how this works:
 [feature, module, route, component, or behavior]
 
-Use .beryl/agent/task-routing.md and the explaining-codebase workflow.
+Use .beryl/agent/task-routing.md and the understand-codebase workflow.
 Inspect only the relevant files and do not edit anything.
 ```
 
 ## 8. When To Use Each Skill
 
-Use `planning` when:
+Task routing picks the workflow for you. Name a skill only when you want a
+specific one.
 
-- The user asks for a plan, design, approach, or breakdown.
-- A feature request has no approved plan yet.
+| Skill | Use when | Example prompt |
+| --- | --- | --- |
+| `planning` | You want a plan, or a feature has no approved plan yet. After you approve, it also covers the implementation. | `Plan this feature and wait for my approval: [feature].` |
+| `initial-build` | You explicitly ask for a large or greenfield application. | `Use initial-build for this application: [description].` |
+| `systematic-debugging` | Something is broken or a check fails. | `Debug this failure: [failure].` |
+| `understand-codebase` | You want an explanation, a map, or a quiz about the code. | `Explain how [feature] works. Do not edit files.` |
+| `composing-modules` | You are choosing a dependency or reusing a library. | `Research options for [need] before adding a dependency.` |
+| `maintaining-codebase` | You want a maintenance or technical-debt program. | `Assess this repository and propose a maintenance program.` |
+| `grill-me` | A plan is risky or ambiguous and you want it stress-tested. | `Grill me on this plan: [plan].` |
+| `test-driven-development` | New behavior or a bug fix needs a failing test first. | Loaded by `planning` and `systematic-debugging`. |
+| `verification-before-completion` | Before the agent claims work is done. | Loaded by `planning`. |
+| `communicating-with-users` | Plans, questions, updates, and reports. | Loaded for every final response. |
+| `creating-illustrations` | A structure or flow is clearer as a diagram. | `Draw the request flow through [module].` |
+| `frontend-design` | New or reshaped UI needs a deliberate visual direction. | `Use frontend-design for the [page] redesign.` |
 
-Ask:
-
-```text
-Use .beryl/agent/task-routing.md and .beryl/agent/skills/planning/SKILL.md. Present the plan for approval before implementation.
-```
-
-Use `adding-features` when:
-
-- The user has ratified a feature plan.
-- The approved feature plan should be implemented.
-
-Ask:
-
-```text
-Use .beryl/agent/task-routing.md and .beryl/agent/skills/adding-features/SKILL.md. Implement the approved plan one internal step at a time.
-```
-
-Use `debugging` when:
-
-- A behavior is broken.
-- A command, test, or runtime flow is failing.
-
-Ask:
-
-```text
-Use .beryl/agent/task-routing.md and .beryl/agent/skills/debugging/SKILL.md for this failure: [failure].
-```
-
-Debugging error history is agent-managed:
-
-- Keep it in gitignored `.beryl/agent/session-state.md`.
-- Keep at most 5 compact entries.
-- Store summaries, not raw logs.
-- Clear resolved entries after checks pass.
-
-Use `explaining-codebase` when:
-
-- The user asks how code works.
-- The user wants a map of a feature, module, route, or behavior.
-
-Ask:
-
-```text
-Use .beryl/agent/task-routing.md and .beryl/agent/skills/explaining-codebase/SKILL.md. Do not edit files.
-```
-
-Use `grill-me` before:
-
-- New features with unclear design.
-- Architecture changes.
-- Cross-context changes.
-- Ambiguous bug fixes.
-- Security-sensitive work.
-
-Ask:
-
-```text
-Run .beryl/agent/skills/grill-me/SKILL.md using its YAML input and output templates.
-```
-
-Use `interview-me` after:
-
-- `grill-me` leaves an unresolved product, UX, delivery, or risk decision.
-- The answer cannot be discovered from repo files, tests, config, logs, or canonical agent docs.
-
-Ask:
-
-```text
-Run .beryl/agent/skills/interview-me/SKILL.md for this unresolved grill-me decision: [decision].
-Ask one question at a time and recommend a default answer.
-```
-
-Use `testing-vertical-slices` before:
-
-- Feature implementation.
-- Bug fixes with behavior impact.
-- Refactors that can break behavior.
-
-Ask:
-
-```text
-Run .beryl/agent/skills/testing-vertical-slices/SKILL.md. Choose the smallest useful test level and identify the first narrow command to run.
-```
-
-Use `improving-architecture` when:
-
-- One change touches too many files.
-- Public APIs are unclear.
-- Modules are shallow pass-through layers.
-- Contexts are importing each other's internals.
-
-Ask:
-
-```text
-Run .beryl/agent/skills/improving-architecture/SKILL.md on [module/path]. Propose one small boundary improvement and the tests that protect it.
-```
-
-Use `tracking-entropy` when:
-
-- Starting weekly maintenance.
-- Planning a large feature.
-- Seeing repeated edits in the same files.
-- Deciding where refactoring is worth it.
-
-Ask:
-
-```text
-Run .beryl/agent/skills/tracking-entropy/SKILL.md with time window 12.month. Pick one hotspot and propose the smallest next refactor step.
-```
+`systematic-debugging`, `test-driven-development`,
+`verification-before-completion`, `grill-me`, `grilling`, and `frontend-design`
+are unmodified upstream skills. See `.beryl/agent/skills/VENDORED.md`.
 
 ### Explicit Sub-Agent Review Overlay
 
@@ -511,7 +408,7 @@ Use Design Reviewer sub-agent:
 Ask:
 
 ```text
-Review feature brief + grill-me output using the review checklist.
+Review the feature plan + grill-me answers using the review checklist.
 Report blockers, risk level, and exact fixes only.
 If no blockers, reply exactly: approved for implementation
 ```
@@ -725,8 +622,7 @@ Run a long-term maintenance audit from the current changed files and entropy dat
 
 Use:
 - .beryl/agent/task-routing.md
-- .beryl/agent/skills/tracking-entropy/SKILL.md
-- .beryl/agent/skills/improving-architecture/SKILL.md where boundary cleanup is relevant
+- .beryl/agent/skills/maintaining-codebase/SKILL.md
 - .beryl/agent/skills/frontend-design/SKILL.md where UI/CSS cleanup is relevant
 
 Read:
@@ -755,14 +651,14 @@ For each candidate include:
 - why it is safe or unsafe to change
 - proposed removal/refactor
 - protecting test/check or missing regression test
-- whether an ADR/design-tree update is needed
+- whether a decision record in architecture.md is needed
 - risk level: low, medium, or high
 
 Then group the backlog into:
 1. Safe removals
 2. Safe extractions
 3. Needs regression test first
-4. Needs design or ADR decision
+4. Needs a design decision
 5. Do not touch because generated or externally owned
 
 Finally recommend the smallest implementation order for the whole backlog, but do not edit files.
@@ -774,11 +670,12 @@ If you approve part or all of the backlog, ask the agent to implement the select
 ./.beryl/scripts/check.sh
 ```
 
-## 10. ADR Rule
+## 10. Decision Record Rule
 
-Create an ADR in `.beryl/agent/adr/` when a decision affects future work.
+Add a one-line entry to the Decision Record in `.beryl/agent/architecture.md`
+when a decision affects future work: the date, the choice, and the reason.
 
-Use ADRs for:
+Record decisions about:
 
 - Bounded context changes.
 - Public interface changes.
@@ -788,7 +685,7 @@ Use ADRs for:
 - Security model changes.
 - Naming conventions across contexts.
 
-Do not write ADRs for tiny implementation details.
+Do not record tiny implementation details.
 
 ## 11. Daily Commands
 
@@ -842,12 +739,6 @@ git worktree remove ../<repo>.worktrees/<task-slug>-b
 
 Remove a completed or rejected worktree.
 
-```bash
-test ! -s .beryl/agent/session-state.md
-```
-
-Check that no temporary session state remains after completed work.
-
 ## 12. What To Check Before Merging
 
 Before merge, require:
@@ -858,12 +749,11 @@ Before merge, require:
 4. Any intentional test changes are explained.
 5. New domain terms are in `.beryl/agent/ubiquitous-language.md`.
 6. Boundary changes are in `.beryl/agent/architecture.md`.
-7. Durable decisions have ADRs.
+7. Durable decisions have a line in the `architecture.md` Decision Record.
 8. No hidden rules exist only in chat.
 9. Sub-agent review is present only if the user explicitly requested sub-agents.
 10. If worktrees were used, the winning branch is identified and rejected worktrees are removed or intentionally kept.
 11. `.beryl/scripts/check-project.sh` includes formatter check mode and lint for the current project stack.
-12. `.beryl/agent/session-state.md` is empty or absent unless work is intentionally blocked.
 
 ## 13. Quick Recovery
 
@@ -874,8 +764,7 @@ If an agent makes a messy change:
 3. Ask the agent to repair only from tool output.
 4. If design drift caused the issue, run `grill-me`.
 5. If tests changed unexpectedly, inspect them with `git diff -- tests/`.
-6. If one module is absorbing too much change, run `tracking-entropy` and then `improving-architecture`.
-7. If `.beryl/agent/session-state.md` contains stale notes, either resume from them or clear them after extracting any durable decision.
+6. If one module is absorbing too much change, run `maintaining-codebase` to get a prioritised cleanup plan.
 
 ## 14. Sub-Module Agent Structure
 
@@ -904,11 +793,9 @@ repo-root/
       .beryl/agent/                      ← module-level (billing-specific decisions)
         module-context.md
         project-brief.md
-        design-tree.md
         architecture.md
         ubiquitous-language.md
         testing-policy.md
-        adr/
       src/
     identity/
       .beryl/agent/
@@ -927,11 +814,9 @@ repo-root/
 | Skills              | ✓ (shared)                          | inherits                  |
 | Scripts             | ✓ (shared)                          | inherits                  |
 | Project brief       | whole-system goal                    | module goal               |
-| Design tree         | cross-module decisions               | module-internal decisions |
-| Architecture        | module map + cross-module boundaries | internal module structure |
+| Architecture        | module map, boundaries, decisions    | internal structure, module decisions |
 | Ubiquitous language | shared terms                         | module-local terms        |
 | Testing policy      | root gate commands                   | module-specific commands  |
-| ADRs                | cross-module decisions               | module-internal decisions |
 
 ### Create A Sub-Module Agent
 
@@ -972,7 +857,7 @@ Read each module's .beryl/agent/module-context.md.
 Changes to module internals follow that module's .beryl/agent/ files.
 Interface changes between modules follow root .beryl/agent/architecture.md.
 New shared terms go in root .beryl/agent/ubiquitous-language.md.
-If a boundary changes, create a root-level ADR.
+If a boundary changes, add a decision line to root .beryl/agent/architecture.md.
 ```
 
 ### Precedence
@@ -991,6 +876,6 @@ mkdir -p modules/new-module
 ./.beryl/agent/scripts/init-module-agent.sh modules/new-module new-module "Domain description"
 ```
 
-Splitting a module: create the new module agent, move relevant ADRs, update both modules and root `architecture.md`, create a root ADR.
+Splitting a module: create the new module agent, move the relevant decision lines, update both modules and root `architecture.md`, and add a root decision line.
 
-Merging modules: choose the surviving module, merge design-tree and language, remove the defunct `.beryl/agent/`, update root `architecture.md`, create a root ADR.
+Merging modules: choose the surviving module, merge decision lines and language, remove the defunct `.beryl/agent/`, update root `architecture.md`, and add a root decision line.

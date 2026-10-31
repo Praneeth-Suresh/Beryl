@@ -39,7 +39,6 @@ Recommended structure:
 .beryl/agent/
   README.md
   project-brief.md
-  design-tree.md
   ubiquitous-language.md
   architecture.md
   testing-policy.md
@@ -49,30 +48,22 @@ Recommended structure:
   tool-instruction-template.md
   mcp.json
   skills/
+    VENDORED.md
     planning/
       SKILL.md
-    adding-features/
+    systematic-debugging/
       SKILL.md
-    debugging/
-      SKILL.md
-    explaining-codebase/
+    test-driven-development/
       SKILL.md
     grill-me/
       SKILL.md
-    interview-me/
+    communicating-with-users/
       SKILL.md
-    testing-vertical-slices/
-      SKILL.md
-    improving-architecture/
-      SKILL.md
-    tracking-entropy/
-      SKILL.md
-  .beryl/scripts/
+    ...
+  scripts/
     agent-doctor.sh
     sync-agent-env.sh
     entropy-hotspots.sh
-  adr/
-    0001-record-architecture-decisions.md
 ```
 
 Why this matters: agents need a stable memory layer that lives in the repo, not in one person's chat history or local tool configuration.
@@ -93,103 +84,9 @@ Treat these as generated shims. The real source of truth stays in `.beryl/agent/
 
 ### Tool-Specific Instruction Prompt
 
-Add this exact prompt to `.beryl/agent/tool-instruction-template.md`, then copy it into each tool-specific instruction file, including `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md`.
+The canonical prompt lives in `.beryl/agent/tool-instruction-template.md`. Run `.beryl/agent/scripts/sync-agent-env.sh` to copy it into `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md`.
 
-The prompt is deliberately short. Its job is not to repeat every rule. Its job is to make each agent load the canonical repo files, obey their precedence, and keep its work inside deterministic feedback loops.
-
-```md
-# Agent Operating Instructions
-
-This tool-specific instruction file is a generated shim. Do not edit this copy manually. Update `.beryl/agent/tool-instruction-template.md` and rerun `.beryl/agent/scripts/sync-agent-env.sh`.
-
-You are working in this repository as an implementation agent. Treat the repository files as the source of truth. Do not rely on hidden chat history, memory, or assumptions when a repo-owned instruction file answers the question.
-
-## Instruction Precedence
-
-1. Follow explicit user instructions for the current task.
-2. Follow the canonical files in `.beryl/agent/`.
-3. Follow this tool-specific shim.
-4. Follow existing code, tests, and local conventions.
-
-If this shim conflicts with files under `.beryl/agent/`, treat this shim as stale, follow the `.beryl/agent/` files, and mention the conflict in your final response.
-
-## Required Context Before Editing
-
-Before changing code or tests, read `.beryl/agent/task-routing.md`, classify the current task, and load only the matching workflow from `.beryl/agent/skills/<skill-name>/SKILL.md`.
-
-Then read the smallest relevant set of canonical files requested by that workflow:
-
-- `.beryl/agent/project-brief.md`
-- `.beryl/agent/design-tree.md`
-- `.beryl/agent/architecture.md`
-- `.beryl/agent/ubiquitous-language.md`
-- `.beryl/agent/testing-policy.md`
-- `.beryl/agent/agent-rules.md`
-
-Load additional files only when they are relevant to the task. Keep context focused.
-
-## Skill Use
-
-Skills live under `.beryl/agent/skills/<skill-name>/SKILL.md`. Use a skill when its name or purpose matches the task.
-
-Task workflows:
-
-- Use `planning` for plans, designs, approaches, and feature planning gates.
-- Use `adding-features` for feature implementation after a user-ratified plan.
-- Use `debugging` for bugs, failures, regressions, exceptions, and failing checks.
-- Use `explaining-codebase` for codebase walkthroughs and explanations without edits.
-
-Supporting skill triggers:
-
-- Use `grill-me` before non-trivial features, architecture changes, cross-context changes, or ambiguous bug fixes.
-- Use `interview-me` only after `grill-me` leaves unresolved user judgment that cannot be answered from repo inspection.
-- Use `testing-vertical-slices` for feature work and bug fixes that need behavior verification.
-- Use `improving-architecture` when a change exposes shallow modules, unclear ownership, repeated coupling, or hard-to-test structure.
-- Use `tracking-entropy` when asked to assess maintainability, hotspots, churn, complexity, or refactoring priority.
-
-When using a skill, read its `SKILL.md`, follow its process, and load only the referenced supporting files needed for the current task.
-
-Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
-
-## Default Work Loop
-
-For every implementation task:
-
-1. Restate the requested behavior and identify the bounded context.
-2. Identify the intended public interface and the files likely to change.
-3. Add or identify the smallest test or deterministic check that proves the behavior.
-4. Implement one internal feature slice at a time.
-5. Run the narrowest relevant check first, then the broader relevant suite.
-6. Repair based on actual tool output, not guesswork.
-7. Update `.beryl/agent/ubiquitous-language.md`, `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, or `.beryl/agent/adr/` if the change alters domain language, boundaries, or durable design decisions.
-
-For feature implementation, an approved plan is mandatory. If no approved plan exists, produce the plan first, present it to the user, and stop. Do not implement until the user ratifies the plan.
-
-Feature-slice bookkeeping is internal. Use gitignored `.beryl/agent/session-state.md` only when interruption or resume support is needed, and clear it when the feature is complete. Do not store temporary slice state in canonical files.
-
-## Engineering Rules
-
-- Prefer existing project patterns over new abstractions.
-- Keep public interfaces small and explicit.
-- Do not import another bounded context's internals.
-- Put external systems behind adapters; do not leak API clients, ORM records, HTTP objects, or UI state into domain logic.
-- Use domain names from `.beryl/agent/ubiquitous-language.md`; add new domain terms when needed.
-- Write types or interfaces before implementation when the language supports it.
-- Do not weaken tests to make implementation pass.
-- Do not edit unrelated files.
-- Do not store secrets in code, tests, logs, prompts, or instruction files.
-
-## Verification
-
-Run the checks required by `.beryl/agent/testing-policy.md` and the local toolchain. If a required check cannot run, explain why and state the risk.
-
-Your final response must include:
-
-- What changed.
-- Which checks ran.
-- Which checks were skipped or unavailable.
-- Any design files, glossary entries, or ADRs updated.
-```
+The prompt is deliberately short. Its job is not to repeat every rule or teach general coding practice. Its job is to make each agent load the canonical repo files, obey their precedence, follow the few Beryl-specific gates (plan approval, checks, no unrequested sub-agents), and keep its work inside deterministic feedback loops. General engineering practice comes from the skills.
 
 ## Step 2: Write The Minimum Useful Instruction Files
 
@@ -201,10 +98,9 @@ Purpose: keep the default prompt small by routing the user's current intent to o
 
 Use it to map:
 
-- Planning requests to `.beryl/agent/skills/planning/SKILL.md`.
-- Feature requests to `.beryl/agent/skills/adding-features/SKILL.md`.
-- Debugging requests to `.beryl/agent/skills/debugging/SKILL.md`.
-- Explanation requests to `.beryl/agent/skills/explaining-codebase/SKILL.md`.
+- Planning and feature requests to `.beryl/agent/skills/planning/SKILL.md`.
+- Debugging requests to `.beryl/agent/skills/systematic-debugging/SKILL.md`.
+- Explanation requests to `.beryl/agent/skills/understand-codebase/SKILL.md`.
 
 Rule: load exactly one task workflow first. Load supporting skills and canonical files only when that workflow asks for them.
 
@@ -214,22 +110,12 @@ Feature gate: if the user asks for feature implementation and no approved plan e
 
 Purpose: prevent context bloat in canonical agent files.
 
-Temporary state belongs in gitignored `.beryl/agent/session-state.md` and should be removed as soon as it is no longer needed:
-
-- Internal feature-slice checklists.
-- Current failing command excerpts.
-- Resume notes for blocked work.
-- Scratch reviewer notes.
-- Worktree variant comparison notes.
+Keep progress notes, failing command excerpts, and scratch reviewer notes out of canonical files. Modern agents track their own progress within a session.
 
 Durable state belongs in canonical files only when it changes future implementation:
 
-- `.beryl/agent/design-tree.md` for open or settled design decisions.
-- `.beryl/agent/architecture.md` for bounded contexts, ownership, public interfaces, adapters, and forbidden imports.
+- `.beryl/agent/architecture.md` for bounded contexts, ownership, public interfaces, adapters, forbidden imports, open decisions, and one-line records of settled decisions.
 - `.beryl/agent/ubiquitous-language.md` for domain terms that should appear in prompts, code, or tests.
-- `.beryl/agent/adr/*` for decisions that future agents must preserve.
-
-Cleanup rule: when a feature, debug repair, or refactor finishes, remove temporary session state. If a temporary note revealed durable knowledge, compress it into the appropriate canonical file and delete the scratch detail.
 
 ### `.beryl/agent/project-brief.md`
 
@@ -278,18 +164,14 @@ A feature is complete only when it has:
 - No new illegal imports across bounded contexts.
 ```
 
-### `.beryl/agent/design-tree.md`
+### Decisions in `.beryl/agent/architecture.md`
 
-Purpose: keep the shared design concept visible.
+Purpose: keep the shared design concept and the decisions behind it visible, in the same file as the boundaries they shape.
 
-This is not a giant upfront plan. It is a living decision tree that improves through implementation.
-
-Use this format:
+This is not a giant upfront plan. Add these sections to `architecture.md`:
 
 ```md
-# Design Tree
-
-## Current Design Concept
+## Design Concept
 
 [One paragraph describing the organizing idea of the system.]
 
@@ -299,18 +181,16 @@ Use this format:
 | --- | --- | --- | --- |
 | [Question] | [A, B, C] | [A] | [Reason] |
 
-## Settled Decisions
+## Decision Record
 
-| Decision | Choice | Date | ADR |
-| --- | --- | --- | --- |
-| [Question] | [Choice] | [YYYY-MM-DD] | [ADR link] |
+- [YYYY-MM-DD]: [Choice], because [reason].
 
 ## Pressure Points
 
 - [Constraint, ambiguity, or tradeoff that keeps affecting implementation.]
 ```
 
-Agent rule: before making architectural changes, the agent must update `Open Decisions` or create an ADR.
+Agent rule: before making architectural changes, the agent must update `Open Decisions` or add a line to the Decision Record.
 
 ### `.beryl/agent/ubiquitous-language.md`
 
@@ -439,7 +319,7 @@ Recommended policy:
 
 Existing tests may not be weakened to make implementation pass.
 
-During bug fixes, tests can be added. Existing test assertions can be changed only if the design artifact or ADR explains why the expected behavior changed.
+During bug fixes, tests can be added. Existing test assertions can be changed only if the plan or decision record explains why the expected behavior changed.
 
 ## What To Mock
 
@@ -482,7 +362,7 @@ Recommended rules:
 
 ## Before Coding
 
-- Read `.beryl/agent/project-brief.md`, `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, and `.beryl/agent/ubiquitous-language.md`.
+- Read `.beryl/agent/project-brief.md`, `.beryl/agent/architecture.md`, and `.beryl/agent/ubiquitous-language.md`.
 - Identify the bounded context being changed.
 - State the intended public interface.
 - Run the `grill-me` skill for non-trivial changes.
@@ -500,205 +380,35 @@ Recommended rules:
 
 - Run formatter, linter, typecheck, and relevant tests.
 - Explain which checks ran and which did not.
-- Update the glossary, design tree, or ADRs if the design changed.
-- Clear `.beryl/agent/session-state.md` when temporary implementation state is no longer needed.
+- Update the glossary or the architecture decision record if the design changed.
 ```
 
 ## Step 3: Add Skills That Encode Repeatable Work
 
 Skills should be small, named by capability, and loaded only when relevant. Do not make one giant "coding" skill.
 
-### Task Workflow: `planning`
+Current models already know how to debug and write code. Write your own skills only for what is specific to your repository, or for what models still do poorly, such as clear communication and accurate diagrams. For general practice, reuse established skills from other teams instead of writing your own.
 
-Create `.beryl/agent/skills/planning/SKILL.md`.
+Beryl ships these:
 
-Use when the user asks for a plan, design, approach, or when a feature request has no approved plan yet.
+| Skill | Source | Purpose |
+| --- | --- | --- |
+| `planning` | Beryl | Plan, get approval, then implement within the approved scope. |
+| `initial-build` | Beryl | Large or greenfield builds through a tracked, transient hierarchy. |
+| `understand-codebase` | Beryl | Read-only teaching, with optional offline artifacts. |
+| `composing-modules` | Beryl | Evidence-led dependency selection. |
+| `maintaining-codebase` | Beryl | Evidence-led maintenance program. |
+| `communicating-with-users` | Beryl | Plans, questions, updates, and reports that are short and specific. |
+| `creating-illustrations` | Beryl | Accurate, readable Mermaid or SVG diagrams. |
+| `systematic-debugging` | obra/superpowers (MIT) | Root cause before fixes. |
+| `test-driven-development` | obra/superpowers (MIT) | Failing test first. |
+| `verification-before-completion` | obra/superpowers (MIT) | Evidence before claiming work is done. |
+| `grill-me`, `grilling` | mattpocock/skills (MIT) | Stress-test a plan through an interview. |
+| `frontend-design` | anthropics/skills (Apache-2.0) | Distinctive visual design. |
 
-The workflow should:
+Vendored skills are copied unchanged with their licences, and their upstream commits are recorded in `.beryl/agent/skills/VENDORED.md`. To update one, copy a newer upstream version; do not edit it in place.
 
-1. Restate the requested outcome.
-2. Load only the canonical files needed for the bounded context.
-3. Identify public interface, likely files, checks, and design artifacts.
-4. Split larger work into internal feature slices without exposing slice bookkeeping to the user.
-5. Run `grill-me` locally for risky or ambiguous work.
-6. Present the plan and wait for user ratification before implementation.
-
-### Task Workflow: `adding-features`
-
-Create `.beryl/agent/skills/adding-features/SKILL.md`.
-
-Use for feature implementation only after the user has ratified a plan.
-
-Hard gate:
-
-- If no approved plan exists, run `planning`, present the plan, and stop.
-- Do not edit implementation code until the user ratifies the plan.
-- After ratification, implement one internal feature slice at a time.
-- Track temporary feature-slice state in `.beryl/agent/session-state.md`, not canonical files.
-- Clear `.beryl/agent/session-state.md` when the feature is complete.
-
-### Task Workflow: `debugging`
-
-Create `.beryl/agent/skills/debugging/SKILL.md`.
-
-Use when the user reports a bug, failing check, exception, regression, or broken behavior.
-
-The workflow should reproduce or inspect the failure first, identify the smallest behavior check that proves the fix, repair from actual tool output, and avoid broad rewrites.
-
-Session error history:
-
-- Use `.beryl/agent/session-state.md` for current-session error summaries only.
-- Keep at most 5 entries.
-- Keep each entry to about 10 lines or fewer.
-- Store summaries, not raw logs.
-- Redact secrets, tokens, credentials, raw production data, and personal data.
-- Clear resolved entries after the bug is fixed or no longer relevant.
-
-### Task Workflow: `explaining-codebase`
-
-Create `.beryl/agent/skills/explaining-codebase/SKILL.md`.
-
-Use when the user asks how code works. It should inspect the smallest relevant file set, explain public interfaces before internals, and avoid file edits.
-
-### Skill 1: `grill-me`
-
-Create `.beryl/agent/skills/grill-me/SKILL.md`.
-
-```md
-# Grilling Design
-
-Use before implementation of non-trivial features, architecture changes, or ambiguous bug fixes.
-
-## Process
-
-1. Restate the requested outcome in one paragraph.
-2. Identify the bounded context and public interface.
-3. List the main design options.
-4. Critique the current plan for:
-   - Reliability
-   - Context management
-   - Security
-   - Scalability
-   - Testability
-   - Coupling
-5. Ask: "What assumption would make this implementation wrong?"
-6. Revise the plan.
-7. Write the first internal implementation step.
-
-## Output
-
-- Chosen approach
-- Rejected alternatives
-- Risks
-- Checks to run
-- Files likely to change
-```
-
-Actionable insight: make the agent argue against its own first plan before it edits files. This catches vague boundaries and hidden coupling early.
-
-### Skill 2: `interview-me`
-
-Create `.beryl/agent/skills/interview-me/SKILL.md`.
-
-```md
-# Interview Me
-
-Use only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
-
-## Process
-
-1. State the unresolved decision in one sentence.
-2. Explore the repository first if the answer might be discoverable.
-3. Ask exactly one focused question.
-4. Provide the recommended default answer.
-5. Wait for the user's answer before asking the next question.
-6. Return the resolved decision to the calling workflow.
-```
-
-Actionable insight: keep `grill-me` as the structured critique and use `interview-me` only for conversational decisions that truly require the developer.
-
-### Skill 3: `testing-vertical-slices`
-
-Create `.beryl/agent/skills/testing-vertical-slices/SKILL.md`.
-
-```md
-# Testing Vertical Slices
-
-Use when implementing a feature or bug fix.
-
-## Process
-
-1. Define the behavior in domain language.
-2. Pick the smallest useful test level:
-   - Unit for pure domain rules.
-   - Integration for persistence, adapters, or cross-module behavior.
-   - E2E for critical user workflows.
-3. Write or identify the failing test first.
-4. Implement only enough code to pass it.
-5. Refactor after the test is green.
-6. Add one edge-case test for the behavior the agent was most likely to miss.
-
-## Rules
-
-- Do not mock code from the same bounded context.
-- Do mock external systems.
-- Do not weaken existing tests without updating a design artifact.
-```
-
-Actionable insight: agents behave better when the unit of work is a tested behavior, not a file list.
-
-### Skill 4: `improving-architecture`
-
-Create `.beryl/agent/skills/improving-architecture/SKILL.md`.
-
-```md
-# Improving Architecture
-
-Use when code feels hard to change, a feature crosses too many files, or a module boundary is unclear.
-
-## Process
-
-1. Identify the friction point.
-2. Name the domain concept being hidden by the current structure.
-3. Find shallow modules that only pass arguments through.
-4. Propose a smaller public interface.
-5. Move implementation detail behind that interface.
-6. Add or update boundary tests.
-7. Record the decision in an ADR if the boundary changes.
-
-## Output
-
-- Current problem
-- Proposed boundary
-- Public API
-- Internal files
-- Tests protecting the boundary
-```
-
-Actionable insight: the best refactors for agents are boundary refactors. They reduce the amount of context future agents need.
-
-### Skill 5: `tracking-entropy`
-
-Create `.beryl/agent/skills/tracking-entropy/SKILL.md`.
-
-```md
-# Tracking Entropy
-
-Use weekly, before large features, or when a file keeps getting changed by unrelated tasks.
-
-## Process
-
-1. Run `.beryl/agent/scripts/entropy-hotspots.sh`.
-2. Identify files with both high churn and high complexity.
-3. For the top hotspot, ask:
-   - Which concepts are mixed together?
-   - Which imports reveal illegal coupling?
-   - Which tests would protect a split?
-4. Create one small refactoring issue.
-5. Do not refactor opportunistically inside unrelated feature work.
-```
-
-Actionable insight: AI increases entropy when every feature touches the same central files. Track churn so refactoring work is aimed at the real risk.
+Actionable insight: when a vendored skill does not fit your repository, write a small repo-specific skill that loads it and adds the missing rule, instead of forking it.
 
 ## Step 4: Connect Deterministic Tools And MCP Servers
 
@@ -737,7 +447,7 @@ Create `.beryl/agent/mcp.json` as the desired MCP inventory. Exact server names 
     },
     {
       "name": "docs-search",
-      "purpose": "Search internal docs, ADRs, runbooks, and product specs"
+      "purpose": "Search internal docs, decision records, runbooks, and product specs"
     }
   ]
 }
@@ -792,7 +502,6 @@ set -euo pipefail
 echo "Checking agent workspace..."
 
 test -f .beryl/agent/project-brief.md
-test -f .beryl/agent/design-tree.md
 test -f .beryl/agent/ubiquitous-language.md
 test -f .beryl/agent/architecture.md
 test -f .beryl/agent/testing-policy.md
@@ -800,13 +509,10 @@ test -f .beryl/agent/agent-rules.md
 test -f .beryl/agent/task-routing.md
 test -f .beryl/agent/tool-instruction-template.md
 test -f .beryl/agent/skills/planning/SKILL.md
-test -f .beryl/agent/skills/adding-features/SKILL.md
-test -f .beryl/agent/skills/debugging/SKILL.md
-test -f .beryl/agent/skills/explaining-codebase/SKILL.md
-test -f .beryl/agent/skills/interview-me/SKILL.md
+test -f .beryl/agent/skills/systematic-debugging/SKILL.md
+test -f .beryl/agent/skills/understand-codebase/SKILL.md
 
 command -v git >/dev/null
-grep -qxF ".beryl/agent/session-state.md" .gitignore
 
 echo "Agent instruction files present."
 echo "Git available."
@@ -1014,7 +720,7 @@ Required output:
 - Public interface.
 - Test strategy.
 
-For small changes, this can be five bullets. For architectural changes, it should update `.beryl/agent/design-tree.md` or create an ADR.
+For small changes, this can be five bullets. For architectural changes, it should update `Open Decisions` or the Decision Record in `.beryl/agent/architecture.md`.
 
 #### Explicit Sub-Agent Overlay (only when requested)
 
@@ -1072,7 +778,7 @@ Rules:
 
 Use this only when the user explicitly asks for sub-agents. If an implementation step touches multiple bounded contexts, too many files, or has unclear ownership, run the same review locally unless sub-agents were requested.
 
-Sub-agent: **Architecture Reviewer** (`improving-architecture`).
+Sub-agent: **Architecture Reviewer**.
 
 Prompt:
 
@@ -1129,9 +835,7 @@ Speed guidance when sub-agents are explicitly requested:
 Before finishing, update:
 
 - `.beryl/agent/ubiquitous-language.md` if new domain terms were introduced.
-- `.beryl/agent/design-tree.md` if a design decision moved from open to settled.
-- `.beryl/agent/architecture.md` if a boundary changed.
-- `.beryl/agent/adr/` if the change affects future implementation choices.
+- `.beryl/agent/architecture.md` if a boundary changed, or if a design decision moved from open to settled (add one line to the Decision Record).
 
 #### Explicit Final Independent Review (only when requested)
 
@@ -1157,7 +861,7 @@ Use worktrees when:
 - A feature has two or three viable designs.
 - A bug fix is ambiguous and the cheapest way to learn is to try competing fixes.
 - A refactor touches an entropy hotspot.
-- `improving-architecture` could produce multiple boundary shapes.
+- A boundary refactor could take several shapes.
 - A medium/high-risk slice would benefit from an independent implementation attempt before review.
 
 Do not use worktrees for tiny edits where setup and review cost more than the change.
@@ -1359,7 +1063,7 @@ The strongest worktree candidates in this workflow are:
 - **Per-Feature Developer Workflow**: when explicitly requested, use worktrees on medium/high-risk features, not every small change.
 - **Sub-Agent Review Overlay**: only when explicitly requested, give reviewers real competing diffs instead of only one implementation to critique.
 - **Weekly Maintenance**: when explicitly requested, try two refactor steps for the same entropy hotspot and keep the one that reduces future context needs.
-- **Architecture Reviewer escalation**: only when explicitly requested, create separate branches for competing boundary designs, then record the chosen boundary in `.beryl/agent/architecture.md` or an ADR.
+- **Architecture Reviewer escalation**: only when explicitly requested, create separate branches for competing boundary designs, then record the chosen boundary in `.beryl/agent/architecture.md`.
 
 Worktrees add speed only when the comparison is disciplined. Every variant must start from the same base, receive the same acceptance criteria, run the same checks, and be cleaned up after the decision.
 
@@ -1368,35 +1072,19 @@ References:
 - [Git worktree documentation](https://git-scm.com/docs/git-worktree.html)
 - [GitHub branches and pull requests documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches)
 
-## Step 9: Use ADRs For Decisions That Future Agents Must Remember
+## Step 9: Record Decisions That Future Agents Must Remember
 
-Create ADRs only for decisions that will matter later. Do not write an ADR for every tiny implementation detail.
+Record a decision only when it will matter later. Do not record every tiny implementation detail.
 
-Template:
+Add one line to the Decision Record in `.beryl/agent/architecture.md`:
 
 ```md
-# ADR N: [Decision Name]
-
-## Status
-
-Accepted
-
-## Context
-
-[What forced this decision?]
-
-## Decision
-
-[What did we choose?]
-
-## Consequences
-
-- [Benefit]
-- [Tradeoff]
-- [Follow-up]
+- 2026-10-31: Keep payment retries in the billing adapter, because the domain must not know about provider error codes.
 ```
 
-Good ADR triggers:
+One line forces the decision and its reason into a form agents can load cheaply. If a decision needs a long explanation, the explanation belongs in the code, a test, or the pull request; the record links to it.
+
+Good triggers:
 
 - Choosing a bounded context boundary.
 - Choosing where domain logic lives.
@@ -1433,14 +1121,14 @@ Goal: create the control plane before asking agents to build features.
 
 1. Create `.beryl/agent/` with the canonical files listed in Step 1. Keep each file short enough that an agent can load it at the start of work.
 2. Fill `.beryl/agent/project-brief.md` with the product goal, primary workflows, non-goals, external systems, and definition of done. Do not start implementation until the primary workflows are named.
-3. Create `.beryl/agent/ubiquitous-language.md` as a table of `Business Term | Technical Symbol | Definition | Constraints`. Pull the first terms from `Plan.md`: design concept, design tree, bounded context, ubiquitous language, feedback loop, entropy hotspot, vertical slice, adapter, seam, and ADR.
-4. Create `.beryl/agent/design-tree.md` with three sections: `Open Decisions`, `Settled Decisions`, and `Pressure Points`. The first version can be rough, but it must name the choices that are still uncertain.
+3. Create `.beryl/agent/ubiquitous-language.md` as a table of `Business Term | Technical Symbol | Definition | Constraints`. Pull the first terms from `Plan.md`: design concept, design tree, bounded context, ubiquitous language, feedback loop, entropy hotspot, vertical slice, adapter, seam, and decision record.
+4. Add `Design Concept`, `Open Decisions`, `Decision Record`, and `Pressure Points` sections to `.beryl/agent/architecture.md`. The first version can be rough, but it must name the choices that are still uncertain.
 5. Run the `grill-me` pre-flight review from `Plan.md` before creating architecture rules. In this repo, implement that as the `grill-me` skill or a `grill-me` alias that loads `.beryl/agent/skills/grill-me/SKILL.md`.
 6. During `grill-me`, make the agent critique the proposed design for reliability, context management, security, and scalability. Require short answers to: "What is unclear?", "What will agents likely misunderstand?", "What test proves the first behavior?", and "What decision must be recorded now?"
-7. Update `.beryl/agent/design-tree.md` and `.beryl/agent/ubiquitous-language.md` based on the grilling output. The review is not complete until the repo files change or the agent states that no change is needed and why.
+7. Update `.beryl/agent/architecture.md` and `.beryl/agent/ubiquitous-language.md` based on the grilling output. The review is not complete until the repo files change or the agent states that no change is needed and why.
 8. Add `agent-rules.md`, `task-routing.md`, `tool-instruction-template.md`, `architecture.md`, and `testing-policy.md`. These files should tell agents how to route the task, what to read, which bounded context they may touch, when tests may change, and which checks must run.
-9. Add the task workflow skills: `planning`, `adding-features`, `debugging`, and `explaining-codebase`.
-10. Add the supporting skills: `grill-me`, `interview-me`, `testing-vertical-slices`, `improving-architecture`, and `tracking-entropy`. Each skill should include trigger conditions, required inputs, required output, and which repo files it may update.
+9. Add the repo-specific workflow skills, such as `planning` and `understand-codebase`.
+10. Vendor established general skills, such as `systematic-debugging`, `test-driven-development`, and `grill-me`, unchanged with their licences. Write your own skill only for what is specific to the repository or what models do poorly.
 11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `.beryl/scripts/check.sh`, and `.beryl/scripts/check-md.sh`.
 12. Run `.beryl/agent/scripts/agent-doctor.sh` and `./.beryl/scripts/check.sh`. Fix missing files before starting feature work.
 
@@ -1465,7 +1153,7 @@ Goal: move repeated explanations out of chat and into files agents can read.
 
 1. Review the last few feature discussions, bug reports, or design notes. Extract repeated domain terms into `.beryl/agent/ubiquitous-language.md`.
 2. Use `grill-me` whenever a term is ambiguous. The skill should ask whether the term belongs to the business domain, technical implementation, UI copy, or external-system vocabulary.
-3. Add ADRs for decisions that repeatedly confuse agents: bounded context ownership, persistence shape, adapter boundaries, test strategy, and naming conventions.
+3. Add Decision Record lines for decisions that repeatedly confuse agents: bounded context ownership, persistence shape, adapter boundaries, test strategy, and naming conventions.
 4. Move long prompt paragraphs into `.beryl/agent/` files. A good rule: if you paste the same instruction twice, it belongs in the repo.
 5. Run `.beryl/agent/scripts/sync-agent-env.sh` so `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/agent-rules.md`, `.github/copilot-instructions.md`, and `.codex/AGENTS.md` are generated from the same source.
 6. Run `agent-doctor.sh` after syncing. It should fail if a canonical file is missing or if a generated shim is stale.
@@ -1476,13 +1164,13 @@ Goal: move repeated explanations out of chat and into files agents can read.
 Goal: use agents to make the codebase easier to change, not just larger.
 
 1. Run `.beryl/agent/scripts/entropy-hotspots.sh` and pick one file or module with high churn. Do not start with the worst file if it is too broad; choose the smallest hotspot that affects current work.
-2. Run the `tracking-entropy` skill. Required output: why the file changes often, which concepts are mixed together, what tests currently protect it, and what change would reduce future context needs.
-3. Run `improving-architecture` on the chosen hotspot. Ask it to identify shallow modules, hidden domain concepts, unclear ownership, and imports that cross boundaries.
+2. Run the `maintaining-codebase` skill. Required output: why the file changes often, which concepts are mixed together, what tests currently protect it, and what change would reduce future context needs.
+3. For the chosen hotspot, identify shallow modules, hidden domain concepts, unclear ownership, and imports that cross boundaries.
 4. Choose one small refactor: extract a domain concept, move adapter code behind an interface, shrink a public API, or merge shallow pass-through modules.
-5. Before refactoring, run `testing-vertical-slices` to identify the smallest behavior test that protects the boundary. Add or identify that test before implementation.
+5. Before refactoring, identify the smallest behavior test that protects the boundary. Add or identify that test before implementation.
 6. Make the refactor in one internal implementation step. Avoid broad cleanup unless it directly supports the new boundary.
 7. Run targeted tests first, then `./.beryl/scripts/check.sh`.
-8. Record the decision in an ADR if future agents need to preserve the boundary. Update `.beryl/agent/architecture.md` if imports or ownership changed.
+8. Add a Decision Record line if future agents need to preserve the boundary. Update `.beryl/agent/architecture.md` if imports or ownership changed.
 
 ### Ongoing: Per Feature
 
@@ -1490,16 +1178,16 @@ Goal: make every feature follow the same generate-check-fix loop.
 
 1. Write a feature brief with `Feature`, `Domain Language`, `Bounded Context`, `Expected Behavior`, and `Checks`.
 2. If no approved plan exists, run `planning`, present the plan, and stop until the user ratifies it.
-3. Load the relevant canonical files: `project-brief.md`, `design-tree.md`, `architecture.md`, `ubiquitous-language.md`, `testing-policy.md`, and `agent-rules.md`.
-4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes. Use `interview-me` only if `grill-me` leaves unresolved user judgment.
-5. Run `testing-vertical-slices` before implementation. It should choose the narrowest useful test level: unit for pure rules, integration for adapters or persistence, E2E smoke for user workflows, and property-based tests for invariants.
+3. Load the relevant canonical files: `project-brief.md`, `architecture.md`, `ubiquitous-language.md`, `testing-policy.md`, and `agent-rules.md`.
+4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes.
+5. Use `test-driven-development` before implementation. Choose the narrowest useful test level: unit for pure rules, integration for adapters or persistence, E2E smoke for user workflows, and property-based tests for invariants.
 6. Define types, interfaces, and public boundaries first. Use names from `.beryl/agent/ubiquitous-language.md`; add new terms before using them widely.
 7. Write or identify the smallest useful test. If the test suite must change, explain why.
 8. Implement one ratified internal feature slice. Keep external systems behind adapters and avoid importing another bounded context's internals.
 9. Run the mutating formatter command recorded in `.beryl/agent/testing-policy.md`, then the narrowest check first, then broader checks, then `./.beryl/scripts/check.sh`.
 10. If checks fail, repair from actual tool output. Do not weaken tests unless the feature brief explicitly says the expected behavior changed.
-11. Close the loop by updating `ubiquitous-language.md`, `design-tree.md`, `architecture.md`, or an ADR when the change creates durable knowledge.
-12. Final response must state: what changed, which skill was used, which checks ran, whether tests changed, and whether temporary session state was cleared.
+11. Close the loop by updating `ubiquitous-language.md` or `architecture.md` when the change creates durable knowledge.
+12. Final response must state: what changed, which skill was used, which checks ran, and whether tests changed.
 
 Sub-agent cadence:
 

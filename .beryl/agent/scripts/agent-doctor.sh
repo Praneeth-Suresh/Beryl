@@ -392,7 +392,6 @@ check_agent_core() {
   local required_canonical=(
     "${BERYL_ROOT}/agent/README.md"
     "${BERYL_ROOT}/agent/project-brief.md"
-    "${BERYL_ROOT}/agent/design-tree.md"
     "${BERYL_ROOT}/agent/ubiquitous-language.md"
     "${BERYL_ROOT}/agent/architecture.md"
     "${BERYL_ROOT}/agent/testing-policy.md"
@@ -403,22 +402,19 @@ check_agent_core() {
     "${BERYL_ROOT}/agent/mcp.json"
     "${BERYL_ROOT}/agent/module-routing.md"
     "${BERYL_ROOT}/agent/templates/install/project-brief.md"
-    "${BERYL_ROOT}/agent/templates/install/design-tree.md"
     "${BERYL_ROOT}/agent/templates/install/architecture.md"
     "${BERYL_ROOT}/agent/templates/install/ubiquitous-language.md"
     "${BERYL_ROOT}/agent/templates/install/testing-policy.md"
-    "${BERYL_ROOT}/agent/templates/install/adr/0001-record-architecture-decisions.md"
-    "${BERYL_ROOT}/agent/adr/0001-record-architecture-decisions.md"
     "${BERYL_ROOT}/agent/skills/planning/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/adding-features/SKILL.md"
     "${BERYL_ROOT}/agent/skills/initial-build/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/debugging/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/explaining-codebase/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/VENDORED.md"
+    "${BERYL_ROOT}/agent/skills/systematic-debugging/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/test-driven-development/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/verification-before-completion/SKILL.md"
     "${BERYL_ROOT}/agent/skills/grill-me/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/interview-me/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/testing-vertical-slices/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/improving-architecture/SKILL.md"
-    "${BERYL_ROOT}/agent/skills/tracking-entropy/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/grilling/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/communicating-with-users/SKILL.md"
+    "${BERYL_ROOT}/agent/skills/creating-illustrations/SKILL.md"
   )
   local file
   for file in "${required_canonical[@]}"; do
@@ -436,16 +432,6 @@ check_agent_core() {
 
   check_file "${REPO_ROOT}/LICENSE"
   check_file "${REPO_ROOT}/NOTICE"
-
-  if [[ -L "${REPO_ROOT}/.gitignore" ]]; then
-    fail ".gitignore must not be a symlink"
-  fi
-  if [[ -f "${REPO_ROOT}/.gitignore" ]]; then
-    grep -qxF ".beryl/agent/session-state.md" "${REPO_ROOT}/.gitignore" || \
-      fail ".gitignore must ignore .beryl/agent/session-state.md"
-  else
-    fail "missing file: .gitignore"
-  fi
 }
 
 check_tool_shims() {

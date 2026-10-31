@@ -10,3 +10,17 @@ this NOTICE file. See TRADEMARKS.md for project trademark-use guidance.
 
 If you redistribute Beryl or derivative works, retain the applicable notices
 from this file as required by the Apache License, Version 2.0.
+
+Third-party skills
+
+Beryl includes unmodified third-party agent skills under .beryl/agent/skills/.
+Each one keeps its upstream licence file in its own directory. Sources and
+commits are listed in .beryl/agent/skills/VENDORED.md.
+
+- systematic-debugging, test-driven-development, verification-before-completion:
+  from https://github.com/obra/superpowers, MIT License,
+  Copyright (c) 2025 Jesse Vincent.
+- grill-me, grilling: from https://github.com/mattpocock/skills, MIT License,
+  Copyright (c) 2026 Matt Pocock.
+- frontend-design: from https://github.com/anthropics/skills, Apache License,
+  Version 2.0.

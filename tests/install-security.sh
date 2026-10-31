@@ -106,7 +106,7 @@ failing_source="${TMP_DIR}/failing-source"
 hook_failure_target="${TMP_DIR}/hook-failure-target"
 mkdir -p "${failing_source}" "${hook_failure_target}"
 cp -pR "${REPO_ROOT}/." "${failing_source}/"
-printf '#!/usr/bin/env bash\nprintf ".beryl/agent/session-state.md\\n" >> .gitignore\nexit 91\n' \
+printf '#!/usr/bin/env bash\nprintf "hook-written-ignore-rule\\n" >> .gitignore\nexit 91\n' \
   >"${failing_source}/.beryl/agent/scripts/seed-agent-context.sh"
 chmod +x "${failing_source}/.beryl/agent/scripts/seed-agent-context.sh"
 printf 'target-owned README\n' >"${hook_failure_target}/README.md"

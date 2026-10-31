@@ -10,8 +10,7 @@ repository-wide improvement program. It reduces technical debt without treating
 
 Use for periodic maintenance, technical-debt reduction, code-quality
 improvement, complexity management, or a whole-repository upkeep request.
-`tracking-entropy` remains the focused hotspot-analysis skill; this skill owns
-the top-level maintenance assessment and prioritisation.
+This skill owns the top-level maintenance assessment and prioritisation.
 
 ## Assessment
 
@@ -42,11 +41,10 @@ Produce a compact reviewable program containing:
 
 Do not modify code during the assessment. Present the program and wait for
 approval before any implementation. After approval, route each behavior change
-through the normal planning/feature or debugging workflow; use
-`tracking-entropy` for hotspot evidence and `improving-architecture` only when
-the public boundary is demonstrably unclear. Never bundle unrelated cleanup,
-weaken tests, claim all debt is removed, or convert a finding into a feature
-without separate product approval.
+through the normal `planning` or `systematic-debugging` workflow. Use
+`./.beryl/agent/scripts/entropy-hotspots.sh` for churn and hotspot evidence.
+Never bundle unrelated cleanup, weaken tests, claim all debt is removed, or
+convert a finding into a feature without separate product approval.
 
 ## Output
 

@@ -22,7 +22,6 @@ For each required file, replace install template placeholders with concrete
 repository-specific details:
 - project-brief.md
 - architecture.md
-- design-tree.md
 - testing-policy.md
 - ubiquitous-language.md
 - agent-rules.md

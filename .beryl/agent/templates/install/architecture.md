@@ -29,3 +29,23 @@ Record concrete forbidden import patterns here once contexts exist:
 - `[from] -> [to/infrastructure/**]`
 
 Keep this list small and high-signal. Add rules only after repeated boundary mistakes.
+
+## Design Concept
+
+[One paragraph describing the organizing idea of the system.]
+
+## Open Decisions
+
+| Decision | Options | Current Lean | Why |
+| --- | --- | --- | --- |
+| [Question] | [A, B, C] | [A] | [Reason] |
+
+## Decision Record
+
+One line per settled decision: the date, the choice, and the reason. Add a line when a decision changes boundaries, data shape, adapter contracts, security model, shared naming, or test strategy.
+
+- [YYYY-MM-DD]: [Choice], because [reason].
+
+## Pressure Points
+
+- [Constraint, ambiguity, or tradeoff affecting delivery]

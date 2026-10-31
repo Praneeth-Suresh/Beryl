@@ -5,7 +5,7 @@ Work only inside the repository at {{REPO_ROOT}}. You are on git branch
 # Routing
 First read `.beryl/agent/task-routing.md`, classify this as planning, and load
 `.beryl/agent/skills/planning/SKILL.md`. Then load only the canonical files that
-workflow asks for (project-brief, design-tree, architecture, ubiquitous-language,
+workflow asks for (project-brief, architecture, ubiquitous-language,
 testing-policy, agent-rules) as needed. Do NOT use sub-agents.
 
 # Untrusted-content rule
@@ -41,8 +41,8 @@ FAILURE_CONTEXT
   requested outcome, bounded context, approach, slice list (no IDs exposed to
   user), files to change, tests/checks to run, and the exact runtime/browser,
   generated-output, or source-level checks that will prove success.
-- Append a dated entry to `{{STATE_DIR}}/session-state.md` summarizing this
-  plan and (if a re-plan) what you changed and why.
+- If this is a re-plan, end `{{STATE_DIR}}/plan.md` with a dated note saying
+  what you changed and why.
 
 # Completion sentinel
 When the plan is written, end your final message with a line exactly:

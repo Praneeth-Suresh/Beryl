@@ -11,7 +11,7 @@ If the file being changed lives under a directory that contains its own `agent/`
 ### Loading Order
 
 1. Read the module's `agent/module-context.md` to understand scope and precedence.
-2. Load the module's `agent/project-brief.md`, `agent/design-tree.md`, `agent/architecture.md`, `agent/ubiquitous-language.md`, and `agent/testing-policy.md`.
+2. Load the module's `agent/project-brief.md`, `agent/architecture.md`, `agent/ubiquitous-language.md`, and `agent/testing-policy.md`.
 3. For skills, rules, scripts, and security policy: use the root `.beryl/agent/` (these are not duplicated per module).
 4. For shared domain terms: check both root and module `ubiquitous-language.md`.
 
@@ -24,7 +24,7 @@ When a task touches multiple modules:
 3. Changes to a module's internals follow that module's agent files.
 4. Changes to the interface between modules follow root `.beryl/agent/architecture.md`.
 5. New shared terms go in root `.beryl/agent/ubiquitous-language.md`.
-6. Cross-module boundary changes require a root-level ADR.
+6. Cross-module boundary changes require a decision line in root `.beryl/agent/architecture.md`.
 
 ### Module Check Commands
 

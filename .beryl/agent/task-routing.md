@@ -15,27 +15,24 @@ Purpose: choose the smallest task workflow to load. Do not load every workflow b
 
 | User Intent | Signals | Load |
 | --- | --- | --- |
-| Planning | plan, design, approach, architecture proposal, break this down | `.beryl/agent/skills/planning/SKILL.md` |
+| Planning and feature work | plan, design, approach, break this down, add, implement, build, change behavior | `.beryl/agent/skills/planning/SKILL.md` |
 | Initial build | explicit request for a large application, greenfield application, or first coordinated build | `.beryl/agent/skills/initial-build/SKILL.md` |
-| Feature addition | add, implement, build, create feature, new workflow, support behavior | `.beryl/agent/skills/adding-features/SKILL.md` |
 | Module composition | add a dependency, reuse a library, choose a package, compose from modules | `.beryl/agent/skills/composing-modules/SKILL.md` |
-| Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/debugging/SKILL.md` |
+| Debugging | debug, bug, error, failing, broken, regression, exception, test failure | `.beryl/agent/skills/systematic-debugging/SKILL.md` |
 | Codebase understanding | explain, teach, walk me through, understand, map the codebase, explain a change/PR/commit/branch, show execution flow, or quiz me | `.beryl/agent/skills/understand-codebase/SKILL.md` |
 | Codebase maintenance | periodically refactor, reduce technical debt, improve code quality, manage complexity, maintain the codebase | `.beryl/agent/skills/maintaining-codebase/SKILL.md` |
-| Post-run maintainability review | long product run, safe extraction slice, dead selectors, repeated CSS, rendering functions to split, generated artifacts, missing regression tests | `.beryl/agent/skills/tracking-entropy/SKILL.md` |
 
 ## Feature Implementation Gate
 
-Feature implementation requires an approved plan.
+Feature implementation requires a plan the user has approved in the current
+conversation.
 
-- If the user asks for a feature and there is no approved plan in the current conversation or `.beryl/agent/design-tree.md`, load `adding-features` and produce the plan first.
-- For non-trivial implementation plans, include implementation paths, acceptance criteria, commit boundaries, and risks before coding.
-- Present the plan to the user and stop.
-- Do not edit implementation code until the user ratifies the plan.
-- After ratification, implement one internal feature slice at a time.
-- Track feature-slice state internally in `.beryl/agent/session-state.md` only when needed for interruption or resume.
-- Clear `.beryl/agent/session-state.md` when the feature is complete.
-- Store only durable decisions in canonical files such as `.beryl/agent/design-tree.md`, `.beryl/agent/architecture.md`, `.beryl/agent/ubiquitous-language.md`, or `.beryl/agent/adr/*`.
+- If there is no approved plan, load `planning`, present the plan, and stop.
+- Do not edit implementation code until the user approves the plan.
+- After approval, implement one commit boundary at a time as described in
+  `planning`.
+- Record only durable decisions, boundaries, and terms, in
+  `.beryl/agent/architecture.md` or `.beryl/agent/ubiquitous-language.md`.
 
 ## Initial Build Routing Gate
 
@@ -54,12 +51,12 @@ If the user explicity requests the use of sub-agents, spin up the following sub-
 
 - Design Reviewer (required sub-agent role: independent reviewer)
   Prompt:
-  Review the feature brief and grill-me output before coding.
+  Review the feature plan and any grill-me answers before coding.
   Use only the Step 10-style checklist: language, bounded context, public interfaces, adapter isolation, tests, and coupling.
   Return only blockers, risk level (low/medium/high), and one exact fix per blocker.
   If no blockers, reply exactly: approved for implementation
 
-- Architecture Reviewer (required sub-agent role: improving-architecture)
+- Architecture Reviewer (required sub-agent role: architecture reviewer)
   Prompt:
   Review this slice for boundary drift.
   Return one minimal boundary improvement, the public API change, and the smallest protecting test.
@@ -74,15 +71,16 @@ If the user explicity requests the use of sub-agents, spin up the following sub-
 
 - Final Reviewer (required sub-agent role: independent merge reviewer)
   Prompt:
-  Review full diff and changed .beryl/agent/ docs before merge.
+  Review the full diff and changed .beryl/agent/ docs before merge.
   Prioritize boundary drift, test weakening, adapter leakage, and stale instruction files.
   Report only merge blockers and exact fixes.
   If no blockers, reply exactly: approved for merge
 
-## Supporting Skill Escalation
+## Supporting Skills
 
-- Use `grill-me` for structured critique before risky, ambiguous, cross-context, or security-sensitive work.
-- Use `interview-me` only when `grill-me` leaves an unresolved decision that depends on user judgment and cannot be answered from repository exploration.
-- Use `frontend-design` for distinctive, intentional visual design when building new UI or reshaping an existing one.
-- Use `tracking-entropy` after long product runs when the user asks for changed-file cleanup or one safe extraction slice.
-- Do not use `interview-me` for routine task routing or discoverable codebase facts.
+- `test-driven-development`: write the failing test first when adding or changing behavior.
+- `verification-before-completion`: run the checks and read their output before claiming work is done.
+- `grill-me`: structured interview before risky, ambiguous, cross-context, or security-sensitive work. It runs `grilling`.
+- `communicating-with-users`: plans, questions, progress updates, and final reports.
+- `creating-illustrations`: diagrams when a structure or flow is clearer drawn than described.
+- `frontend-design`: distinctive, intentional visual design when building new UI or reshaping an existing one.

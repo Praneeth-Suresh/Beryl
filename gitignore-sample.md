@@ -23,8 +23,4 @@ Add this only when the code is going to move to production. This is because unti
 /.codex/
 /.cursor/rules/agent-rules.md
 /.github/copilot-instructions.md
-
-# --- Agent State & Manifests ---
-# Deterministic check state that should not be part of the codebase logic
-/.beryl/agent/session-state.md
 ```

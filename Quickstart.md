@@ -252,8 +252,7 @@ If Beryl is already installed without the driver component, rerun setup with
 - [Cheatsheet.md](./Cheatsheet.md): command and workflow reference
 - [.beryl/scripts/README.md](./.beryl/scripts/README.md): install flags and troubleshooting
 - [.beryl/agent/task-routing.md](./.beryl/agent/task-routing.md): workflow selection
-- [.beryl/agent/skills/planning/SKILL.md](./.beryl/agent/skills/planning/SKILL.md): planning workflow
-- [.beryl/agent/skills/adding-features/SKILL.md](./.beryl/agent/skills/adding-features/SKILL.md): feature workflow
+- [.beryl/agent/skills/planning/SKILL.md](./.beryl/agent/skills/planning/SKILL.md): planning and feature workflow
 ## Readiness States
 
 An installed target runs `./.beryl/scripts/check.sh`; it uses the lockfile and

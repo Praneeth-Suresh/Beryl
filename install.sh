@@ -811,7 +811,6 @@ add_hook_mutation_paths() {
   # explicit absence markers so a failed update removes only hook outputs.
   for hook_file in \
     .beryl/agent/project-brief.md \
-    .beryl/agent/design-tree.md \
     .beryl/agent/architecture.md \
     .beryl/agent/ubiquitous-language.md \
     .beryl/agent/testing-policy.md \
