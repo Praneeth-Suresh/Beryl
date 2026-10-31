@@ -156,58 +156,6 @@ Run:
 
 Fix anything that fails before implementation starts.
 
-## 2. Configure The Test Manifest
-
-The test manifest tells you if test files changed since the last approved baseline.
-
-Edit:
-
-```text
-.beryl/agent/test-manifest.conf
-```
-
-Set:
-
-```bash
-MANIFEST_PATH="tests/.manifest.sha256"
-INCLUDE_GLOBS=(
-  "tests/**"
-  "spec/**"
-  "src/**/__tests__/**"
-  "**/*.test.*"
-  "**/*.spec.*"
-  "**/*_test.go"
-  "**/*_test.py"
-)
-EXCLUDE_GLOBS=(
-  ".git/**"
-  "node_modules/**"
-  "vendor/**"
-  ".venv/**"
-  "dist/**"
-  "build/**"
-  "coverage/**"
-)
-```
-
-Create the first manifest:
-
-```bash
-./.beryl/scripts/update-test-manifest.sh
-```
-
-Check that tests are unchanged:
-
-```bash
-./.beryl/scripts/check-tests-unchanged.sh
-```
-
-Normal rule:
-
-- Run `./.beryl/scripts/check-tests-unchanged.sh` when you want assurance that tests did not move.
-- Run `./.beryl/scripts/update-test-manifest.sh` only when a test change is intentional.
-- Commit the test change and manifest change together.
-
 ## 3. Configure The Project Check
 
 Configure the affected test gate:
@@ -361,7 +309,7 @@ For every feature, do this:
 2. Review and ratify the plan.
 3. Ask the agent to implement the approved plan.
 4. The agent manages any step-by-step bookkeeping internally, runs the formatter, narrow checks, and `./.beryl/scripts/check.sh`, then clears temporary state when done.
-5. If tests changed intentionally, verify the manifest changed too.
+5. If tests changed intentionally, check the agent explained why.
 6. The agent updates `.beryl/agent/` docs or ADRs only when durable knowledge changed.
 
 Internal session state:
@@ -691,7 +639,7 @@ Variant angle:
 Read canonical files under .beryl/agent/ as needed.
 Do not touch other worktrees.
 Run the formatter command after code edits, then narrow checks, then ./.beryl/scripts/check.sh.
-Final response must include changed files, checks run, checks skipped, tests changed, manifest changed, and .beryl/agent/ docs updated.
+Final response must include changed files, checks run, checks skipped, tests changed, and .beryl/agent/ docs updated.
 ```
 
 ### Compare Variants
@@ -757,7 +705,6 @@ Notes:
 
 - Git refuses to check out the same branch in two worktrees. Give every agent attempt its own branch.
 - Use `git worktree remove`; do not manually delete worktree directories unless you also run `git worktree prune`.
-- If the winning branch intentionally changed tests, run `./.beryl/scripts/update-test-manifest.sh` before the final `./.beryl/scripts/check.sh`.
 - After a GitHub pull request merges, delete the head branch unless another open pull request still uses it as a base.
 - References: [Git worktree docs](https://git-scm.com/docs/git-worktree.html), [GitHub branch docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches).
 
@@ -860,18 +807,6 @@ Run all deterministic checks.
 Run the project-specific formatter check, linter, typecheck, and tests configured for this codebase.
 
 ```bash
-./.beryl/scripts/check-tests-unchanged.sh
-```
-
-Check whether the configured test scope changed.
-
-```bash
-./.beryl/scripts/update-test-manifest.sh
-```
-
-Approve intentional test changes by refreshing the manifest.
-
-```bash
 ./.beryl/agent/scripts/agent-doctor.sh
 ```
 
@@ -920,7 +855,7 @@ Before merge, require:
 1. `./.beryl/scripts/check.sh` passes.
 2. `./.beryl/agent/scripts/agent-doctor.sh` passes.
 3. The agent final response lists checks run and skipped.
-4. Any intentional test changes include an updated manifest.
+4. Any intentional test changes are explained.
 5. New domain terms are in `.beryl/agent/ubiquitous-language.md`.
 6. Boundary changes are in `.beryl/agent/architecture.md`.
 7. Durable decisions have ADRs.
@@ -938,7 +873,7 @@ If an agent makes a messy change:
 2. Run `./.beryl/scripts/check.sh`.
 3. Ask the agent to repair only from tool output.
 4. If design drift caused the issue, run `grill-me`.
-5. If tests changed unexpectedly, run `./.beryl/scripts/check-tests-unchanged.sh` and inspect the diff.
+5. If tests changed unexpectedly, inspect them with `git diff -- tests/`.
 6. If one module is absorbing too much change, run `tracking-entropy` and then `improving-architecture`.
 7. If `.beryl/agent/session-state.md` contains stale notes, either resume from them or clear them after extracting any durable decision.
 

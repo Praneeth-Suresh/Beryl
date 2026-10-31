@@ -863,110 +863,6 @@ git log --format=format: --name-only --since="$SINCE" \
 
 Start with churn. Add complexity tooling later only if the churn list is too noisy.
 
-### `.beryl/scripts/check-tests-unchanged.sh`
-
-Purpose: detect whether the test suite changed since the last approved test manifest.
-
-This does not make tests impossible to edit. It makes test changes explicit, deterministic, and easy to review. The check compares files under `tests/` against a committed SHA-256 manifest at `tests/.manifest.sha256`.
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TESTS_DIR="${ROOT_DIR}/tests"
-MANIFEST="${TESTS_DIR}/.manifest.sha256"
-
-fail() {
-  printf "ERROR: %s\n" "$*" >&2
-  exit 1
-}
-
-if [[ ! -d "${TESTS_DIR}" ]]; then
-  printf "check-tests: no tests/ directory (skipping)\n"
-  exit 0
-fi
-
-if [[ ! -f "${MANIFEST}" ]]; then
-  fail "check-tests: missing ${MANIFEST}. Run .beryl/scripts/update-test-manifest.sh to create it."
-fi
-
-if command -v sha256sum >/dev/null 2>&1; then
-  SHA="sha256sum"
-elif command -v shasum >/dev/null 2>&1; then
-  SHA="shasum -a 256"
-else
-  fail "check-tests: need sha256sum or shasum."
-fi
-
-tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
-
-(
-  cd "${TESTS_DIR}"
-  find . -type f -print0 \
-    | LC_ALL=C sort -z \
-    | while IFS= read -r -d '' p; do
-        [[ "$p" == "./.manifest.sha256" ]] && continue
-        rel="${p#./}"
-        ${SHA} "$rel"
-      done
-) >"$tmp"
-
-normalize() {
-  awk '{print $1" "$2}' "$1"
-}
-
-if ! diff -u <(normalize "${MANIFEST}") <(normalize "$tmp") >/dev/null; then
-  fail "check-tests: tests/ contents differ from manifest. If intentional, run .beryl/scripts/update-test-manifest.sh and commit the updated manifest."
-fi
-
-printf "check-tests: OK (manifest matches)\n"
-```
-
-Pair it with `.beryl/scripts/update-test-manifest.sh`, which is only run when a test change is intentional:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TESTS_DIR="${ROOT_DIR}/tests"
-MANIFEST="${TESTS_DIR}/.manifest.sha256"
-
-fail() {
-  printf "ERROR: %s\n" "$*" >&2
-  exit 1
-}
-
-mkdir -p "${TESTS_DIR}"
-
-if command -v sha256sum >/dev/null 2>&1; then
-  SHA="sha256sum"
-elif command -v shasum >/dev/null 2>&1; then
-  SHA="shasum -a 256"
-else
-  fail "update-manifest: need sha256sum or shasum."
-fi
-
-tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
-
-(
-  cd "${TESTS_DIR}"
-  find . -type f -print0 \
-    | LC_ALL=C sort -z \
-    | while IFS= read -r -d '' p; do
-        [[ "$p" == "./.manifest.sha256" ]] && continue
-        rel="${p#./}"
-        ${SHA} "$rel"
-      done
-) >"$tmp"
-
-mv "$tmp" "${MANIFEST}"
-printf "Wrote %s\n" "${MANIFEST}"
-```
-
 Expose all deterministic checks through one manual command:
 
 ```bash
@@ -976,7 +872,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 "${ROOT_DIR}/scripts/check-md.sh"
-"${ROOT_DIR}/scripts/check-tests-unchanged.sh"
 "${ROOT_DIR}/scripts/check-project.sh"
 
 printf "OK\n"
@@ -1364,7 +1259,7 @@ Bias this attempt toward the simplest implementation that preserves the existing
 Read canonical files under .beryl/agent/ as needed.
 Do not touch other worktrees.
 Run the formatter command after code edits, then narrow checks, then ./.beryl/scripts/check.sh.
-Final response must include changed files, checks run, checks skipped, tests changed, manifest changed, and .beryl/agent/ docs updated.
+Final response must include changed files, checks run, checks skipped, tests changed, and .beryl/agent/ docs updated.
 ```
 
 Example variants:
@@ -1426,13 +1321,6 @@ When combining selected commits from multiple variants, cherry-pick deliberately
 
 ```bash
 git cherry-pick <commit-sha>
-./.beryl/scripts/check.sh
-```
-
-If the winning branch changed tests intentionally, run:
-
-```bash
-./.beryl/scripts/update-test-manifest.sh
 ./.beryl/scripts/check.sh
 ```
 
@@ -1553,7 +1441,7 @@ Goal: create the control plane before asking agents to build features.
 8. Add `agent-rules.md`, `task-routing.md`, `tool-instruction-template.md`, `architecture.md`, and `testing-policy.md`. These files should tell agents how to route the task, what to read, which bounded context they may touch, when tests may change, and which checks must run.
 9. Add the task workflow skills: `planning`, `adding-features`, `debugging`, and `explaining-codebase`.
 10. Add the supporting skills: `grill-me`, `interview-me`, `testing-vertical-slices`, `improving-architecture`, and `tracking-entropy`. Each skill should include trigger conditions, required inputs, required output, and which repo files it may update.
-11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `.beryl/scripts/check.sh`, `.beryl/scripts/check-md.sh`, `.beryl/scripts/check-tests-unchanged.sh`, and `.beryl/scripts/update-test-manifest.sh`.
+11. Add `agent-doctor.sh`, `sync-agent-env.sh`, `entropy-hotspots.sh`, `.beryl/scripts/check.sh`, and `.beryl/scripts/check-md.sh`.
 12. Run `.beryl/agent/scripts/agent-doctor.sh` and `./.beryl/scripts/check.sh`. Fix missing files before starting feature work.
 
 ### Week 1: Make Feedback Deterministic
@@ -1563,14 +1451,13 @@ Goal: make every agent change pass through the same local checks.
 1. Choose the project commands and write them into `.beryl/agent/testing-policy.md`: `format`, `lint`, `typecheck`, `unit test`, `integration test`, `e2e smoke`, and `check`. If a command does not exist yet, write `not available yet` and the reason.
 2. Configure `.beryl/scripts/check-project.sh` as the project-specific quality gate. Put formatter check mode first, then lint, then typecheck and tests. Do not create a second script for this.
 3. Record the mutating formatter command in `.beryl/agent/testing-policy.md` so agents know what to run immediately after code edits before they run the gate.
-4. Make `./.beryl/scripts/check.sh` the manual one-command gate. It should call Markdown checks, test-manifest checks, and `.beryl/scripts/check-project.sh`.
-5. Add `tests/.manifest.sha256` by running `./.beryl/scripts/update-test-manifest.sh`. From this point forward, `./.beryl/scripts/check-tests-unchanged.sh` tells you whether tests changed since the last approved manifest.
-6. Define the test-change rule in `.beryl/agent/testing-policy.md`: existing tests must not be weakened during implementation; intentional test changes require a matching manifest update and a short explanation in the final response.
-7. Turn on strict typechecking as far as the current codebase allows. If strict mode creates too much noise, document the relaxed rule and the plan to tighten it.
-8. Add import-boundary rules for the highest-value bounded contexts first. Start with one or two forbidden imports that catch real mistakes rather than a large policy that nobody understands.
-9. Add one E2E smoke test for the most important workflow. Keep it thin: it should prove the app starts and the primary path works, not exhaustively test every variant.
-10. Update `.beryl/agent/agent-rules.md` so every agent final response includes checks passed, checks skipped, and whether tests were changed.
-11. Run the formatter after code edits, then run `./.beryl/scripts/check.sh` manually before and after feature work. This replaces continuous watching; you decide when you want assurance.
+4. Make `./.beryl/scripts/check.sh` the manual one-command gate. It should call Markdown checks and `.beryl/scripts/check-project.sh`.
+5. Define the test-change rule in `.beryl/agent/testing-policy.md`: existing tests must not be weakened during implementation; intentional test changes require a short explanation in the final response.
+6. Turn on strict typechecking as far as the current codebase allows. If strict mode creates too much noise, document the relaxed rule and the plan to tighten it.
+7. Add import-boundary rules for the highest-value bounded contexts first. Start with one or two forbidden imports that catch real mistakes rather than a large policy that nobody understands.
+8. Add one E2E smoke test for the most important workflow. Keep it thin: it should prove the app starts and the primary path works, not exhaustively test every variant.
+9. Update `.beryl/agent/agent-rules.md` so every agent final response includes checks passed, checks skipped, and whether tests were changed.
+10. Run the formatter after code edits, then run `./.beryl/scripts/check.sh` manually before and after feature work. This replaces continuous watching; you decide when you want assurance.
 
 ### Week 2: Improve Agent Memory
 
@@ -1607,12 +1494,12 @@ Goal: make every feature follow the same generate-check-fix loop.
 4. Run `grill-me` for non-trivial work, ambiguous bug fixes, architecture changes, cross-context changes, or security-sensitive changes. Use `interview-me` only if `grill-me` leaves unresolved user judgment.
 5. Run `testing-vertical-slices` before implementation. It should choose the narrowest useful test level: unit for pure rules, integration for adapters or persistence, E2E smoke for user workflows, and property-based tests for invariants.
 6. Define types, interfaces, and public boundaries first. Use names from `.beryl/agent/ubiquitous-language.md`; add new terms before using them widely.
-7. Write or identify the smallest useful test. If the test suite must change, run `./.beryl/scripts/update-test-manifest.sh` after the intentional edit and explain why the manifest changed.
+7. Write or identify the smallest useful test. If the test suite must change, explain why.
 8. Implement one ratified internal feature slice. Keep external systems behind adapters and avoid importing another bounded context's internals.
 9. Run the mutating formatter command recorded in `.beryl/agent/testing-policy.md`, then the narrowest check first, then broader checks, then `./.beryl/scripts/check.sh`.
 10. If checks fail, repair from actual tool output. Do not weaken tests unless the feature brief explicitly says the expected behavior changed.
 11. Close the loop by updating `ubiquitous-language.md`, `design-tree.md`, `architecture.md`, or an ADR when the change creates durable knowledge.
-12. Final response must state: what changed, which skill was used, which checks ran, whether tests changed, whether the manifest changed, and whether temporary session state was cleared.
+12. Final response must state: what changed, which skill was used, which checks ran, whether tests changed, and whether temporary session state was cleared.
 
 Sub-agent cadence:
 

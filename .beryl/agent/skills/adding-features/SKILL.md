@@ -71,7 +71,7 @@ If the approved plan has no commit boundaries, define them before coding. If a c
 - Do not store session-specific slice state in canonical files.
 - Do not start a second slice in the same pass unless the approved plan and checks make it safe.
 - Do not weaken tests to make implementation pass.
-- If tests change intentionally, update the test manifest and explain why.
+- If tests change intentionally, explain why.
 - Do not use sub-agents unless the user explicitly asks for them.
 
 ## Temporary Vs Durable State
@@ -102,6 +102,6 @@ Durable state belongs in canonical files only when it changes future work:
 - Checks run
 - Checks skipped or unavailable
 - Whether tests changed
-- Whether the test manifest changed
+- Whether tests changed, and why
 - Design files or ADRs updated
 - Whether temporary session state was cleared or why it remains

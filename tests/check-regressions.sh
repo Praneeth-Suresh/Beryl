@@ -37,34 +37,7 @@ init_git_repo() {
   git -C "${target}" config user.name 'Beryl check regression tests'
 }
 
-# Root-level JavaScript, TypeScript, Python, and Go tests must be included in
-# the immutable manifest just like their nested equivalents.
-manifest_target="${TMP_DIR}/manifest"
-copy_check_surface "${manifest_target}"
-for rel in \
-  root.test.js nested/root.test.js \
-  root.spec.ts nested/root.spec.ts \
-  test_root.py nested/test_root.py \
-  root_test.py nested/root_test.py \
-  root_test.go nested/root_test.go; do
-  mkdir -p "${manifest_target}/$(dirname "${rel}")"
-  printf 'test fixture: %s\n' "${rel}" >"${manifest_target}/${rel}"
-done
-(cd "${manifest_target}" && ./.beryl/scripts/update-test-manifest.sh)
-for rel in \
-  root.test.js nested/root.test.js \
-  root.spec.ts nested/root.spec.ts \
-  test_root.py nested/test_root.py \
-  root_test.py nested/root_test.py \
-  root_test.go nested/root_test.go; do
-  assert_contains "${manifest_target}/tests/.manifest.sha256" "  ${rel}"
-done
-printf 'intentional root-level manifest mutation\n' >>"${manifest_target}/root.test.js"
-expect_failure "${TMP_DIR}/manifest-changed.out" \
-  bash "${manifest_target}/.beryl/scripts/check-tests-unchanged.sh"
-assert_contains "${TMP_DIR}/manifest-changed.out" 'configured test scope differs'
-
-# The affected-test gate shares the manifest glob matcher. Its recorder
+# The affected-test gate matches configured globs. Its recorder
 # captures selected files instead of depending on a host project test runner.
 affected_target="${TMP_DIR}/affected"
 copy_check_surface "${affected_target}"

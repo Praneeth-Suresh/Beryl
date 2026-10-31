@@ -69,7 +69,7 @@ Use a source-level search when the change introduces a new durable concept:
 rg -n "RepositoryUpkeep\\.md|Repository Upkeep|Material Intake" README.md RepositoryUpkeep.md .beryl/agent/design-tree.md .beryl/agent/ubiquitous-language.md
 ```
 
-If tests change intentionally, follow [.beryl/agent/testing-policy.md](./.beryl/agent/testing-policy.md) and run `./.beryl/scripts/update-test-manifest.sh`. Do not weaken tests to make an upkeep change pass.
+If tests change intentionally, follow [.beryl/agent/testing-policy.md](./.beryl/agent/testing-policy.md). Do not weaken tests to make an upkeep change pass.
 
 ## Out Of Scope
 

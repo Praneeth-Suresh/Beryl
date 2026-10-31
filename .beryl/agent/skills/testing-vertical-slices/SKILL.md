@@ -84,5 +84,5 @@ Abort if:
 ## File Update Permissions
 
 - May update: test files and test fixtures
-- Must update manifest with `./.beryl/scripts/update-test-manifest.sh` when test files change intentionally
+- Must explain intentional test file changes
 - Must not weaken existing assertions without explicit behavior-change rationale

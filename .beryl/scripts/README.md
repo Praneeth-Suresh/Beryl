@@ -338,8 +338,7 @@ Single entrypoint:
 `check.sh` runs:
 
 1. `check-md.sh`
-2. `check-tests-unchanged.sh`
-3. `check-project.sh` (project-specific extension point)
+2. `check-project.sh` (project-specific extension point)
 
 `check-project.sh` delegates to the affected test gate:
 
@@ -364,25 +363,6 @@ FULL_TEST_CMD=(npm test)
 RELATED_TEST_CMD=(pytest --testmon)
 FULL_TEST_CMD=(pytest)
 ```
-
-## Test Immutability (Detection)
-
-This repo uses a committed SHA-256 manifest over a configurable test scope.
-
-- Scope is configured in `.beryl/agent/test-manifest.conf` via:
-  - `MANIFEST_PATH`
-  - `INCLUDE_GLOBS`
-  - `EXCLUDE_GLOBS`
-- `./.beryl/scripts/check-tests-unchanged.sh` fails if any file in the configured scope differs from the manifest.
-- If a test change is intentional, update the manifest:
-
-```bash
-./.beryl/scripts/update-test-manifest.sh
-```
-
-Commit both the test changes and the updated manifest together.
-
-This mechanism provides deterministic detection of test changes. It does not create absolute immutability against privileged repository writes.
 
 ## Run On Every Commit (Optional)
 

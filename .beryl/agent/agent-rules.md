@@ -10,7 +10,7 @@ These defaults apply in every agent session even when the user does not restate 
 4. After edits, run the formatter command if configured, then narrow checks, then `./.beryl/scripts/check.sh --development` in this source checkout (installed projects use `./.beryl/scripts/check.sh`).
 5. Clear temporary session state when the feature, repair, or debugging thread is complete.
 6. Never weaken tests to make implementation pass.
-7. If tests change intentionally, run `./.beryl/scripts/update-test-manifest.sh` and explain why the test and manifest changes were required.
+7. If tests change intentionally, explain why the test changes were required.
 8. Do not use sub-agents unless the user explicitly asks for sub-agents, parallel agents, reviewer agents, or competing agent implementations.
 9. For an explicit large or greenfield application request, load the `initial-build` workflow. Discover the repository, ask clarification questions one at a time, and obtain plan ratification before creating `.beryl/agent/hierarchy.md` or editing build code.
 10. Treat `.beryl/agent/hierarchy.md` as Git-tracked active-build state. Resume it when present, update it after each dependency-ordered slice, and delete it only after every node and check passes and durable context has been promoted.
@@ -86,6 +86,6 @@ Final response must include:
 - Which checks ran.
 - Which checks were skipped or unavailable.
 - Whether tests changed.
-- Whether `tests/.manifest.sha256` changed.
+- Whether tests changed, and why.
 - Which skill(s) were used.
 - Whether temporary session state was cleared or why it remains.

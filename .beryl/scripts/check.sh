@@ -106,7 +106,6 @@ if [[ "${CHECK_AFFECTED_MODE:-worktree}" == "staged" ]]; then
 else
   "${BERYL_ROOT}/scripts/check-secrets.sh" --worktree
 fi
-"${BERYL_ROOT}/scripts/check-tests-unchanged.sh"
 "${BERYL_ROOT}/scripts/check-project.sh"
 
 printf "OK\n"

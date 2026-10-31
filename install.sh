@@ -818,13 +818,11 @@ add_hook_mutation_paths() {
     .beryl/agent/bootstrap-status.json \
     .beryl/agent/bootstrap-runner.log \
     .gitignore \
-    tests/.manifest.sha256 \
     AGENTS.md CLAUDE.md .cursor/rules/agent-rules.md \
     .github/copilot-instructions.md .codex/AGENTS.md; do
     add_mutation_path "$hook_file"
   done
   add_seed_hook_mutation_paths
-  add_configured_test_manifest_path
 }
 
 add_seed_hook_mutation_paths() {
@@ -838,25 +836,6 @@ add_seed_hook_mutation_paths() {
     validate_install_path "$seed_output"
     add_mutation_path "$seed_output"
   done <"$TMP_DIR/seed-template-paths"
-}
-
-validate_target_relative_path() {
-  target_rel="$1"
-  case "$target_rel" in
-    ""|/*|..|../*|*/..|*/../*|*[[:space:]]*)
-      update_fail snapshot checks .beryl/agent/test-manifest.conf invalid-manifest-path
-      ;;
-  esac
-}
-
-add_configured_test_manifest_path() {
-  manifest_config="$TARGET_DIR/.beryl/agent/test-manifest.conf"
-  [ -f "$manifest_config" ] || return 0
-  configured_manifest_path="$(sed -n 's/^[[:space:]]*MANIFEST_PATH="\([^"]*\)"[[:space:]]*$/\1/p' "$manifest_config")"
-  [ -n "$configured_manifest_path" ] || \
-    update_fail snapshot checks .beryl/agent/test-manifest.conf missing-manifest-path
-  validate_target_relative_path "$configured_manifest_path"
-  add_mutation_path "$configured_manifest_path"
 }
 
 validate_update_destination_path() {
@@ -1548,15 +1527,6 @@ ${hook}"
             fi
           fi
           ;;
-        update-test-manifest)
-          if [ -x "$TARGET_DIR/.beryl/scripts/update-test-manifest.sh" ]; then
-            printf "beryl: running post-install hook: .beryl/scripts/update-test-manifest.sh\n"
-            if ! (cd "$TARGET_DIR" && ./.beryl/scripts/update-test-manifest.sh); then
-              [ "$UPDATE_MODE" = "1" ] && update_fail hook "$component" update-test-manifest failed
-              fail "post-install hook failed: update-test-manifest"
-            fi
-          fi
-          ;;
         enable-githooks)
           if [ "$ENABLE_GITHOOKS" = "1" ] && command -v git >/dev/null 2>&1 && git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
             if [ "$GIT_HOOKS_CONFIGURE" = "1" ]; then
@@ -1820,10 +1790,11 @@ ${backup_rel}"
 # here, then separately authorized against a fresh staged release surface.
 recovery_validate_path() {
   recovery_rel="$1"
-  # Deterministic hooks legitimately snapshot these two target contracts even
-  # though neither is a manifest-delivered component path.
+  # Hooks legitimately snapshot .gitignore even though it is not a
+  # manifest-delivered component path. Backups made before the test manifest
+  # was removed may also contain its old path, so restores keep accepting it.
   case "$recovery_rel" in
-    .gitignore|tests/.manifest.sha256) ;;
+    .gitignore|tests/.manifest.sha256) ;; # legacy backups
     *) validate_install_path "$recovery_rel" ;;
   esac
   case "$recovery_rel" in

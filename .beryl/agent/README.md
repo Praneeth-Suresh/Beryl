@@ -46,14 +46,6 @@ Then run:
 ./.beryl/scripts/check.sh --development
 ```
 
-## Test manifest scope
-
-Configure test immutability detection in `.beryl/agent/test-manifest.conf`.
-
-- `INCLUDE_GLOBS`: which test files are tracked
-- `EXCLUDE_GLOBS`: ignored paths
-- `MANIFEST_PATH`: where the hash manifest is stored
-
 ## Decision recording rule
 
 - Use `design-tree.md` for evolving or unresolved design choices.

@@ -16,7 +16,7 @@
 3. External APIs, SDKs, and persistence details must be accessed through adapters.
 4. Domain logic must not depend directly on HTTP objects, ORM records, UI state, or vendor client types.
 5. Beryl-owned implementation files live under `.beryl/`; root files are allowed only for external-tool contracts or project legal and community documents.
-6. Scripts use `BERYL_ROOT` for Beryl-owned paths and `REPO_ROOT` for host project scans, Git operations, generated root shims, and test manifests.
+6. Scripts use `BERYL_ROOT` for Beryl-owned paths and `REPO_ROOT` for host project scans, Git operations, and generated root shims.
 
 ## Public Interface Rule
 

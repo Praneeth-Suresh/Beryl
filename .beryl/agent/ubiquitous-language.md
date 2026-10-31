@@ -34,7 +34,7 @@
 | Seam | `Seam` | Intentional change point for behavior substitution without invasive edits. | Should be protected by tests. | `HackPoint` |
 | ADR | `ADR` | Architecture Decision Record for durable decisions. | Required for lasting boundary changes. | `RandomNote` |
 | Beryl Root | `BERYL_ROOT` | Absolute path to the installed `.beryl` control-plane directory. | Use only for Beryl-owned implementation files and manifest/config reads. | Treating it as the host repo root |
-| Repo Root | `REPO_ROOT` | Absolute path to the host project repository root that contains `.beryl`. | Use for Git operations, host scans, root shims, and test manifests. | Treating it as the Beryl implementation root |
+| Repo Root | `REPO_ROOT` | Absolute path to the host project repository root that contains `.beryl`. | Use for Git operations, host scans, and root shims. | Treating it as the Beryl implementation root |
 | Component | `Component` | Installable Beryl capability such as `agent-core`, `checks`, `githooks`, `ci`, or `driver`. | Declared in `.beryl/beryl.components.json`; dependencies resolve before install. | Ad hoc copy bundle |
 | Profile | `Profile` | Named component selection such as `minimal`, `standard`, or `full`. | Must resolve through the same dependency graph as explicit components. | Separate setup mode |
 | Component Manifest | `ComponentManifest` | `.beryl/beryl.components.json`, the source of truth for components, profiles, paths, root contracts, and hooks. | Parsed by installer, setup, and validator. | Duplicated component lists |

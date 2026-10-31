@@ -111,7 +111,6 @@ printf 'active local session\n' >"${update_target}/.beryl/agent/session-state.md
 mkdir -p "${update_target}/.beryl/agent/custom-settings"
 printf 'CUSTOM_SETTING=keep\n' >"${update_target}/.beryl/agent/custom-settings/local.env"
 printf '# repository affected-test configuration\n' >"${update_target}/.beryl/agent/affected-tests.conf"
-printf 'MANIFEST_PATH="tests/local-manifest.sha256"\n' >"${update_target}/.beryl/agent/test-manifest.conf"
 printf 'LOCAL_DRIVER_CONFIG=keep\n' >"${update_target}/.beryl/driver/config.env"
 printf 'user-owned driver task\n' >"${update_target}/.beryl/driver/tasks/99-user-task.md"
 printf 'user-owned beryl file\n' >"${update_target}/.beryl/user-added.txt"
@@ -137,8 +136,6 @@ assert_file_contains "${update_target}/.beryl/agent/custom-settings/local.env" \
   'CUSTOM_SETTING=keep' 'manifest-owned update preservation'
 assert_file_contains "${update_target}/.beryl/agent/affected-tests.conf" \
   'repository affected-test configuration' 'update preservation'
-assert_file_contains "${update_target}/.beryl/agent/test-manifest.conf" \
-  'tests/local-manifest.sha256' 'update preservation'
 assert_file_contains "${update_target}/.beryl/driver/config.env" \
   'LOCAL_DRIVER_CONFIG=keep' 'update preservation'
 assert_file_contains "${update_target}/.beryl/driver/tasks/99-user-task.md" \
@@ -365,7 +362,6 @@ git -C "${githooks_target}" init -q
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${githooks_target}" --profile full
 git -C "${githooks_target}" config --local core.hooksPath previous-hooks
 rm -f "${githooks_target}/.beryl/agent/adr/0001-record-architecture-decisions.md"
-rm -f "${githooks_target}/tests/.manifest.sha256"
 printf '#!/bin/sh\nexit 0\n' >"${githooks_target}/.beryl/scripts/user-local.sh"
 chmod 0644 "${githooks_target}/.beryl/scripts/user-local.sh"
 githooks_output="${TMP_DIR}/update-githooks-rollback.out"
@@ -380,8 +376,6 @@ assert_file_contains "${githooks_output}" 'beryl: update failed phase=verify' \
   fail 'update githooks rollback: core.hooksPath was not restored'
 [[ ! -e "${githooks_target}/.beryl/agent/adr/0001-record-architecture-decisions.md" ]] || \
   fail 'update hook rollback: seeded ADR remained after failed update'
-[[ ! -e "${githooks_target}/tests/.manifest.sha256" ]] || \
-  fail 'update hook rollback: configured test manifest remained after failed update'
 [[ ! -x "${githooks_target}/.beryl/scripts/user-local.sh" ]] || \
   fail 'update permission rollback: user script mode changed after failed update'
 
@@ -393,7 +387,6 @@ bash "${REPO_ROOT}/.beryl/scripts/setup-project.sh" --non-interactive --profile 
 [[ -f "${setup_target}/AGENTS.md" ]] || fail 'setup: generated shim missing'
 [[ -f "${setup_target}/LICENSE" ]] || fail 'setup: Apache license missing'
 [[ -f "${setup_target}/NOTICE" ]] || fail 'setup: Apache notice missing'
-[[ -f "${setup_target}/tests/.manifest.sha256" ]] || fail 'setup: test manifest missing'
 [[ -f "${setup_target}/.beryl/agent/skills/initial-build/SKILL.md" ]] || fail 'setup: initial-build skill missing'
 [[ ! -e "${setup_target}/.beryl/agent/hierarchy.md" ]] || fail 'setup: hierarchy.md must not be created during install'
 (cd "${setup_target}" && ./.beryl/scripts/check.sh)

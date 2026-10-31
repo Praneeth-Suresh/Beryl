@@ -5,8 +5,8 @@ driver. Work only inside the repository at {{REPO_ROOT}}. You are on git branch
 # Routing
 Read `.beryl/agent/task-routing.md`, load `.beryl/agent/skills/adding-features/SKILL.md`, and
 follow it. The plan below is the ratified plan — treat it as approved. Do NOT
-use sub-agents. Do NOT weaken tests; if a test changes intentionally, update the
-test manifest per `.beryl/agent/testing-policy.md`.
+use sub-agents. Do NOT weaken tests; if a test changes intentionally, follow
+`.beryl/agent/testing-policy.md`.
 
 The driver has already completed the planning gate for this task. Do not ask for
 additional user ratification, do not produce another plan, and do not stop after
