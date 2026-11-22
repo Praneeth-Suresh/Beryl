@@ -33,6 +33,9 @@ jobs:
         run: ./.beryl/agent/scripts/agent-doctor.sh --development
 
       - name: Run cross-platform install and setup smoke test
+        # Git Bash must create real symlinks, not copies, for the guard tests.
+        env:
+          MSYS: ${{ runner.os == 'Windows' && 'winsymlinks:nativestrict' || '' }}
         run: ./.beryl/scripts/portability-smoke.sh
 
   lifecycle-regressions:
