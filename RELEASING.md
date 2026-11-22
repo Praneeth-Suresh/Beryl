@@ -19,24 +19,27 @@ bootstrap accepts them only after cryptographic signature verification.
    The `Publish Release Checksum` workflow resolves that target to a full
    40-character SHA, downloads its codeload archive, and uploads
    `beryl-<full-sha>.tar.gz.sha256`.
-2. Obtain the digest from that uploaded checksum asset and sign canonical
-   metadata from a secured maintainer workstation. The private key must be the
-   externally stored key whose public SHA-256 fingerprint is:
+2. Confirm the GitHub Release tag resolves to the intended full commit SHA.
+   Use only the checksum asset whose filename contains that exact SHA. If
+   other checksum assets are attached, do not use their digests for this tag.
+   Sign canonical metadata from a secured maintainer workstation. The private
+   key must be the externally stored key whose public SHA-256 fingerprint is:
 
    ```text
    d405d4eb71087593e79dc8659e9d3a770b3a8dc5eda41d73e9840829aa640475
    ```
 
-   For example, issue metadata for 30 days:
+   Choose a future UTC expiry (for example, 30 days from signing):
 
    ```bash
    RELEASE_SHA='<full-40-character-release-sha>'
+   EXPIRES_AT='<future-UTC-datetime-YYYY-MM-DDTHH:MM:SSZ>'
    ARCHIVE_SHA256='<digest-from-beryl-<sha>.tar.gz.sha256>'
-   ./\.beryl/scripts/sign-release-metadata.sh \
+   ./.beryl/scripts/sign-release-metadata.sh \
      --release-tag vX.Y.Z \
      --source-ref "$RELEASE_SHA" \
      --archive-sha256 "$ARCHIVE_SHA256" \
-     --expires-at 2026-09-18T00:00:00Z \
+     --expires-at "$EXPIRES_AT" \
      --private-key "$HOME/.config/beryl/release-signing-key.pem" \
      --output-dir /tmp/beryl-release-assets
    ```
@@ -54,7 +57,9 @@ bootstrap accepts them only after cryptographic signature verification.
    ```
 
    The release is not eligible for automatic installation until the checksum,
-   metadata, and signature assets are all present.
+   metadata, and signature assets are all present and the metadata has not
+   expired. Provide the corresponding versioned bootstrap through the
+   independently trusted distribution channel as well.
 4. Verify from a clean directory using the versioned bootstrap obtained from
    Beryl's independently trusted bootstrap channel:
 

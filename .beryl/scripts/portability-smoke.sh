@@ -5,11 +5,38 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/beryl-portability.XXXXXX")"
 trap 'rm -rf "${TMP_DIR}"' EXIT
+# macOS can expose a logical temp path under /var. Use the physical path for
+# our own newly created fixtures; keep the installer's path checks unchanged.
+physical_tmp_dir="$(CDPATH='' cd -P -- "${TMP_DIR}" && pwd -P)"
+TMP_DIR="${physical_tmp_dir}"
 
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1
 }
+
+make_fixture_symlink() {
+  local source="$1" destination="$2"
+  ln -s "${source}" "${destination}" || \
+    fail "could not create required fixture symlink: ${destination}"
+  [[ -L "${destination}" ]] || \
+    fail "fixture is not a symbolic link: ${destination} (Git Bash requires MSYS=winsymlinks:nativestrict)"
+}
+
+file_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    fail 'portability smoke requires sha256sum or shasum'
+  fi
+}
+
+# Fail early rather than letting a runner that copies files in place of links
+# spend hours on lifecycle cases before reporting an invalid fixture.
+touch "${TMP_DIR}/symlink-probe-file"
+make_fixture_symlink "${TMP_DIR}/symlink-probe-file" "${TMP_DIR}/symlink-probe-link"
 
 install_profile() {
   local profile="$1"
@@ -254,7 +281,7 @@ cmp -s "${TMP_DIR}/tampered-lock-before.json" "${tampered_lock}" || \
 forged_authority_target="${TMP_DIR}/update-forged-authority-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${forged_authority_target}" --profile full
 printf 'user-owned forged authority sentinel\n' >"${forged_authority_target}/.beryl/user-owned.txt"
-forged_digest="$(sha256sum "${forged_authority_target}/.beryl/user-owned.txt" | awk '{print $1}')"
+forged_digest="$(file_sha256 "${forged_authority_target}/.beryl/user-owned.txt")"
 forged_lock="${forged_authority_target}/.beryl/lock.json"
 sed \
   -e 's/"managedPaths": \[/"managedPaths": [".beryl\/user-owned.txt",/' \
@@ -308,7 +335,7 @@ printf 'external content must survive\n' >"${external_readme}"
 printf '#!/bin/sh\nexit 0\n' >"${symlink_target}/.beryl/scripts/user-local.sh"
 chmod 0644 "${symlink_target}/.beryl/scripts/user-local.sh"
 rm -f "${symlink_target}/.beryl/driver/README.md"
-ln -s "${external_readme}" "${symlink_target}/.beryl/driver/README.md"
+make_fixture_symlink "${external_readme}" "${symlink_target}/.beryl/driver/README.md"
 snapshot_tree "${symlink_target}" "${TMP_DIR}/update-symlink-before.tar"
 if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${symlink_target}" \
   >"${TMP_DIR}/update-symlink.out" 2>&1; then
@@ -326,7 +353,7 @@ parent_symlink_target="${TMP_DIR}/update-parent-symlink-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${parent_symlink_target}" --profile full
 external_driver_dir="${TMP_DIR}/external-driver-dir"
 mv "${parent_symlink_target}/.beryl/driver" "${external_driver_dir}"
-ln -s "${external_driver_dir}" "${parent_symlink_target}/.beryl/driver"
+make_fixture_symlink "${external_driver_dir}" "${parent_symlink_target}/.beryl/driver"
 parent_symlink_output="${TMP_DIR}/update-parent-symlink.out"
 if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${parent_symlink_target}" \
   >"${parent_symlink_output}" 2>&1; then
@@ -343,7 +370,7 @@ backup_symlink_target="${TMP_DIR}/update-backup-symlink-target"
 sh "${REPO_ROOT}/install.sh" --source-dir "${REPO_ROOT}" --target "${backup_symlink_target}" --profile full
 external_backup_dir="${TMP_DIR}/external-backup-dir"
 mkdir -p "${external_backup_dir}"
-ln -s "${external_backup_dir}" "${backup_symlink_target}/.beryl/.updates"
+make_fixture_symlink "${external_backup_dir}" "${backup_symlink_target}/.beryl/.updates"
 backup_symlink_output="${TMP_DIR}/update-backup-symlink.out"
 if sh "${REPO_ROOT}/install.sh" --update --source-dir "${update_source}" --target "${backup_symlink_target}" \
   >"${backup_symlink_output}" 2>&1; then

@@ -16,43 +16,46 @@
   <img src="https://img.shields.io/static/v1?label=license&message=Apache-2.0&color=d97706&labelColor=111827&style=flat-square" alt="Apache-2.0 licensed" />
 </p>
 
-<p align="center">
-  <img src="assets/beryl-readme-hero.png" alt="Beryl launch slide: Hard guarantees for agent-ready repositories" width="960" />
-</p>
+Beryl installs shared instructions and deterministic checks in repositories that
+use coding agents. Run `./.beryl/scripts/check.sh` to check Markdown and your
+configured project rules. A passing check does not prove a change is correct or
+replace review.
 
-Beryl is a hard guarantee layer for AI-assisted development. It turns the agent workflow into files, checks, and review-ready boundaries before agent output is trusted.
+**See it in action:** The [Notes repository case study](https://notes.praneeth-suresh-s.workers.dev/projects/beryl/)
+shows a configured test-manifest check rejecting an unexpected test edit.
+Reviewers could then ask whether the change was intentional.
 
-You get repository-owned defaults for where the contract lives, how work is routed, and which checks run. Beryl does not replace review. It makes review and recovery easier.
-
-## Open Source License
-
-Beryl is open source under the [Apache License, Version 2.0](./LICENSE).
-You may use, modify, redistribute, and commercialize Beryl. When distributing
-it or derivative works, preserve the license and applicable notices, identify
-modified files, and follow the [NOTICE](./NOTICE) requirements. Apache-2.0 also
-includes an express patent license and patent-termination provision; read the
-full license for its terms, conditions, warranty disclaimer, and limitation of
-liability.
-
-The license does not grant rights to use the Beryl name or logos beyond normal
-descriptive use. See [TRADEMARKS.md](./TRADEMARKS.md).
-
-## Community, Support, and Services
-
-- [Contribute](./CONTRIBUTING.md) code or documentation under Apache-2.0.
-- Get best-effort community help through [Support](./SUPPORT.md), or report a
-  vulnerability through the [Security Policy](./SECURITY.md).
-- Beryl remains free and open source; [consulting services](./SERVICES.md)
-  provide tailored setup, migrations, governance design, training, audits, and
-  ongoing advisory support.
+[Try it in a scratch repository](#quick-start) · [See what Beryl installs](#what-you-can-do-with-beryl) · [View CI results](https://github.com/Praneeth-Suresh/Beryl/actions)
 
 ## Quick Start
 
-**Recommended first read:** Read [this section](#what-you-can-do-with-beryl) to 
-  understand the installed workflow before choosing commands.
+Start in a scratch Git repository so you can inspect the generated files
+before using Beryl in an existing project.
 
-Use [Quickstart.md](./Quickstart.md) for the shortest
-walkthrough from first read to first safe agent task.
+### Install Directly
+
+1. Obtain `beryl-bootstrap.sh` associated with a **specific version** from
+   [Beryl Releases](https://github.com/Praneeth-Suresh/Beryl/releases), if that's
+   your independently trusted distribution channel, or use your organization's
+   approved copy. Inspect the file before running it. Do not use a mutable raw
+   URL as the trust root or pipe a download into a shell.
+2. From the target repository, run the inspected file with `sh`. The examples
+   assume you saved it inside your scratch repo; use its absolute path if it
+   lives elsewhere. Prerequisites: `curl`, `tar`, `openssl`, and a SHA-256
+   utility. On Windows, use Git Bash or WSL, not native PowerShell.
+
+   ```sh
+   sh ./beryl-bootstrap.sh --release latest --dry-run
+   sh ./beryl-bootstrap.sh --release latest --interactive
+   ./.beryl/scripts/check.sh
+   ```
+
+The dry run verifies signed release metadata and the selected archive before
+previewing the install. Review the tag, full commit SHA, key ID, and archive
+digest it reports. Missing, invalid, or expired verification data stops the
+install; do not bypass it. After installation, read `.beryl/agent/` for the
+agent instructions and review the chosen check results before merging changes.
+The [first-task walkthrough](./Quickstart.md) shows the complete flow.
 
 ### Choose A Setup Workflow
 
@@ -95,39 +98,6 @@ preserved files, conflicts, and results.
 
 Remote lifecycle commands require a full 40-character commit SHA, never a tag
 or moving branch.
-
-### Install Directly
-
-Download a **versioned `beryl-bootstrap.sh` through Beryl's independently
-trusted bootstrap channel**, inspect it, then let it select and verify the
-current signed release. Do not treat a raw `latest` URL alone as the trust root
-and do not pipe a download into a shell.
-
-Linux/macOS:
-
-```bash
-less beryl-bootstrap.sh
-sh beryl-bootstrap.sh --release latest --interactive
-```
-
-Windows: download the approved bootstrap in PowerShell if needed, then run it
-from Git Bash or WSL (native PowerShell execution is not supported):
-
-```powershell
-Get-Content beryl-bootstrap.sh
-bash -lc 'sh beryl-bootstrap.sh --release latest --interactive'
-```
-
-The bootstrap requires `curl`, `tar`, a SHA-256 utility, and `openssl`. It
-prints the selected release tag, full SHA, signing key ID, and archive digest.
-A signed metadata failure, expired metadata, archive mismatch, or unavailable
-verifier aborts before Beryl touches the target.
-
-**How to obtain the bootstrap:** download `beryl-bootstrap.sh` from the
-[GitHub Releases page](https://github.com/Praneeth-Suresh/Beryl/releases) or
-from your organization's independently trusted distribution. Inspect the file
-before execution. The bootstrap is the initial trust boundary — a mutable raw
-GitHub URL alone is not a trust root.
 
 ### Pinned Manual Fallback
 
@@ -285,6 +255,28 @@ Beryl starts as a practical safety layer for one repository, then scales without
 <p align="center">
   <img src="assets/beryl-value-ladder.png" alt="Beryl value ladder: start with one repo, then scale to an engineering team and company fleet" width="960" />
 </p>
+
+## Open Source License
+
+Beryl is open source under the [Apache License, Version 2.0](./LICENSE).
+You may use, modify, redistribute, and commercialize Beryl. When distributing
+it or derivative works, preserve the license and applicable notices, identify
+modified files, and follow the [NOTICE](./NOTICE) requirements. Apache-2.0 also
+includes an express patent license and patent-termination provision; read the
+full license for its terms, conditions, warranty disclaimer, and limitation of
+liability.
+
+The license does not grant rights to use the Beryl name or logos beyond normal
+descriptive use. See [TRADEMARKS.md](./TRADEMARKS.md).
+
+## Community, Support, and Services
+
+- [Contribute](./CONTRIBUTING.md) code or documentation under Apache-2.0.
+- Get best-effort community help through [Support](./SUPPORT.md), or report a
+  vulnerability through the [Security Policy](./SECURITY.md).
+- Beryl remains free and open source; [consulting services](./SERVICES.md)
+  provide tailored setup, migrations, governance design, training, audits, and
+  ongoing advisory support.
 
 ## Origin
 
